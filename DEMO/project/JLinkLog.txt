@@ -1,0 +1,30 @@
+
+T2EA0 010:865 SEGGER J-Link V4.98e Log File (0000ms, 10860ms total)
+T2EA0 010:865 DLL Compiled: May  5 2015 11:00:52 (0000ms, 10860ms total)
+T2EA0 010:865 Logging started @ 2017-10-18 00:55 (0000ms, 10860ms total)
+T2EA0 010:865 JLINK_SetWarnOutHandler(...) (0000ms, 10860ms total)
+T2EA0 010:865 JLINK_OpenEx(...)
+Firmware: J-Link ARM V8 compiled Nov 28 2014 13:44:46
+Hardware: V8.00
+S/N: 12345678
+Feature(s): RDI,FlashDL,FlashBP,JFlash,GDBFull  returns O.K. (0265ms, 11125ms total)
+T2EA0 011:130 JLINK_SetErrorOutHandler(...) (0000ms, 11125ms total)
+T2EA0 011:130 JLINK_ExecCommand("ProjectFile = "F:\FILE\STM32\DEMO\STM32F1xWOW\DEMO\project\JLinkSettings.ini"", ...)  returns 0x00 (0001ms, 11126ms total)
+T2EA0 011:133 JLINK_ExecCommand("Device = STM32F103CB", ...)Device "STM32F103CB" selected.  returns 0x00 (0002ms, 11128ms total)
+T2EA0 011:135 JLINK_ExecCommand("DisableConnectionTimeout", ...)  returns 0x01 (0000ms, 11128ms total)
+T2EA0 011:135 JLINK_GetHardwareVersion()  returns 0x13880 (0000ms, 11128ms total)
+T2EA0 011:135 JLINK_GetDLLVersion()  returns 49805 (0000ms, 11128ms total)
+T2EA0 011:135 JLINK_GetFirmwareString(...) (0000ms, 11128ms total)
+T2EA0 011:145 JLINK_GetDLLVersion()  returns 49805 (0000ms, 11128ms total)
+T2EA0 011:145 JLINK_GetCompileDateTime() (0000ms, 11128ms total)
+T2EA0 011:149 JLINK_GetFirmwareString(...) (0001ms, 11129ms total)
+T2EA0 011:154 JLINK_GetHardwareVersion()  returns 0x13880 (0000ms, 11129ms total)
+T2EA0 011:160 JLINK_TIF_Select(JLINKARM_TIF_SWD)  returns 0x00 (0002ms, 11131ms total)
+T2EA0 011:162 JLINK_SetSpeed(5000) (0001ms, 11132ms total)
+T2EA0 011:163 JLINK_GetId() >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF> >0x108 TIF>STM32Fxxxx: Cannot attach to CPU. Trying connect under reset. >0x108 TIF> >0x108 TIF>
+                JLINK_EMU_HasCapEx(0x0000002C)  returns 0x01 (0000ms, 0000ms total)
+                JLINK_EMU_HasCapEx(0x0000002C)  returns 0x01 (0000ms, 0000ms total)
+                returns 0x00000000 (6907ms, 18039ms total)
+T2EA0 020:800 JLINK_Close() (0001ms, 18040ms total)
+T2EA0 020:800  (0001ms, 18040ms total)
+T2EA0 020:800 Closed (0001ms, 18040ms total)
