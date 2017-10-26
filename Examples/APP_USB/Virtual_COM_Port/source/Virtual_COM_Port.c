@@ -51,11 +51,11 @@
 *******************************************************************************/
 void Virtual_COM_Port_Configuration(void)
 {
-  Set_System();
-  Set_USBClock();
-  USB_Interrupts_Config();
-  USB_Init();
-  
+  Set_System();							//设置系统时钟
+  Set_USBClock();						//设置USB时钟
+  USB_Interrupts_Config();	//打开USB中断
+  USB_Init();								//USB初始化
+
   while (1)
   {
   }

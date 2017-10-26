@@ -136,6 +136,7 @@ void Set_System(void)
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_Init(USB_DISCONNECT, &GPIO_InitStructure);
+	GPIO_ResetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
 
   /* Configure USART1 Rx (PA.10) as input floating */
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
@@ -243,12 +244,12 @@ void USB_Cable_Config (FunctionalState NewState)
   if (NewState != DISABLE)
   {
     GPIO_ResetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
-		GPIO_SetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
+//		GPIO_SetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
   }
   else
   {
     GPIO_SetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
-		GPIO_ResetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
+//		GPIO_ResetBits(USB_DISCONNECT, USB_DISCONNECT_PIN);
   }
 }
 
@@ -419,7 +420,7 @@ void USART_To_USB_Send_Data(void)
 	{
 		USART_ClearFlag(USART1,USART_FLAG_IDLE);
 		DMA_Cmd(DMA1_Channel5,DISABLE);    																//关闭接收DMA
-		count_in = USART1->DR; 																								//读出数据以完成清除标志			
+		count_in = USART1->DR; 																						//读出数据以完成清除标志			
 		count_in = VIRTUAL_COM_PORT_DATA_SIZE -  DMA_GetCurrDataCounter(DMA1_Channel5);	//得到真正接收数据个数
 
 		memcpy(buffer_in, buffer_rx, count_in);
@@ -429,8 +430,8 @@ void USART_To_USB_Send_Data(void)
 		DMA1_Channel5->CNDTR=VIRTUAL_COM_PORT_DATA_SIZE;														//重新设置接收数据个数			
 		DMA_Cmd(DMA1_Channel5,ENABLE);  																	//开启接收DMA
 		UserToPMABufferCopy(buffer_in, ENDP1_TXADDR, count_in);
-		SetEPTxCount(ENDP1, count_in);
-		SetEPTxValid(ENDP1);
+		SetEPTxCount(ENDP1, count_in);																		//设置端点数据长度
+		SetEPTxValid(ENDP1);																							//使能端点
 	}
 }
 /*******************************************************************************
@@ -455,18 +456,18 @@ void USART_To_USB_Send_Databac1(void)
 //  SetEPTxCount(ENDP1, count_in);
 //  SetEPTxValid(ENDP1);
 //	u32 num=0;
-//	num=USART_RX_FlagClearADDR(USART1,(u32*)buffer_rx);				//清除串口接收中断标志
+//	num=USART_RX_FlagClearADDR(USART1,(u32*)buffer_rx);							//清除串口接收中断标志
 	
-//	USART_ClearITPendingBit(USART1,USART_IT_IDLE); 										//清除空闲串口标志位
+//	USART_ClearITPendingBit(USART1,USART_IT_IDLE); 									//清除空闲串口标志位
 	DMA_Cmd(DMA1_Channel5,DISABLE);    																//关闭接收DMA
-	count_in = USART1->DR; 																								//读出数据以完成清除标志			
+	count_in = USART1->DR; 																						//读出数据以完成清除标志			
 	count_in = VIRTUAL_COM_PORT_DATA_SIZE -  DMA_GetCurrDataCounter(DMA1_Channel5);	//得到真正接收数据个数
 	
 	memcpy(buffer_in, buffer_rx, count_in);
 	memset(buffer_rx, 0x00, VIRTUAL_COM_PORT_DATA_SIZE);
 	
 	DMA1_Channel5->CMAR=(u32)buffer_rx;																//重新设置DMA接收地址
-	DMA1_Channel5->CNDTR=VIRTUAL_COM_PORT_DATA_SIZE;														//重新设置接收数据个数			
+	DMA1_Channel5->CNDTR=VIRTUAL_COM_PORT_DATA_SIZE;									//重新设置接收数据个数			
 	DMA_Cmd(DMA1_Channel5,ENABLE);  																	//开启接收DMA	
 	
 	

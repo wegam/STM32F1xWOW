@@ -27,10 +27,10 @@ typedef enum _CONTROL_STATE
   OUT_DATA,         /* 3 */
   LAST_IN_DATA,     /* 4 */		//最后的数据
   LAST_OUT_DATA,    /* 5 */		//最后的数据
-  WAIT_STATUS_IN,   /* 7 */		//等待状态
-  WAIT_STATUS_OUT,  /* 8 */		//等待状态
-  STALLED,          /* 9 */		//终止发送和接受
-  PAUSE             /* 10 */
+  WAIT_STATUS_IN,   /* 6 */		//等待状态
+  WAIT_STATUS_OUT,  /* 7 */		//等待状态
+  STALLED,          /* 8 */		//终止发送和接受
+  PAUSE             /* 9 */
 } CONTROL_STATE;    /* The state machine states of a control pipe */
 
 typedef struct OneDescriptor
@@ -105,11 +105,11 @@ typedef union		//为了简化对DEVICE_INFO 结构中的某些字段的访问（以u16 或u8 格式）
 
 typedef struct _DEVICE_INFO		//设备信息结构--USB 内核将主机发送过来的用于实现USB 设备的设置包保存在设备信息结构中，该结构类型是
 {
-  u8 USBbmRequestType;       /* bmRequestType */		//设置包中的bmRequestType 的副本
-  u8 USBbRequest;            /* bRequest */					//设置包中的bRequest 的副本
-  u16_u8 USBwValues;         /* wValue */						//设置包中的wValue 的副本
-  u16_u8 USBwIndexs;         /* wIndex */						//设置包中的wIndex 的副本
-  u16_u8 USBwLengths;        /* wLength */
+  u8 USBbmRequestType;       /* bmRequestType */		//请求类型（包含传输方向，请求类型及接收终端信息）
+  u8 USBbRequest;            /* bRequest */					//请求代码（标准请求代码）
+  u16_u8 USBwValues;         /* wValue */						//根据不同的命令，含义也不同（例如设备描述符的索引号）
+  u16_u8 USBwIndexs;         /* wIndex */						//索引或偏移,根据不同的命令，含义也不同，主要用于传送索引或偏移
+  u16_u8 USBwLengths;        /* wLength */					//如有数据传送阶段，此为数据字节数
 
   u8 ControlState;           /* of type CONTROL_STATE */			//内核的状态
   u8 Current_Feature;																					//反映了当前设备的特性
@@ -198,7 +198,7 @@ USER_STANDARD_REQUESTS;
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-u8 Setup0_Process(void);
+u8 Setup0_Process(void);		//建立数据包：对主机发过来的数据进行分类封装，以备处理
 u8 Post0_Process(void);
 u8 Out0_Process(void);
 u8 In0_Process(void);

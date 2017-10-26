@@ -26,7 +26,7 @@
 /* u8	Device_no; */
 /*  Points to the DEVICE_INFO structure of current device */
 /*  The purpose of this register is to speed up the execution */
-DEVICE_INFO *pInformation;		//设备状态
+DEVICE_INFO *pInformation;				//USB设备控制传输（包括枚举）时使用的状信息构体
 /*  Points to the DEVICE_PROP structure of current device */
 /*  The purpose of this register is to speed up the execution */
 DEVICE_PROP *pProperty;

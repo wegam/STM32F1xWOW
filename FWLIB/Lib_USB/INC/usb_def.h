@@ -28,7 +28,7 @@ typedef enum _RECIPIENT_TYPE
 } RECIPIENT_TYPE;
 
 
-typedef enum _STANDARD_REQUESTS
+typedef enum _STANDARD_REQUESTS		//标准命令---USB规范定义了11个标准命令，所有USB设备都必需支持
 {
   GET_STATUS = 0,			//GET_STATUS==00用来返回特定接收者的状态
   CLEAR_FEATURE,			//CLEAR_FEATURE==01用来清除或禁止接收者的某些特性
@@ -47,7 +47,7 @@ typedef enum _STANDARD_REQUESTS
 } STANDARD_REQUESTS;
 
 /* Definition of "USBwValue" */
-typedef enum _DESCRIPTOR_TYPE
+typedef enum _DESCRIPTOR_TYPE		//描述符分类（与GET_DESCRIPTOR有关）
 {
   DEVICE_DESCRIPTOR = 1,		//DEVICE_DESCRIPTOR==01	设备描述符
   CONFIG_DESCRIPTOR,				//CONFIG_DESCRIPTOR==02	配置描述符

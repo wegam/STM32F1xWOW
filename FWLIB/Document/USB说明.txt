@@ -5,6 +5,36 @@ USB配置流程
 4-获取设备信息（REQUEST_STANDARD->USB_REQUEST_GET_DESCRIPTOR->REQUEST_TO_DEVICE）:设备到主机
 5-请求设备配置信息（REQUEST_STANDARD->USB_REQUEST_GET_CONFIGURATION）:设备到主机
 
+
+
+
+
+
+专业名词解释：
+SETUP
+PID IN
+PID OUT
+PID DATA0
+PID DATA1
+SOF
+SYNC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 USB枚举过程：
 
 A-枚举过程中，第一个来回的详细分析
@@ -50,7 +80,10 @@ USB插入时的动作流程：
 8-获取String Descriptor ( 可选)
 9-配置
 
-STANDARD_REQUESTS（标准请求值）
+
+
+
+STANDARD_REQUESTS（标准命令---USB规范定义了11个标准命令，所有USB设备都必需支持,pInformation->USBbRequest）：
 	GET_STATUS			= 	0,		//用来返回特定接收者的状态
 	CLEAR_FEATURE		=	1,		//用来清除或禁止接收者的某些特性
 	SET_FEATURE			=	3,		//用来启用或激活命令接收者的某些特性
@@ -62,6 +95,16 @@ STANDARD_REQUESTS（标准请求值）
 	GET_INTERFACE		=	10,		//用于获取当前某个接口描述符编号
 	SET_INTERFACE		=	11,		//用于主机要求设备用某个描述符来描述接口
 	SYNCH_FRAME 		= 	12		//用于设备设置和报告一个端点的同步帧
+	
+	
+GET_DESCRIPTOR（设备描述符pInformation->USBwValues）
+	DEVICE_DESCRIPTOR 		= 	1,		//设备描述符
+	CONFIG_DESCRIPTOR		=	2,		//配置描述符
+	STRING_DESCRIPTOR		=	3,		//字符串描述符
+	INTERFACE_DESCRIPTOR	=	4,		//接口描述符
+	ENDPOINT_DESCRIPTOR		=	5,		//端点描述符	
+	
+	
 
 USB文件结构说明：（Virtual_COM_Port）
 hw_config.c	（用于 USB硬件配置）
@@ -75,4 +118,13 @@ usb_core.c	（USB总线数据处理的核心文件）
 
 
 
+
+Virtual_COM_Port
+变量说明：
+pInformation;				//USB设备控制传输（包括枚举）时使用的状信息构体
+	pInformation->USBbmRequestType;  	/* bmRequestType */		//请求类型（包含传输方向，请求类型及接收终端信息）
+	pInformation->USBbRequest;       	/* bRequest */			//请求代码（标准请求代码）
+	pInformation->USBwValues;        	/* wValue */			//根据不同的命令，含义也不同（例如设备描述符的索引号）
+	pInformation->USBwIndexs;        	/* wIndex */			//索引或偏移,根据不同的命令，含义也不同，主要用于传送索引或偏移
+	pInformation->USBwLengths;        	/* wLength */			//如有数据传送阶段，此为数据字节数
 

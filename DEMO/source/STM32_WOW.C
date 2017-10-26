@@ -308,6 +308,10 @@ void WOW_Configuration(void)
 	Virtual_COM_Port_Configuration();
 #endif
 
+//*********************************Virtual_COM_Port_IAD*********************************//
+#ifdef Virtual_COM_Port_IAD
+	Virtual_COM_Port_IAD_Configuration();
+#endif
 
 
 
@@ -603,6 +607,13 @@ void WOW_Server(void)
 #ifdef Virtual_COM_Port
 	Virtual_COM_Port_Server();
 #endif
+
+//*********************************Virtual_COM_Port_IAD*********************************//
+#ifdef Virtual_COM_Port_IAD
+	Virtual_COM_Port_IAD_Server();
+#endif
+
+
 
 
 //IWDG_Feed();								//∂¿¡¢ø¥√≈π∑Œππ∑

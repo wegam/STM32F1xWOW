@@ -117,7 +117,7 @@ const u8 CustomHID_ConfigDescriptor[CUSTOMHID_SIZ_CONFIG_DESC] =
   ; /* CustomHID_ConfigDescriptor */		//ª„±®√Ë ˆ
 const u8 CustomHID_ReportDescriptor[CUSTOMHID_SIZ_REPORT_DESC] =
   {    
-    0x05, 0x8c,            /* USAGE_PAGE (ST Page)           */                   
+		0x05, 0x8C,            /* USAGE_PAGE (ST Page)           */ 
     0x09, 0x01,            /* USAGE (Demo Kit)               */    
     0xa1, 0x01,            /* COLLECTION (Application)       */            
     /* 6 */

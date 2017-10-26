@@ -46,7 +46,7 @@ void CTR_LP(void)			//被调用：usb_istr.c			//用于端点数据输入输入中断处
     _SetISTR((u16)CLR_CTR); /* clear CTR flag */	//清除正确的传输标志 (Correct transfer)
     /* extract highest priority endpoint number */
     EPindex = (u8)(wIstr & ISTR_EP_ID);						//找到节点索引号//端点ID (Endpoint Identifier)////获取数据传输针对的端点号
-    if (EPindex == 0)			//0号端点--控制传输
+    if (EPindex == 0)			//0号端点--控制传输（包含USB枚举）
     {
       /* Decode and service control endpoint interrupt */
       /* calling related service routine */
@@ -98,7 +98,7 @@ void CTR_LP(void)			//被调用：usb_istr.c			//用于端点数据输入输入中断处
         else if ((wEPVal &EP_SETUP) != 0)		//建立包状态
         {
           _ClearEP_CTR_RX(ENDP0); /* SETUP bit kept frozen while CTR_RX = 1 */
-          Setup0_Process();				//usb_core.c//建立包
+          Setup0_Process();				//usb_core.c//建立数据包：对主机发过来的数据进行分类封装，以备处理
           /* before terminate set Tx & Rx status */
           _SetEPRxStatus(ENDP0, SaveRState);
           _SetEPTxStatus(ENDP0, SaveTState);
@@ -116,7 +116,7 @@ void CTR_LP(void)			//被调用：usb_istr.c			//用于端点数据输入输入中断处
         }
       }
     }/* if(EPindex == 0) */
-    else		//其它节点制作
+    else									//其它节点制作
     {
       /* Decode and service non control endpoints interrupt  */
 

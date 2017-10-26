@@ -171,7 +171,7 @@ void USB_Istr(void)
   {
     /* servicing of the endpoint correct transfer interrupt */
     /* clear of the CTR flag into the sub */
-    CTR_LP();				//usb_int.c						//处理端点数据传输完成中断
+    CTR_LP();				//usb_int.c						//调用正确传输中断服务程序：控制端点及其它端点服务程序
 #ifdef CTR_CALLBACK			//未启用
     CTR_Callback();
 #endif

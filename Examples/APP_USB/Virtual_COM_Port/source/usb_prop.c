@@ -105,6 +105,7 @@ ONE_DESCRIPTOR Qualifier_Descriptor =
 ONE_DESCRIPTOR Config_Descriptor =
   {
     (u8*)Virtual_Com_Port_ConfigDescriptor,										//注册配置描述符数组
+//		sizeof((char*)Virtual_Com_Port_ConfigDescriptor)
     VIRTUAL_COM_PORT_SIZ_CONFIG_DESC												//配置描述符的长度
   };
 

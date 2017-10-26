@@ -76,7 +76,8 @@
 #define VIRTUAL_COM_PORT_INT_SIZE               8
 
 #define VIRTUAL_COM_PORT_SIZ_DEVICE_DESC        18			//设备描述符总长度
-//#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        207			// 67/83/97配置描述符总长度
+//#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        (USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)			// 67/83/97配置描述符总长度---test	
+#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        67			// 67/83/97配置描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_LANGID      4				//字符串LANGID描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_VENDOR      38			//字符串VENDOR描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_PRODUCT     50			//字符串PRODUCT描述符总长度
@@ -91,9 +92,6 @@
 #define USB_ENDPOINT_OUT(addr)                 ((addr) | 0x00)
 #define USB_ENDPOINT_IN(addr)                  ((addr) | 0x80)
 
-
-#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        (USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)			// 67/83/97配置描述符总长度---test	
-//#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        (u16)(1500)			// 67/83/97配置描述符总长度---test	
 
 // Interface numbers
 enum {
@@ -144,7 +142,6 @@ extern const u8 Virtual_Com_Port_DeviceDescriptor[VIRTUAL_COM_PORT_SIZ_DEVICE_DE
 //extern const u8 Virtual_Com_Port_ConfigDescriptor[VIRTUAL_COM_PORT_SIZ_CONFIG_DESC];
 extern const u8 Virtual_Com_Port_ConfigDescriptor[];			//---数组不设置长度--长度不确定
 extern const u8 USBD_DeviceQualifier[10];
-
 extern const u8 Virtual_Com_Port_StringLangID[VIRTUAL_COM_PORT_SIZ_STRING_LANGID];
 extern const u8 Virtual_Com_Port_StringVendor[VIRTUAL_COM_PORT_SIZ_STRING_VENDOR];
 extern const u8 Virtual_Com_Port_StringProduct[VIRTUAL_COM_PORT_SIZ_STRING_PRODUCT];
@@ -257,11 +254,12 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
 		
 
 //IAD_CDC描述符设置
-#define IAD_CDC_IF_DESC_SET( 			comIfNum,		/*通讯接口序号*/				\
-																	datIfNum, 	/*数据接口序号*/				\
-																	comInEp, 		/*通讯（IN）端点*/			\
-																	datOutEp, 	/*数据（OUT）端点*/		\
-																	datInEp			/*数据（IN）端点*/	)		\
+#define IAD_CDC_IF_DESC_SET( 			comIfNum,		/*通讯接口序号*/					\
+																	datIfNum, 	/*数据接口序号*/					\
+																	comInEp, 		/*通讯（IN）端点*/				\
+																	datOutEp, 	/*数据（OUT）端点*/			\
+																	datInEp			/*数据（IN）端点*/				\
+																	)																		\
 		/* IAD描述符配置 */                                  							\
     0x08,                                   /* bLength */           	\
     0x0B,                                   /* bDescriptorType */    	\

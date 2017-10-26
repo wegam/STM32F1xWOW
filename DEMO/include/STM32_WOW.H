@@ -269,6 +269,10 @@
 	#include "Virtual_COM_Port.H"
 #endif
 
+//*********************************Virtual_COM_Port_IAD*********************************//
+#ifdef Virtual_COM_Port_IAD
+	#include "Virtual_COM_Port_IAD.H"
+#endif
 
 
 

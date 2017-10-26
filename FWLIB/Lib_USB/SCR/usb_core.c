@@ -41,8 +41,8 @@ bool Data_Mul_MaxPacketSize = FALSE;
 /* Private function prototypes -----------------------------------------------*/
 static void DataStageOut(void);
 static void DataStageIn(void);
-static void NoData_Setup0(void);
-static void Data_Setup0(void);
+static void NoData_Setup0(void);	//USB设备枚举时主从需要获取从机信息：处理USB请求---不需要返回数据
+static void Data_Setup0(void);		//USB设备枚举时主从需要获取从机信息：处理USB请求---需要返回数据
 /* Private functions ---------------------------------------------------------*/
 
 /*******************************************************************************
@@ -562,8 +562,8 @@ void NoData_Setup0(void)
           || (pInformation->Current_Configuration != 0))
         /* Device Address should be 127 or less*/
       {
-        ControlState = STALLED;
-        goto exit_NoData_Setup0;
+        ControlState = STALLED;			//更新状态：STALLED终止发送和接受
+        goto exit_NoData_Setup0;		//跳转
       }
       else
       {
@@ -665,13 +665,13 @@ exit_NoData_Setup0:
 *******************************************************************************/
 void Data_Setup0(void)
 {
-  u8 *(*CopyRoutine)(u16);										//这是一个函数指针定义。
+  u8 *(*CopyRoutine)(u16);										//这是一个函数指针定义：接收响应请求处理的函数指针
   RESULT Result;
-  u32 Request_No = pInformation->USBbRequest;
+  u32 Request_No = pInformation->USBbRequest;	//获取请求类型
 
   u32 Related_Endpoint, Reserved;
   u32 wOffset, Status;
-
+	//USB设备枚举时主从需要获取从机信息：处理USB请求---需要返回数据
 
 
   CopyRoutine = NULL;			//这是一个函数指针，由用户提供。
@@ -772,10 +772,10 @@ void Data_Setup0(void)
 
   }
   
-  if (CopyRoutine)
+  if (CopyRoutine)			//得到相应请求的处理函数地址：请求得到响应
   {
     pInformation->Ctrl_Info.Usb_wOffset = wOffset;
-    pInformation->Ctrl_Info.CopyData = CopyRoutine;
+    pInformation->Ctrl_Info.CopyData = CopyRoutine;					//将响应函数首地址存入CopyData
     /* sb in the original the cast to word was directly */
     /* now the cast is made step by step */
     (*CopyRoutine)(0);
@@ -805,15 +805,15 @@ void Data_Setup0(void)
   }
 
 
-  if (ValBit(pInformation->USBbmRequestType, 7))
+  if (ValBit(pInformation->USBbmRequestType, 7))			//此为往USB主机上传数据（如果数据长度大于最大长度，则分包上传)
   {
     /* Device ==> Host */		//上面这个语句主要是判断传输方向。如果为 1，则是设备到主机
-    vu32 wLength = pInformation->USBwLength;		// 这个一般是 64
+    vu32 wLength = pInformation->USBwLength;		// 主机请求从机需要上传的数据长度
      
     /* Restrict the data length to be the one host asks */
-    if (pInformation->Ctrl_Info.Usb_wLength > wLength)	//设备描述符长度 18
+    if (pInformation->Ctrl_Info.Usb_wLength > wLength)	//数据长度超过主机请求的长度
     {
-      pInformation->Ctrl_Info.Usb_wLength = wLength;
+      pInformation->Ctrl_Info.Usb_wLength = wLength;		//按主机请求数据长度上传
     }
     
     else if (pInformation->Ctrl_Info.Usb_wLength < pInformation->USBwLength)
@@ -843,6 +843,7 @@ void Data_Setup0(void)
 /*******************************************************************************
 * Function Name  : Setup0_Process
 * Description    : Get the device request data and dispatch to individual process.
+*										建立数据包：对主机发过来的数据进行分类封装，以备处理
 * Input          : None.
 * Output         : None.
 * Return         : Post0_Process.
@@ -858,7 +859,7 @@ u8 Setup0_Process(void)
 	/*PMAAddr是包缓冲区起始地址，_GetEPRxAddr(ENDP0)获得端点 0描述符表里的接收缓冲区地址，为什么要乘以2 呢？大概因为描述符表里地址项为16 位，
 	使用的是相对偏移。*/
   pBuf.b = PMAAddr + (u8 *)(_GetEPRxAddr(ENDP0) * 2); /* *2 for 32 bits addr */	////这是取得端点0 接收缓冲区的起始地址。
-	//更新请状态信息
+	//更新请状态信息---分类数据
   if (pInformation->ControlState != PAUSE)
   {
     pInformation->USBbmRequestType = *pBuf.b++; /* bmRequestType */		//请求类型，表明方向和接收对象（设备、接口还是端点）此时为 80，表明设备到主机
@@ -871,16 +872,16 @@ u8 Setup0_Process(void)
     pInformation->USBwLength = *pBuf.w; /* wLength */
   }
 
-  pInformation->ControlState = SETTING_UP;
+  pInformation->ControlState = SETTING_UP;	//正在SETUP--状态值：1
   if (pInformation->USBwLength == 0)
   {
     /* Setup with no data stage */
-    NoData_Setup0();		//建立空数据包		//无数据传输
+    NoData_Setup0();		//不带数据返回请求的配置处理---不需要从机返回数据//建立空数据包		//无数据传输
   }
   else
   {
     /* Setup with data stage */
-    Data_Setup0();		//usb_core.c->Line666://建立数据包	////这次是有数据传输的，所以有进入该该函数。
+    Data_Setup0();		//usb_core.c->Line666://建立数据包	//这次是有数据传输的，需要给主机上报数据，所以有进入该该函数。
   }
   return Post0_Process();
 }
