@@ -78,6 +78,7 @@
 #define VIRTUAL_COM_PORT_SIZ_DEVICE_DESC        18			//设备描述符总长度
 //#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        (USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)			// 67/83/97配置描述符总长度---test	
 #define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        75			// 67/83/97配置描述符总长度
+//#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        141			// 67/83/97配置描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_LANGID      4				//字符串LANGID描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_VENDOR      38			//字符串VENDOR描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_PRODUCT     50			//字符串PRODUCT描述符总长度
@@ -139,8 +140,8 @@ enum {
 
 /* Exported functions ------------------------------------------------------- */
 extern const u8 Virtual_Com_Port_DeviceDescriptor[VIRTUAL_COM_PORT_SIZ_DEVICE_DESC];
-//extern const u8 Virtual_Com_Port_ConfigDescriptor[VIRTUAL_COM_PORT_SIZ_CONFIG_DESC];
-extern const u8 Virtual_Com_Port_ConfigDescriptor[];			//---数组不设置长度--长度不确定
+extern const u8 Virtual_Com_Port_ConfigDescriptor[VIRTUAL_COM_PORT_SIZ_CONFIG_DESC];
+//extern const u8 Virtual_Com_Port_ConfigDescriptor[75];			//---数组不设置长度--长度不确定
 extern const u8 USBD_DeviceQualifier[10];
 extern const u8 Virtual_Com_Port_StringLangID[VIRTUAL_COM_PORT_SIZ_STRING_LANGID];
 extern const u8 Virtual_Com_Port_StringVendor[VIRTUAL_COM_PORT_SIZ_STRING_VENDOR];

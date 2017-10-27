@@ -64,10 +64,10 @@ const u8 Virtual_Com_Port_DeviceDescriptor[] =								//设备描述符--数组
 			0x02,   /* bDeviceSubClass */															//子类挖码
 			0x01,   /* bDeviceProtocol */															//协议码
 			0x40,   /* bMaxPacketSize0 */															//端点0的最大包大小（仅8,16,32,64 为合法值）
-			0x51,
-			0xC2,   /* idVendor = 0x0483 */														//厂商标志（由USB-IF组织赋值）
-			0x01,
-			0xF0,   /* idProduct = 0x5740 */													//产品标志（由厂商赋值）
+			0x83,
+			0x04,   /* idVendor = 0x0483 */														//厂商标志（由USB-IF组织赋值）
+			0x40,
+			0x57,   /* idProduct = 0x5740 */													//产品标志（由厂商赋值）
 		#else
 			0x02,   /* bDeviceClass: CDC */														//设备类码：0X02 CDC控制类
 			0x02,   /* bDeviceSubClass */															//子类挖码
@@ -99,19 +99,20 @@ const u8 USBD_DeviceQualifier[] =								//设备描述符--数组
     0x00,   /* idVendor = 0x0483 */														//厂商标志（由USB-IF组织赋值）													
   };
 	
-const u8 Virtual_Com_Port_ConfigDescriptor0[] =
+const u8 Virtual_Com_Port_ConfigDescriptor[] =
 {
 /* Configuration 1 */
   USB_CONFIGURATION_DESC_SIZE,       	/* bLength */
   USB_CONFIGURATION_DESCRIPTOR_TYPE, 	/* bDescriptorType */
   WBVAL((USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)),/* wTotalLength */
   USB_NUM_INTERFACES,                	/* bNumInterfaces */
+//	0x02,                	/* bNumInterfaces */
   0x01,                              	/* bConfigurationValue: 0x01 is used to select this configuration */
   0x00,                              	/* iConfiguration: no string to describe this configuration */
   USB_CONFIG_BUS_POWERED,							/* bmAttributes USB_CONFIG_REMOTE_WAKEUP*/
   USB_CONFIG_POWER_MA(100),          	/* bMaxPower, device power consumption is 100 mA */
 	
-  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM0,		USB_CDC_DIF_NUM0,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3),		USB_ENDPOINT_IN(1)	),		//CDC接口1
+  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM0,		USB_CDC_DIF_NUM0,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3),		USB_ENDPOINT_IN(1)	)		//CDC接口1
 //  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM1, 	USB_CDC_DIF_NUM1, 	USB_ENDPOINT_IN(1), 	USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口2
 //  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM2, 	USB_CDC_DIF_NUM2,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口3
 //	IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM3, 	USB_CDC_DIF_NUM3,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口4
@@ -134,7 +135,279 @@ const u8 Virtual_Com_Port_ConfigDescriptor0[] =
 };
 	
 /* USB配置描述符集合(配置、接口、端点、类、厂商)(Configuration, Interface, Endpoint, Class, Vendor */
-const u8 Virtual_Com_Port_ConfigDescriptor[] =			//配置描述符
+const u8 Virtual_Com_Port_ConfigDescriptor1[] =			//配置描述符
+  {
+		//*******************以下为配置描述符*********************/
+    /*Configuation Descriptor*/		
+    0x09,   /* bLength: Configuation Descriptor size */																		//整个描述符长度--0x09/9个字节
+    USB_CONFIGURATION_DESCRIPTOR_TYPE,      /* bDescriptorType: Configuration */					//类别--0X02设备描述符
+    0X8D,       /* wTotalLength:no of returned bytes */				//此配置信息的总长（包括配置，接口，端点和设备类及厂商定义的描述符）
+    0x00,
+//		WBVAL((USB_CONFIGURATION_DESC_SIZE	+	6 * IAD_CDC_IF_DESC_SET_SIZE)),/* wTotalLength */
+    0x04,   /* bNumInterfaces: 2 interface */																							//此配置所支持的接口个数----设置不当有可能会造成枚举不正常
+    0x01,   /* bConfigurationValue: Configuration value */																//在SetConfiguration（）请求中用作参数来选定此配置。
+    0x00,   /* iConfiguration: Index of string descriptor describing the configuration */	//描述此配置的字串描述表索引
+    0xC0,   /* bmAttributes: self powered */																							//配置特性：D7： 保留（设为一），D6： 自给电源，D5： 远程唤醒，D4..0：保留（设为一）
+    0x32,   /* MaxPower 0 mA */																														//在此配置下的总线电源耗费量。以2mA 为一个单位。
+    /*Interface Descriptor*/																							/*接口描述符*/
+		
+		
+		//*******************以下为IAD描述符*********************/
+//		#if (USB_MULTI_IF)
+//			CDC_ACM_DESC_IAD(1,1),
+//		#endif
+		
+		/* Interface Association Descriptor */
+		0x08,               				/* bLength: Interface Descriptor size */
+		USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE,   		/* bDescriptorType: IAD */
+		0x00,               				/* bFirstInterface */	//起始接口
+		0x02,               				/* bInterfaceCount */	//接口数
+		0x02,               				/* bFunctionClass */
+		0x02,               				/* bFunctionSubClass */
+		0x01,               				/* bFunctionProtocol */
+		0x02,              					/* iFunction */
+
+			
+		
+				
+		//需具备两个接口，CDC类接口和数据类接口
+		//在CDC设备中，必须有一个CDC接口，以供数据类接口传输，CDC接口使用标准接口描述符，有一个中断输入端点，用来报告状态
+		
+		/**************  CDC类接口描述符****************/
+    
+		0x09,   //bLength字段。接口描述符的长度为9字节。		
+		0x04,  //bDescriptorType字段。接口描述符的编号为0x04。/* bDescriptorType: Interface */
+    /* Interface descriptor type */		//接口类描述符
+    
+		0x00,   //bInterfaceNumber字段。该接口的编号，第一个接口，编号为0。
+		0x00,   //bAlternateSetting字段。该接口的备用编号，为0。
+		0x01,   //bNumEndpoints字段。非0端点的数目。CDC接口只使用一个中断输入端点。此接口用的端点数量，如果是0则说明此接口只用缺省控制管道。
+		0x02,   //bInterfaceClass字段。该接口所使用的类。CDC类的类代码为0x02。接口所属的类值：0值为将来的标准保留。 如果此域的值设为FFH，则此接口类由厂商说明。 所有其它的值由USB说明保留。,0x02 CDC控制类
+		0x02,   //bInterfaceSubClass字段。该接口所使用的子类。要实现USB转串口,就必须使用Abstract Control Model（抽象控制模型）子类。它的编号为0x02。子类码:这些值的定义视bInterfaceClass域而定。 如果bInterfaceClass域的值为零则此域的值必须为零。 bInterfaceClass域不为FFH则所有值由USB 所保留。					
+		0x01,   //bInterfaceProtocol字段。使用Common AT Commands（通用AT命令）协议。该协议的编号为0x01。协议码：bInterfaceClass 和bInterfaceSubClass 域的值而定.如果一个接口支持设备类相关的请求此域的值指出了设备类说明中所定义的协议.
+		0x00,   //iConfiguration字段。该接口的字符串索引值。这里没有，为0。/* iInterface: */	
+
+		
+		
+		/***************以下为功能描述符****************/
+		//CDC类中，不具备HID描述符和报告描述符，而是功能描述符（类特殊接口描述符），用来描述接口功能。
+    /*Header Functional Descriptor*/								/*头功能描述*/
+		/****************头功能描述符***************/
+    0x05,   //bFunctionLength字段。该描述符长度为5字节
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24
+    0x00,   //bDescriptorSubtype字段。描述符子类为Header Functional Descriptor,编号为0x00。
+    0x10,   //bcdCDC字段。CDC版本号，为0x0110（低字节在先）
+    0x01,
+		
+		
+    /*Call Managment Functional Descriptor*/
+		/*************调用管理功能描述符*************/
+    0x05,   //bFunctionLength字段。该描述符长度为5字节
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24
+    0x01,   //bDescriptorSubtype字段。描述符子类为Call Management,functional descriptor，编号为0x01。
+    0x00,   //bmCapabilities字段。设备自己不管理call management
+    0x01,   //bDataInterface字段。没有数据类接口用作call management
+		
+		
+		
+    /*ACM Functional Descriptor*/
+		/**************ACM 功能描述符****************/
+    0x04,   //bFunctionLength字段。该描述符长度为4字节
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24。
+    0x02,   //bDescriptorSubtype字段。描述符子类为Abstract Control,Management functional descriptor，编号为0x02。
+    0x02,   //bmCapabilities字段。支持Set_Line_Coding、Set_Control_Line_State、Get_Line_Coding请求和Serial_State通知
+		
+		
+    /*Union Functional Descriptor*/
+		/***************联合功能描述符**************/
+    0x05,   //bFunctionLength字段。该描述符长度为5字节。
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24。
+    0x06,   //bDescriptorSubtype字段。描述符子类为Union functional descriptor，编号为0x06。
+    0x00,   //MasterInterface字段。这里为前面编号为0的CDC接口。
+    0x01,   //SlaveInterface字段，这里为接下来编号为1的数据类接口。
+		
+	
+
+
+		/***************以下为端点描述符****************/
+    /*Endpoint 2 Descriptor*/
+		/********************输入端点2描述符******************/
+    0x07,   /* bLength: Endpoint Descriptor size */
+    USB_ENDPOINT_DESCRIPTOR_TYPE,   /* bDescriptorType: Endpoint */				//端点描述类型 0x04
+    0x82,   /* bEndpointAddress: (IN2) */																	//端点：此描述表所描述的端点的地址、方向：
+																																					//		Bit 3..0 : 端点号，Bit 6..4 : 保留,为零，Bit 7: 方向,如果控制端点则略。0：输出端点（主机到设备），1：输入端点（设备到主机）
+   
+		0x03,   /* bmAttributes: Interrupt */																	//传输类型：Bit 1..0 :传送类型；00=控制传送，01=同步传送，10=批传送，11=中断传送
+    VIRTUAL_COM_PORT_INT_SIZE,      /* wMaxPacketSize: */									//端点能够接收或发送的最大数据包的大小。对于实进传输，此值用于为每帧的数据净负荷预留时间。在实际运行时，管道可能不完全需要预留的带宽，实际带宽可由设备通过一种非USB定义的机制汇报给主机。对于中断传输，批量传输和控制传输，端点可能发送比之短的数据包
+    0x00,
+    0xFF,   /* bInterval: */																							//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。
+    
+	
+	
+		/*Data class interface descriptor*/
+		/********************数据类接口描述符********************/
+    0x09,   /* bLength: Endpoint Descriptor size */												//
+    USB_INTERFACE_DESCRIPTOR_TYPE,  /* bDescriptorType: */								//USB接口描述符 0X04
+    0x01,   /* bInterfaceNumber: Number of Interface */										//接口号，当前配置支持的接口数组索引（从零开始）。
+    0x00,   /* bAlternateSetting: Alternate setting */										//可选设置的索引值。
+    0x02,   /* bNumEndpoints: Two endpoints used */												//此接口用的端点数量，如果是零则说明此接口只用缺省控制管道。
+    0x0A,   /* bInterfaceClass: CDC */																		//接口所属的类值： 0值为将来的标准保留。 如果此域的值设为FFH，则此接口类由厂商说明。 所有其它的值由USB 说明保留。0x0A CDC数据类
+    0x00,   /* bInterfaceSubClass: */																			//子类码
+    0x00,   /* bInterfaceProtocol: */																			//协议码：bInterfaceClass 和bInterfaceSubClass 域的值而定.如果一个接口支持设备类相关的请求此域的值指出了设备类说明中所定义的协议.
+    0x00,   /* iInterface: */																							//描述此接口的字串描述表的索引值。   
+	 
+		
+		/*Endpoint 3 Descriptor*/																/*端点3描述*/
+		/********************输出端点3描述符******************/
+    0x07,   /* bLength: Endpoint Descriptor size */
+    USB_ENDPOINT_DESCRIPTOR_TYPE,   /* bDescriptorType: Endpoint */				//端点描述类型 0x04
+    0x03,   /* bEndpointAddress: (OUT3) */																//端点：此描述表所描述的端点的地址、方向：
+																																					//		Bit 3..0 : 端点号，Bit 6..4 : 保留,为零，Bit 7: 方向,如果控制端点则略。0：输出端点（主机到设备），1：输入端点（设备到主机）
+    0x02,   /* bmAttributes: Bulk */																			//传输类型：Bit 1..0 :传送类型；00=控制传送，01=同步传送，10=批传送，11=中断传送
+    VIRTUAL_COM_PORT_DATA_SIZE,             /* wMaxPacketSize: */					//端点能够接收或发送的最大数据包的大小。对于实进传输，此值用于为每帧的数据净负荷预留时间。在实际运行时，管道可能不完全需要预留的带宽，实际带宽可由设备通过一种非USB定义的机制汇报给主机。对于中断传输，批量传输和控制传输，端点可能发送比之短的数据包
+    0x00,
+    0x00,   /* bInterval: ignore for Bulk transfer */											//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。
+    
+		
+		/*Endpoint 1 Descriptor*/
+		/********************输入端点1描述符********************/
+    0x07,   /* bLength: Endpoint Descriptor size */
+    USB_ENDPOINT_DESCRIPTOR_TYPE,   /* bDescriptorType: Endpoint */				//端点描述类型 0x04
+    0x81,   /* bEndpointAddress: (IN1) */																	//端点：此描述表所描述的端点的地址、方向：
+																																					//		Bit 3..0 : 端点号，Bit 6..4 : 保留,为零，Bit 7: 方向,如果控制端点则略。0：输出端点（主机到设备），1：输入端点（设备到主机）
+    0x02,   /* bmAttributes: Bulk */																			//传输类型：Bit 1..0 :传送类型；00=控制传送，01=同步传送，10=批传送，11=中断传送
+    VIRTUAL_COM_PORT_DATA_SIZE,             /* wMaxPacketSize: */					//端点能够接收或发送的最大数据包的大小。对于实进传输，此值用于为每帧的数据净负荷预留时间。在实际运行时，管道可能不完全需要预留的带宽，实际带宽可由设备通过一种非USB定义的机制汇报给主机。对于中断传输，批量传输和控制传输，端点可能发送比之短的数据包
+    0x00,
+    0x00,    /* bInterval */																								//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。																					//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。
+	
+//==========================设备2
+		/* Interface Association Descriptor */
+		0x08,               				/* bLength: Interface Descriptor size */
+		USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE,   		/* bDescriptorType: IAD */
+		0x00,               				/* bFirstInterface */	//起始接口
+		0x02,               				/* bInterfaceCount */	//接口数
+		0x02,               				/* bFunctionClass */
+		0x02,               				/* bFunctionSubClass */
+		0x01,               				/* bFunctionProtocol */
+		0x02,              					/* iFunction */
+		
+		
+				//需具备两个接口，CDC类接口和数据类接口
+		//在CDC设备中，必须有一个CDC接口，以供数据类接口传输，CDC接口使用标准接口描述符，有一个中断输入端点，用来报告状态
+		
+		/**************  CDC类接口描述符****************/
+    
+		0x09,   //bLength字段。接口描述符的长度为9字节。		
+		0x04,  //bDescriptorType字段。接口描述符的编号为0x04。/* bDescriptorType: Interface */
+    /* Interface descriptor type */		//接口类描述符
+    
+		0x02,   //bInterfaceNumber字段。该接口的编号，第一个接口，编号为0。
+		0x00,   //bAlternateSetting字段。该接口的备用编号，为0。
+		0x01,   //bNumEndpoints字段。非0端点的数目。CDC接口只使用一个中断输入端点。此接口用的端点数量，如果是0则说明此接口只用缺省控制管道。
+		0x02,   //bInterfaceClass字段。该接口所使用的类。CDC类的类代码为0x02。接口所属的类值：0值为将来的标准保留。 如果此域的值设为FFH，则此接口类由厂商说明。 所有其它的值由USB说明保留。,0x02 CDC控制类
+		0x02,   //bInterfaceSubClass字段。该接口所使用的子类。要实现USB转串口,就必须使用Abstract Control Model（抽象控制模型）子类。它的编号为0x02。子类码:这些值的定义视bInterfaceClass域而定。 如果bInterfaceClass域的值为零则此域的值必须为零。 bInterfaceClass域不为FFH则所有值由USB 所保留。					
+		0x01,   //bInterfaceProtocol字段。使用Common AT Commands（通用AT命令）协议。该协议的编号为0x01。协议码：bInterfaceClass 和bInterfaceSubClass 域的值而定.如果一个接口支持设备类相关的请求此域的值指出了设备类说明中所定义的协议.
+		0x00,   //iConfiguration字段。该接口的字符串索引值。这里没有，为0。/* iInterface: */	
+
+		
+		
+		/***************以下为功能描述符****************/
+		//CDC类中，不具备HID描述符和报告描述符，而是功能描述符（类特殊接口描述符），用来描述接口功能。
+    /*Header Functional Descriptor*/								/*头功能描述*/
+		/****************头功能描述符***************/
+    0x05,   //bFunctionLength字段。该描述符长度为5字节
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24
+    0x00,   //bDescriptorSubtype字段。描述符子类为Header Functional Descriptor,编号为0x00。
+    0x10,   //bcdCDC字段。CDC版本号，为0x0110（低字节在先）
+    0x01,
+		
+		
+    /*Call Managment Functional Descriptor*/
+		/*************调用管理功能描述符*************/
+    0x05,   //bFunctionLength字段。该描述符长度为5字节
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24
+    0x01,   //bDescriptorSubtype字段。描述符子类为Call Management,functional descriptor，编号为0x01。
+    0x00,   //bmCapabilities字段。设备自己不管理call management
+    0x01,   //bDataInterface字段。没有数据类接口用作call management
+		
+		
+		
+    /*ACM Functional Descriptor*/
+		/**************ACM 功能描述符****************/
+    0x04,   //bFunctionLength字段。该描述符长度为4字节
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24。
+    0x02,   //bDescriptorSubtype字段。描述符子类为Abstract Control,Management functional descriptor，编号为0x02。
+    0x02,   //bmCapabilities字段。支持Set_Line_Coding、Set_Control_Line_State、Get_Line_Coding请求和Serial_State通知
+		
+		
+    /*Union Functional Descriptor*/
+		/***************联合功能描述符**************/
+    0x05,   //bFunctionLength字段。该描述符长度为5字节。
+    0x24,   //bDescriptorType字段。描述符类型为类特殊接口（CS_INTERFACE）,编号为0x24。
+    0x06,   //bDescriptorSubtype字段。描述符子类为Union functional descriptor，编号为0x06。
+    0x00,   //MasterInterface字段。这里为前面编号为0的CDC接口。
+    0x01,   //SlaveInterface字段，这里为接下来编号为1的数据类接口。
+		
+	
+
+
+		/***************以下为端点描述符****************/
+    /*Endpoint 2 Descriptor*/
+		/********************输入端点2描述符******************/
+    0x07,   /* bLength: Endpoint Descriptor size */
+    USB_ENDPOINT_DESCRIPTOR_TYPE,   /* bDescriptorType: Endpoint */				//端点描述类型 0x04
+    0x82,   /* bEndpointAddress: (IN2) */																	//端点：此描述表所描述的端点的地址、方向：
+																																					//		Bit 3..0 : 端点号，Bit 6..4 : 保留,为零，Bit 7: 方向,如果控制端点则略。0：输出端点（主机到设备），1：输入端点（设备到主机）
+   
+		0x03,   /* bmAttributes: Interrupt */																	//传输类型：Bit 1..0 :传送类型；00=控制传送，01=同步传送，10=批传送，11=中断传送
+    VIRTUAL_COM_PORT_INT_SIZE,      /* wMaxPacketSize: */									//端点能够接收或发送的最大数据包的大小。对于实进传输，此值用于为每帧的数据净负荷预留时间。在实际运行时，管道可能不完全需要预留的带宽，实际带宽可由设备通过一种非USB定义的机制汇报给主机。对于中断传输，批量传输和控制传输，端点可能发送比之短的数据包
+    0x00,
+    0xFF,   /* bInterval: */																							//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。
+    
+	
+	
+		/*Data class interface descriptor*/
+		/********************数据类接口描述符********************/
+    0x09,   /* bLength: Endpoint Descriptor size */												//
+    USB_INTERFACE_DESCRIPTOR_TYPE,  /* bDescriptorType: */								//USB接口描述符 0X04
+    0x03,   /* bInterfaceNumber: Number of Interface */										//接口号，当前配置支持的接口数组索引（从零开始）。
+    0x00,   /* bAlternateSetting: Alternate setting */										//可选设置的索引值。
+    0x02,   /* bNumEndpoints: Two endpoints used */												//此接口用的端点数量，如果是零则说明此接口只用缺省控制管道。
+    0x0A,   /* bInterfaceClass: CDC */																		//接口所属的类值： 0值为将来的标准保留。 如果此域的值设为FFH，则此接口类由厂商说明。 所有其它的值由USB 说明保留。0x0A CDC数据类
+    0x00,   /* bInterfaceSubClass: */																			//子类码
+    0x00,   /* bInterfaceProtocol: */																			//协议码：bInterfaceClass 和bInterfaceSubClass 域的值而定.如果一个接口支持设备类相关的请求此域的值指出了设备类说明中所定义的协议.
+    0x00,   /* iInterface: */																							//描述此接口的字串描述表的索引值。   
+	 
+		
+		/*Endpoint 3 Descriptor*/																/*端点3描述*/
+		/********************输出端点3描述符******************/
+    0x07,   /* bLength: Endpoint Descriptor size */
+    USB_ENDPOINT_DESCRIPTOR_TYPE,   /* bDescriptorType: Endpoint */				//端点描述类型 0x04
+    0x03,   /* bEndpointAddress: (OUT3) */																//端点：此描述表所描述的端点的地址、方向：
+																																					//		Bit 3..0 : 端点号，Bit 6..4 : 保留,为零，Bit 7: 方向,如果控制端点则略。0：输出端点（主机到设备），1：输入端点（设备到主机）
+    0x02,   /* bmAttributes: Bulk */																			//传输类型：Bit 1..0 :传送类型；00=控制传送，01=同步传送，10=批传送，11=中断传送
+    VIRTUAL_COM_PORT_DATA_SIZE,             /* wMaxPacketSize: */					//端点能够接收或发送的最大数据包的大小。对于实进传输，此值用于为每帧的数据净负荷预留时间。在实际运行时，管道可能不完全需要预留的带宽，实际带宽可由设备通过一种非USB定义的机制汇报给主机。对于中断传输，批量传输和控制传输，端点可能发送比之短的数据包
+    0x00,
+    0x00,   /* bInterval: ignore for Bulk transfer */											//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。
+    
+		
+		/*Endpoint 1 Descriptor*/
+		/********************输入端点1描述符********************/
+    0x07,   /* bLength: Endpoint Descriptor size */
+    USB_ENDPOINT_DESCRIPTOR_TYPE,   /* bDescriptorType: Endpoint */				//端点描述类型 0x04
+    0x81,   /* bEndpointAddress: (IN1) */																	//端点：此描述表所描述的端点的地址、方向：
+																																					//		Bit 3..0 : 端点号，Bit 6..4 : 保留,为零，Bit 7: 方向,如果控制端点则略。0：输出端点（主机到设备），1：输入端点（设备到主机）
+    0x02,   /* bmAttributes: Bulk */																			//传输类型：Bit 1..0 :传送类型；00=控制传送，01=同步传送，10=批传送，11=中断传送
+    VIRTUAL_COM_PORT_DATA_SIZE,             /* wMaxPacketSize: */					//端点能够接收或发送的最大数据包的大小。对于实进传输，此值用于为每帧的数据净负荷预留时间。在实际运行时，管道可能不完全需要预留的带宽，实际带宽可由设备通过一种非USB定义的机制汇报给主机。对于中断传输，批量传输和控制传输，端点可能发送比之短的数据包
+    0x00,
+    0x00,    /* bInterval */																								//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。																					//周期数据传输端点的时间间隙。此域的值对于批传送的端点及控制传送的端点无意义。对于同步传送的端点此域必需为1，表示周期为1ms。对于中断传送的端点此域值的范围为1ms到255ms。
+	
+
+		
+		
+};
+/* USB配置描述符集合(配置、接口、端点、类、厂商)(Configuration, Interface, Endpoint, Class, Vendor */
+const u8 Virtual_Com_Port_ConfigDescriptor11[] =			//配置描述符
   {
 		//*******************以下为配置描述符*********************/
     /*Configuation Descriptor*/		
@@ -143,7 +416,7 @@ const u8 Virtual_Com_Port_ConfigDescriptor[] =			//配置描述符
     0X4B,       /* wTotalLength:no of returned bytes */				//此配置信息的总长（包括配置，接口，端点和设备类及厂商定义的描述符）
     0x00,
 //		WBVAL((USB_CONFIGURATION_DESC_SIZE	+	6 * IAD_CDC_IF_DESC_SET_SIZE)),/* wTotalLength */
-    0x06,   /* bNumInterfaces: 2 interface */																							//此配置所支持的接口个数
+    0x01,   /* bNumInterfaces: 2 interface */																							//此配置所支持的接口个数----设置不当有可能会造成枚举不正常
     0x01,   /* bConfigurationValue: Configuration value */																//在SetConfiguration（）请求中用作参数来选定此配置。
     0x00,   /* iConfiguration: Index of string descriptor describing the configuration */	//描述此配置的字串描述表索引
     0xC0,   /* bmAttributes: self powered */																							//配置特性：D7： 保留（设为一），D6： 自给电源，D5： 远程唤醒，D4..0：保留（设为一）
