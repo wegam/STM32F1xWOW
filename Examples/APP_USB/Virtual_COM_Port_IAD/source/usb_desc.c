@@ -32,27 +32,6 @@
 /*=================================================================================*/
 /*=================================================================================*/
 /* USB标准设备描述符*/
-const u8 Virtual_Com_Port_DeviceDescriptor0[] =								//设备描述符--数组
-  {
-    0x12,   /* bLength */																			//整个描述符长度--0x12/18个字节
-    USB_DEVICE_DESCRIPTOR_TYPE,     /* bDescriptorType */			//类别--0X01设备描述符
-    0x00,
-    0x02,   /* bcdUSB = 2.00 */																//此设备与描述表兼容的USB设备说明版本号（BCD 码）
-    0x02,   /* bDeviceClass: CDC */														//设备类码：0X02 CDC控制类
-    0x00,   /* bDeviceSubClass */															//子类挖码
-    0x00,   /* bDeviceProtocol */															//协议码
-    0x40,   /* bMaxPacketSize0 */															//端点0的最大包大小（仅8,16,32,64 为合法值）
-    0x83,
-    0x04,   /* idVendor = 0x0483 */														//厂商标志（由USB-IF组织赋值）
-    0x40,
-    0x57,   /* idProduct = 0x7540 */													//产品标志（由厂商赋值）
-    0x00,
-    0x02,   /* bcdDevice = 2.00 */														//设备的版本号	
-    1,              /* Index of string descriptor describing manufacturer */										//描述厂商信息的字符串描述符的索引值。
-    2,              /* Index of string descriptor describing product */													//描述产品信息的字串描述符的索引值。
-    3,              /* Index of string descriptor describing the device's serial number */			//描述设备序列号信息的字串描述符的索引值。
-    0x01    /* bNumConfigurations */													//可能的配置描述符数目																						
-  };	
 const u8 Virtual_Com_Port_DeviceDescriptor[] =								//设备描述符--数组
   {
     0x12,   /* bLength */																			//整个描述符长度--0x12/18个字节
@@ -64,10 +43,10 @@ const u8 Virtual_Com_Port_DeviceDescriptor[] =								//设备描述符--数组
 			0x02,   /* bDeviceSubClass */															//子类挖码
 			0x01,   /* bDeviceProtocol */															//协议码
 			0x40,   /* bMaxPacketSize0 */															//端点0的最大包大小（仅8,16,32,64 为合法值）
-			0x83,
-			0x04,   /* idVendor = 0x0483 */														//厂商标志（由USB-IF组织赋值）
-			0x40,
-			0x57,   /* idProduct = 0x5740 */													//产品标志（由厂商赋值）
+			0x02,
+			0xFF,   /* idVendor = 0x0483 */														//厂商标志（由USB-IF组织赋值）
+			0x01,
+			0x00,   /* idProduct = 0x5740 */													//产品标志（由厂商赋值）
 		#else
 			0x02,   /* bDeviceClass: CDC */														//设备类码：0X02 CDC控制类
 			0x02,   /* bDeviceSubClass */															//子类挖码
@@ -79,13 +58,13 @@ const u8 Virtual_Com_Port_DeviceDescriptor[] =								//设备描述符--数组
 			0x57,   /* idProduct = 0x5740 */													//产品标志（由厂商赋值）
 		#endif
     0x00,
-    0x02,   /* bcdDevice = 2.00 */														//设备的版本号	
+    0x01,   /* bcdDevice = 2.00 */														//设备的版本号	
     1,              /* Index of string descriptor describing manufacturer */										//描述厂商信息的字符串描述符的索引值。
     2,              /* Index of string descriptor describing product */													//描述产品信息的字串描述符的索引值。
     3,              /* Index of string descriptor describing the device's serial number */			//描述设备序列号信息的字串描述符的索引值。
     0x01    /* bNumConfigurations */													//可能的配置描述符数目
   };
-const u8 USBD_DeviceQualifier[] =								//设备描述符--数组
+const u8 Virtual_Com_Port_QualifierDescriptor[] =								//设备描述符--数组
   {
     0x0A,   /* bLength */																			//整个描述符长度--0x12/18个字节
     0X06,     /* bDescriptorType */			//类别--0X00设备描述符
@@ -101,20 +80,22 @@ const u8 USBD_DeviceQualifier[] =								//设备描述符--数组
 	
 const u8 Virtual_Com_Port_ConfigDescriptor[] =
 {
-/* Configuration 1 */
-  USB_CONFIGURATION_DESC_SIZE,       	/* bLength */
-  USB_CONFIGURATION_DESCRIPTOR_TYPE, 	/* bDescriptorType */
-  WBVAL((USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)),/* wTotalLength */
-  USB_NUM_INTERFACES,                	/* bNumInterfaces */
-//	0x02,                	/* bNumInterfaces */
-  0x01,                              	/* bConfigurationValue: 0x01 is used to select this configuration */
-  0x00,                              	/* iConfiguration: no string to describe this configuration */
-  USB_CONFIG_BUS_POWERED,							/* bmAttributes USB_CONFIG_REMOTE_WAKEUP*/
-  USB_CONFIG_POWER_MA(100),          	/* bMaxPower, device power consumption is 100 mA */
+///* Configuration 1 */
+//  USB_CONFIGURATION_DESC_SIZE,       	/* bLength */
+//  USB_CONFIGURATION_DESCRIPTOR_TYPE, 	/* bDescriptorType */
+//  WBVAL((USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)),/* wTotalLength */
+//  USB_NUM_INTERFACES,                	/* bNumInterfaces */
+////	0x02,                	/* bNumInterfaces */
+//  0x01,                              	/* bConfigurationValue: 0x01 is used to select this configuration */
+//  0x00,                              	/* iConfiguration: no string to describe this configuration */
+//  USB_CONFIG_BUS_POWERED,							/* bmAttributes USB_CONFIG_REMOTE_WAKEUP*/
+//  USB_CONFIG_POWER_MA(100),          	/* bMaxPower, device power consumption is 100 mA */
 	
-  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM0,		USB_CDC_DIF_NUM0,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3),		USB_ENDPOINT_IN(1)	)		//CDC接口1
-//  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM1, 	USB_CDC_DIF_NUM1, 	USB_ENDPOINT_IN(1), 	USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口2
-//  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM2, 	USB_CDC_DIF_NUM2,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口3
+	Multiple_USB_CONF_DESCRIPTOR(WBVAL((USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)),USB_NUM_INTERFACES),
+	
+  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM0,		USB_CDC_DIF_NUM0,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(2),		USB_ENDPOINT_IN(2)	),		//CDC接口1
+  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM1, 	USB_CDC_DIF_NUM1, 	USB_ENDPOINT_IN(3), 	USB_ENDPOINT_OUT(4), 		USB_ENDPOINT_IN(4)	),		//CDC接口2
+  IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM2, 	USB_CDC_DIF_NUM2,		USB_ENDPOINT_IN(5),		USB_ENDPOINT_OUT(6), 		USB_ENDPOINT_IN(6)	),		//CDC接口3
 //	IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM3, 	USB_CDC_DIF_NUM3,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口4
 //	
 //	IAD_CDC_IF_DESC_SET(	USB_CDC_CIF_NUM4, 	USB_CDC_DIF_NUM4,		USB_ENDPOINT_IN(1),		USB_ENDPOINT_OUT(3), 		USB_ENDPOINT_IN(1)	),		//CDC接口5
@@ -141,7 +122,7 @@ const u8 Virtual_Com_Port_ConfigDescriptor1[] =			//配置描述符
     /*Configuation Descriptor*/		
     0x09,   /* bLength: Configuation Descriptor size */																		//整个描述符长度--0x09/9个字节
     USB_CONFIGURATION_DESCRIPTOR_TYPE,      /* bDescriptorType: Configuration */					//类别--0X02设备描述符
-    0X8D,       /* wTotalLength:no of returned bytes */				//此配置信息的总长（包括配置，接口，端点和设备类及厂商定义的描述符）
+    0X4B,       /* wTotalLength:no of returned bytes */				//此配置信息的总长（包括配置，接口，端点和设备类及厂商定义的描述符）
     0x00,
 //		WBVAL((USB_CONFIGURATION_DESC_SIZE	+	6 * IAD_CDC_IF_DESC_SET_SIZE)),/* wTotalLength */
     0x04,   /* bNumInterfaces: 2 interface */																							//此配置所支持的接口个数----设置不当有可能会造成枚举不正常
@@ -407,7 +388,7 @@ const u8 Virtual_Com_Port_ConfigDescriptor1[] =			//配置描述符
 		
 };
 /* USB配置描述符集合(配置、接口、端点、类、厂商)(Configuration, Interface, Endpoint, Class, Vendor */
-const u8 Virtual_Com_Port_ConfigDescriptor11[] =			//配置描述符
+const u8 Virtual_Com_Port_ConfigDescriptor2[] =			//配置描述符
   {
 		//*******************以下为配置描述符*********************/
     /*Configuation Descriptor*/		
@@ -433,11 +414,11 @@ const u8 Virtual_Com_Port_ConfigDescriptor11[] =			//配置描述符
 		0x08,               				/* bLength: Interface Descriptor size */
 		USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE,   		/* bDescriptorType: IAD */
 		0x00,               				/* bFirstInterface */	//起始接口
-		0x02,               				/* bInterfaceCount */	//接口数
+		0x01,               				/* bInterfaceCount */	//接口数
 		0x02,               				/* bFunctionClass */
 		0x02,               				/* bFunctionSubClass */
 		0x01,               				/* bFunctionProtocol */
-		0x02,              					/* iFunction */
+		0x04,              					/* iFunction */
 
 			
 		
@@ -555,7 +536,7 @@ const u8 Virtual_Com_Port_ConfigDescriptor11[] =			//配置描述符
 		
 };
 /* USB配置描述符集合(配置、接口、端点、类、厂商)(Configuration, Interface, Endpoint, Class, Vendor */
-const u8 Virtual_Com_Port_ConfigDescriptor2[] =			//配置描述符
+const u8 Virtual_Com_Port_ConfigDescriptor3[] =			//配置描述符
   {
     /*Configuation Descriptor*/
 		

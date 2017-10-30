@@ -69,6 +69,7 @@ DEVICE_PROP Device_Property =				//
     Virtual_Com_Port_GetDeviceDescriptor,		//CustomHID获取设备描述符
     Virtual_Com_Port_GetConfigDescriptor,		//CustomHID获取配置描述符
     Virtual_Com_Port_GetStringDescriptor,		//CustomHID获取字符串描述符
+		Virtual_Com_Port_GetQualifierDescriptor,		//CustomHID获取字符串描述符
     0,																			//当前库未使用
     0x40 /*MAX PACKET SIZE*/								//最大的包长度为64字节
   };
@@ -97,7 +98,7 @@ ONE_DESCRIPTOR Device_Descriptor =
 /*注册设备描述符信息*/
 ONE_DESCRIPTOR Qualifier_Descriptor =
   {
-    (u8*)USBD_DeviceQualifier,	//注册设备描述符数组
+    (u8*)Virtual_Com_Port_QualifierDescriptor,	//注册设备描述符数组
     10				//设备描述符的长度
   };
 
@@ -163,52 +164,122 @@ void Virtual_Com_Port_init(void)
 * Output         : None.
 * Return         : None.
 *******************************************************************************/
+//void Virtual_Com_Port_Reset0(void)
+//{
+//  /* Set Virtual_Com_Port DEVICE as not configured */
+//  pInformation->Current_Configuration = 0;				//设置当前的配置为0，表示没有配置过
+
+//  /* Current Feature initialization */
+//  pInformation->Current_Feature = Virtual_Com_Port_ConfigDescriptor[7];	//当前的属性，bmAttributes:设备的一些特性，0xc0表示自供电，不支持远程唤醒
+
+//  /* Set Virtual_Com_Port DEVICE with the default Interface*/
+//  pInformation->Current_Interface = 0;
+//  SetBTABLE(BTABLE_ADDRESS);
+
+//  /* Initialize Endpoint 0 */
+//	/* *****初始化端点0***** */
+//  SetEPType(ENDP0, EP_CONTROL);													//设置端点0为控制端点
+//  SetEPTxStatus(ENDP0, EP_TX_STALL);										//设置端点0发送延时
+//  SetEPRxAddr(ENDP0, ENDP0_RXADDR);											//设置端点0的接收缓冲区地址
+//  SetEPTxAddr(ENDP0, ENDP0_TXADDR);											//设置端点0的发送缓冲区地址
+//  Clear_Status_Out(ENDP0);															//清除端点0的状态
+//  SetEPRxCount(ENDP0, Device_Property.MaxPacketSize);		//设置端点0的接收最大包
+//  SetEPRxValid(ENDP0);																	//使能接收状态
+
+//  /* Initialize Endpoint 1 */
+//	/* *****初始化端点1***** */
+//  SetEPType(ENDP1, EP_BULK);														//设置端点1为进批量传输
+//  SetEPTxAddr(ENDP1, ENDP1_TXADDR);											//设置端点发送地址
+//  SetEPTxStatus(ENDP1, EP_TX_NAK);											//设置端点1的发送不响应
+//  SetEPRxStatus(ENDP1, EP_RX_DIS);											//设置端点1不接收
+
+//  /* Initialize Endpoint 2 */
+//	/* *****初始化端点2***** */
+//  SetEPType(ENDP2, EP_INTERRUPT);												//设置端点2为中断传输
+//  SetEPTxAddr(ENDP2, ENDP2_TXADDR);											//设置端点2发送地址
+//  SetEPRxStatus(ENDP2, EP_RX_DIS);											//设置端点2不接收状态
+//  SetEPTxStatus(ENDP2, EP_TX_NAK);											//设置端点2端点2为接收不响应
+
+//  /* Initialize Endpoint 3 */
+//	/* *****初始化端点3***** */
+//  SetEPType(ENDP3, EP_BULK);														//设置端点3为仅批量传输
+//  SetEPRxAddr(ENDP3, ENDP3_RXADDR);											//设置端点3接收地址
+//  SetEPRxCount(ENDP3, VIRTUAL_COM_PORT_DATA_SIZE);			//设置端点3的计数值
+//  SetEPRxStatus(ENDP3, EP_RX_VALID);										//设置端点3接收有效
+//  SetEPTxStatus(ENDP3, EP_TX_DIS);											//设置端点3不发送
+
+//  /* Set this device to response on default address */
+//  SetDeviceAddress(0);																	//设置设备为默认地址为0
+
+//  bDeviceState = ATTACHED;
+//}
+
 void Virtual_Com_Port_Reset(void)
 {
   /* Set Virtual_Com_Port DEVICE as not configured */
-  pInformation->Current_Configuration = 0;				//设置当前的配置为0，表示没有配置过
+  pInformation->Current_Configuration = 0;
 
   /* Current Feature initialization */
-  pInformation->Current_Feature = Virtual_Com_Port_ConfigDescriptor[7];	//当前的属性，bmAttributes:设备的一些特性，0xc0表示自供电，不支持远程唤醒
+  pInformation->Current_Feature = Virtual_Com_Port_ConfigDescriptor[7];
 
   /* Set Virtual_Com_Port DEVICE with the default Interface*/
   pInformation->Current_Interface = 0;
+
   SetBTABLE(BTABLE_ADDRESS);
 
   /* Initialize Endpoint 0 */
-	/* *****初始化端点0***** */
-  SetEPType(ENDP0, EP_CONTROL);													//设置端点0为控制端点
-  SetEPTxStatus(ENDP0, EP_TX_STALL);										//设置端点0发送延时
-  SetEPRxAddr(ENDP0, ENDP0_RXADDR);											//设置端点0的接收缓冲区地址
-  SetEPTxAddr(ENDP0, ENDP0_TXADDR);											//设置端点0的发送缓冲区地址
-  Clear_Status_Out(ENDP0);															//清除端点0的状态
-  SetEPRxCount(ENDP0, Device_Property.MaxPacketSize);		//设置端点0的接收最大包
-  SetEPRxValid(ENDP0);																	//使能接收状态
+  SetEPType(ENDP0, EP_CONTROL);
+  SetEPTxStatus(ENDP0, EP_TX_STALL);
+  SetEPRxAddr(ENDP0, ENDP0_RXADDR);
+  SetEPTxAddr(ENDP0, ENDP0_TXADDR);
+  Clear_Status_Out(ENDP0);
+  SetEPRxCount(ENDP0, Device_Property.MaxPacketSize);
+  SetEPRxValid(ENDP0);
 
   /* Initialize Endpoint 1 */
-	/* *****初始化端点1***** */
-  SetEPType(ENDP1, EP_BULK);														//设置端点1为进批量传输
-  SetEPTxAddr(ENDP1, ENDP1_TXADDR);											//设置端点发送地址
-  SetEPTxStatus(ENDP1, EP_TX_NAK);											//设置端点1的发送不响应
-  SetEPRxStatus(ENDP1, EP_RX_DIS);											//设置端点1不接收
+  SetEPType(ENDP1, EP_INTERRUPT);
+  SetEPTxAddr(ENDP1, ENDP1_TXADDR);
+  SetEPTxStatus(ENDP1, EP_TX_NAK);
+  SetEPRxStatus(ENDP1, EP_RX_DIS);
 
   /* Initialize Endpoint 2 */
-	/* *****初始化端点2***** */
-  SetEPType(ENDP2, EP_INTERRUPT);												//设置端点2为中断传输
-  SetEPTxAddr(ENDP2, ENDP2_TXADDR);											//设置端点2发送地址
-  SetEPRxStatus(ENDP2, EP_RX_DIS);											//设置端点2不接收状态
-  SetEPTxStatus(ENDP2, EP_TX_NAK);											//设置端点2端点2为接收不响应
+  SetEPType(ENDP2, EP_BULK);
+  SetEPTxAddr(ENDP2, ENDP2_TXADDR);
+  SetEPTxStatus(ENDP2, EP_TX_NAK);
+  SetEPRxAddr(ENDP2, ENDP2_RXADDR);
+  SetEPRxCount(ENDP2, VIRTUAL_COM_PORT_DATA_SIZE);
+  SetEPRxStatus(ENDP2, EP_RX_VALID);
 
   /* Initialize Endpoint 3 */
-	/* *****初始化端点3***** */
-  SetEPType(ENDP3, EP_BULK);														//设置端点3为仅批量传输
-  SetEPRxAddr(ENDP3, ENDP3_RXADDR);											//设置端点3接收地址
-  SetEPRxCount(ENDP3, VIRTUAL_COM_PORT_DATA_SIZE);			//设置端点3的计数值
-  SetEPRxStatus(ENDP3, EP_RX_VALID);										//设置端点3接收有效
-  SetEPTxStatus(ENDP3, EP_TX_DIS);											//设置端点3不发送
+  SetEPType(ENDP3, EP_INTERRUPT);
+  SetEPTxAddr(ENDP3, ENDP3_TXADDR);
+  SetEPTxStatus(ENDP3, EP_TX_NAK);
+  SetEPRxStatus(ENDP3, EP_RX_DIS);
+
+  /* Initialize Endpoint 4 */
+  SetEPType(ENDP4, EP_BULK);
+  SetEPTxAddr(ENDP4, ENDP4_TXADDR);
+  SetEPTxStatus(ENDP4, EP_TX_NAK);
+  SetEPRxAddr(ENDP4, ENDP4_RXADDR);
+  SetEPRxCount(ENDP4, VIRTUAL_COM_PORT_DATA_SIZE);
+  SetEPRxStatus(ENDP4, EP_RX_VALID);
+
+  /* Initialize Endpoint 5 */
+  SetEPType(ENDP5, EP_INTERRUPT);
+  SetEPTxAddr(ENDP5, ENDP5_TXADDR);
+  SetEPTxStatus(ENDP5, EP_TX_NAK);
+  SetEPRxStatus(ENDP5, EP_RX_DIS);
+
+  /* Initialize Endpoint 6 */
+  SetEPType(ENDP6, EP_BULK);
+  SetEPTxAddr(ENDP6, ENDP6_TXADDR);
+  SetEPTxStatus(ENDP6, EP_TX_NAK);
+  SetEPRxAddr(ENDP6, ENDP6_RXADDR);
+  SetEPRxCount(ENDP6, VIRTUAL_COM_PORT_DATA_SIZE);
+  SetEPRxStatus(ENDP6, EP_RX_VALID);
 
   /* Set this device to response on default address */
-  SetDeviceAddress(0);																	//设置设备为默认地址为0
+  SetDeviceAddress(0);
 
   bDeviceState = ATTACHED;
 }
@@ -347,16 +418,26 @@ u8 *Virtual_Com_Port_GetDeviceDescriptor(u16 Length)
   return Standard_GetDescriptorData(Length, &Device_Descriptor);
 }
 /*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	无
+*******************************************************************************/
+u8 *Virtual_Com_Port_GetQualifierDescriptor(u16 Length)
+{
+	return Standard_GetDescriptorData(Length,&Qualifier_Descriptor);
+}
+/*******************************************************************************
 * Function Name  : Virtual_Com_Port_GetDeviceDescriptor.
 * Description    : Gets the device descriptor. 	数据类请求--获取设备描述符
 * Input          : Length.
 * Output         : None.
 * Return         : The address of the device descriptor.
 *******************************************************************************/
-u8 *Qualifier_GetDeviceDescriptor(u16 Length)
-{
-  return Standard_GetDescriptorData(10,&Qualifier_Descriptor);
-}
+//u8 *Qualifier_GetDeviceDescriptor(u16 Length)
+//{
+//  return Standard_GetDescriptorData(Length,&Qualifier_Descriptor);
+//}
 /*******************************************************************************
 * Function Name  : Virtual_Com_Port_GetConfigDescriptor.
 * Description    : get the configuration descriptor.数据类请求--获取配置描述符
@@ -388,6 +469,8 @@ u8 *Virtual_Com_Port_GetStringDescriptor(u16 Length)
     return Standard_GetDescriptorData(Length, &String_Descriptor[wValue0]);
   }
 }
+
+
 
 /*******************************************************************************
 * Function Name  : Virtual_Com_Port_Get_Interface_Setting.

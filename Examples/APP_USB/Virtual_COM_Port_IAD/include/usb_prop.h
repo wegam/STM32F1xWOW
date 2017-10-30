@@ -64,7 +64,7 @@ RESULT Virtual_Com_Port_Get_Interface_Setting(u8 Interface, u8 AlternateSetting)
 u8 *Virtual_Com_Port_GetDeviceDescriptor(u16 );
 u8 *Virtual_Com_Port_GetConfigDescriptor(u16);
 u8 *Virtual_Com_Port_GetStringDescriptor(u16);
-
+u8 *Virtual_Com_Port_GetQualifierDescriptor(u16);
 u8 *Virtual_Com_Port_GetLineCoding(u16 Length);	//获取串口通信信息
 u8 *Virtual_Com_Port_SetLineCoding(u16 Length);	//设置串口通讯信息
 

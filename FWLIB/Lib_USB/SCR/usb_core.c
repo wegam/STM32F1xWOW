@@ -694,11 +694,11 @@ void Data_Setup0(void)
       {
         CopyRoutine = pProperty->GetStringDescriptor;	//字符串描述符	usb_prop.c->Device_Property->Virtual_Com_Port_GetStringDescriptor->String_Descriptor
       }
-			else if (wValue1 == 06)					//CONFIG_DESCRIPTOR==06	配置描述符
-      {
-//        CopyRoutine = Qualifier_GetDeviceDescriptor;	//配置描述符	usb_prop.c->Device_Property->Virtual_Com_Port_GetConfigDescriptor->Config_Descriptor->Virtual_Com_Port_ConfigDescriptor
-				CopyRoutine = pProperty->GetDeviceDescriptor;		//配置描述符	usb_prop.c->Device_Property->Virtual_Com_Port_GetConfigDescriptor->Config_Descriptor->Virtual_Com_Port_ConfigDescriptor
-			}
+//			else if (wValue1 == DEVICE_QUALIFIER_DESCRIPTOR)					//DEVICE_QUALIFIER_DESCRIPTOR==06	设备限定符	：设备限定描述符说明了呢功能进行高速操作的设备在其他速度操作时产生的变化信息.
+//      {
+//        CopyRoutine = pProperty->GetQualifierDescriptor;	//配置描述符	usb_prop.c->Device_Property->Virtual_Com_Port_GetConfigDescriptor->Config_Descriptor->Virtual_Com_Port_ConfigDescriptor
+////				CopyRoutine = pProperty->GetDeviceDescriptor;		//配置描述符	usb_prop.c->Device_Property->Virtual_Com_Port_GetConfigDescriptor->Config_Descriptor->Virtual_Com_Port_ConfigDescriptor
+//			}
       			/* End of GET_DESCRIPTOR */
     }
   }

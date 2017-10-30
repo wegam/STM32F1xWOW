@@ -44,7 +44,7 @@ u32 count_in = 0;
 void EP3_OUT_Callback(void)
 {
   count_out = GetEPRxCount(ENDP3);														//获取USB接收到的数据
-  PMAToUserBufferCopy(buffer_out, ENDP3_RXADDR, count_out);		//USB接口到的数据从串口发送
+  PMAToUserBufferCopy(buffer_out, ENDP2_RXADDR, count_out);		//USB接口到的数据从串口发送
 	SetEPRxValid(ENDP3);																				//使能端点3
 	
 	//----添加程序---USB发送给串口
