@@ -41,6 +41,22 @@ u32 count_in = 0;
 * Output         : 	None.
 * Return         : 	None.
 *******************************************************************************/
+//void EP2_OUT_Callback(void)
+//{
+//  count_out = GetEPRxCount(ENDP3);														//获取USB接收到的数据
+//  PMAToUserBufferCopy(buffer_out, ENDP2_RXADDR, count_out);		//USB接口到的数据从串口发送
+//	SetEPRxValid(ENDP3);																				//使能端点3
+//	
+//	//----添加程序---USB发送给串口
+//	USB_To_USART_Send_Data(buffer_out,count_out);
+//}
+/*******************************************************************************
+* Function Name  :	EP3_IN_Callback
+* Description    :	端点3输出回调	---设备接收
+* Input          : 	None.
+* Output         : 	None.
+* Return         : 	None.
+*******************************************************************************/
 void EP3_OUT_Callback(void)
 {
   count_out = GetEPRxCount(ENDP3);														//获取USB接收到的数据
@@ -50,7 +66,6 @@ void EP3_OUT_Callback(void)
 	//----添加程序---USB发送给串口
 	USB_To_USART_Send_Data(buffer_out,count_out);
 }
-
 /*******************************************************************************
 * Function Name  : 	EP1_IN_Callback
 * Description    :	端点1输入的回调函数	--设备发送
@@ -65,6 +80,20 @@ void EP1_IN_Callback(void)
 	USART_To_USB_Send_Data();
 //	USART_TX_DMAFlagClear(USART1);
 }
+/*******************************************************************************
+* Function Name  : 	EP1_IN_Callback
+* Description    :	端点1输入的回调函数	--设备发送
+* Input          : 	None.
+* Output         : 	None.
+* Return         : 	None.
+*******************************************************************************/
+//void EP3_IN_Callback(void)
+//{
+////	count_in = 0;
+////	Handle_USBAsynchXfer();
+//	USART_To_USB_Send_Data();
+////	USART_TX_DMAFlagClear(USART1);
+//}
 /*******************************************************************************
 * Function Name  : SOF_Callback / INTR_SOFINTR_Callback
 * Description    :

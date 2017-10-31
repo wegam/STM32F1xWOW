@@ -69,7 +69,7 @@ DEVICE_PROP Device_Property =				//
     Virtual_Com_Port_GetDeviceDescriptor,		//CustomHID获取设备描述符
     Virtual_Com_Port_GetConfigDescriptor,		//CustomHID获取配置描述符
     Virtual_Com_Port_GetStringDescriptor,		//CustomHID获取字符串描述符
-		Virtual_Com_Port_GetQualifierDescriptor,		//CustomHID获取字符串描述符
+//		Virtual_Com_Port_GetQualifierDescriptor,		//限定描述符
     0,																			//当前库未使用
     0x40 /*MAX PACKET SIZE*/								//最大的包长度为64字节
   };

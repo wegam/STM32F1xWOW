@@ -77,7 +77,7 @@
 
 #define VIRTUAL_COM_PORT_SIZ_DEVICE_DESC        18			//设备描述符总长度
 //#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        (USB_CONFIGURATION_DESC_SIZE	+	(USB_NUM_INTERFACES/2) * IAD_CDC_IF_DESC_SET_SIZE)			// 67/83/97配置描述符总长度---test	
-#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        207			// 67/83/97配置描述符总长度
+#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        9+66*2	//273			// 67/83/97/207/273配置描述符总长度
 //#define VIRTUAL_COM_PORT_SIZ_CONFIG_DESC        75			// 67/83/97配置描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_LANGID      4				//字符串LANGID描述符总长度
 #define VIRTUAL_COM_PORT_SIZ_STRING_VENDOR      38			//字符串VENDOR描述符总长度
@@ -100,8 +100,8 @@ enum {
     USB_CDC_DIF_NUM0,			//CDC数据接口0
     USB_CDC_CIF_NUM1,			//CDC通讯接口1
     USB_CDC_DIF_NUM1,			//CDC数据接口1
-    USB_CDC_CIF_NUM2,			//CDC通讯接口2
-    USB_CDC_DIF_NUM2,			//CDC数据接口2
+//    USB_CDC_CIF_NUM2,			//CDC通讯接口2
+//    USB_CDC_DIF_NUM2,			//CDC数据接口2
 //		USB_CDC_CIF_NUM3,			//CDC通讯接口3
 //    USB_CDC_DIF_NUM3,			//CDC数据接口3	
 //		USB_CDC_CIF_NUM4,			//CDC通讯接口4
@@ -181,8 +181,8 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
 #define IAD_CDC_IF_DESC_SET_SIZE    ( USB_INTERFACE_ASSOC_DESC_SIZE			/*IAD描述符长度	0x08	*/ 	\
 																		+ CDC_IF_DESC_SET_SIZE							/*CDC接口描述符长度	0x3A*/)
 //================配置描述符Configuation Descriptor
-#define Multiple_USB_CONF_DESCRIPTOR(wTotalLength,			/*配置描述符总长度*/	\
-																		bNumInterfaces		/*包含口数量*/					\
+#define Multiple_CONF_DESCRIPTOR(wTotalLength,			/*配置描述符总长度*/	\
+																		bNumInterfaces			/*包含口数量*/					\
 																							)																			\
   0x09,       					/* bLength		描述符长度*/																		\
   0x02, 								/* bDescriptorType 02表示此为配置描述符*/										\
@@ -194,7 +194,7 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
   USB_CONFIG_POWER_MA(500)	/* bMaxPower, device power consumption is 100 mA */
 	
 //================IAD描述符Interface Association Descriptor
-#define Multiple_IAD_DESCRIPTOR(comIfNum)								\
+#define Multiple_IAD_DESCRIPTOR(comIfNum		/*通讯接口序号*/)					\
     0x08,                                   /* bLength */           	\
     0x0B,                                   /* bDescriptorType */    	\
     comIfNum,                               /* bFirstInterface */  		\
@@ -202,10 +202,10 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
     USB_Communications_DeviceClass,      		/* bFunctionClass */     	\
     CDC_ABSTRACT_CONTROL_MODEL,             /* bFunctionSubClass */  	\
     0x01,                                   /* bFunctionProcotol */ 	\
-    0x00                                  	/* iInterface */       		
+    0x00                                  	/* iInterface */
 
 //================CDC接口描述符Interface Association Descriptor
-#define Multiple_CDC_Descriptor(comIfNum)		\
+#define Multiple_CDC_Descriptor(comIfNum		/*通讯接口序号*/)						\
     0x09,                										/* bLength */               \
     0x04,          		/*04表示接口描述符*/		/* bDescriptorType */       \
     comIfNum,                               /* bInterfaceNumber */      \
@@ -214,77 +214,54 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
     0x02,      				/*CDC通讯类型*/				/* bInterfaceClass */       \
     0x02,             											/* bInterfaceSubClass */    \
     0x01,                                   /* bInterfaceProtocol */    \
-    0x00                                   	/* iInterface */            \
+    0x00                                   	/* iInterface */
 
 //================CDC头描述符Header Functional Descriptor
 #define Multiple_HDF_Descriptor(bcdCDC)																	\
 		0x05,                                   /* bLength */               \
     CDC_CS_INTERFACE,                       /* bDescriptorType */       \
     CDC_HEADER,                             /* bDescriptorSubtype */    \
-    WBVAL(CDC_V1_10)	 /* 1.10 */       		/* bcdCDC */                \
+    WBVAL(CDC_V1_10)	 /* 1.10 */       		/* bcdCDC */
 
 //================CMF头描述符Call Management Functional Descriptor
-#define Multiple_CMF_Descriptor(datIfNum)																\
+#define Multiple_CMF_Descriptor(datIfNum		/*数据接口序号*/)						\
     0x05,                                   /* bFunctionLength */       \
     CDC_CS_INTERFACE,                       /* bDescriptorType */       \
     CDC_CALL_MANAGEMENT,                    /* bDescriptorSubtype */    \
     0x03,                                   /* bmCapabilities */        \
-    datIfNum	                         			/* bDataInterface */        \
+    datIfNum	                         			/* bDataInterface */
 
-//================ACM述符Call Management Functional Descriptor
+//================ACM描述符Call Management Functional Descriptor
 #define Multiple_ACM_Descriptor()																				\
     0x04,                                   /* bFunctionLength */       \
-    CDC_CS_INTERFACE,                       /* bDescriptorType */       \
+    0x24,                       						/* bDescriptorType */       \
     CDC_ABSTRACT_CONTROL_MANAGEMENT,        /* bDescriptorSubtype */    \
-    0x02                              			/* bmCapabilities */        \
+    0x02                              			/* bmCapabilities */
 		
-//CDC接口描述符设置
-#define CDC_IF_DESC_SET_BAC( 					comIfNum,		/*通讯接口序号*/				\
-																	datIfNum, 	/*数据接口序号*/				\
-																	comInEp, 		/*通讯（IN）端点*/			\
-																	datOutEp, 	/*数据（OUT）端点*/		\
-																	datInEp			/*数据（IN）端点*/	)		\
-/* CDC Communication Interface Descriptor */                            \
-    USB_INTERFACE_DESC_SIZE,                /* bLength */               \
-    USB_INTERFACE_DESCRIPTOR_TYPE,          /* bDescriptorType */       \
-    comIfNum,                               /* bInterfaceNumber */      \
-    0x00,                                   /* bAlternateSetting */     \
-    0x01,                                   /* bNumEndpoints */         \
-    USB_CDC_InterfaceClass,      						/* bInterfaceClass */       \
-    CDC_ABSTRACT_CONTROL_MODEL,             /* bInterfaceSubClass */    \
-    0x01,                                   /* bInterfaceProtocol */    \
-    0x00,                                   /* iInterface */            \
-/* Header Functional Descriptor */                                      \
-    0x05,                                   /* bLength */               \
-    CDC_CS_INTERFACE,                       /* bDescriptorType */       \
-    CDC_HEADER,                             /* bDescriptorSubtype */    \
-    WBVAL(CDC_V1_10), /* 1.10 */            /* bcdCDC */                \
-/* Call Management Functional Descriptor */                             \
+//================UFD描述符Union Functional Descriptor
+#define Multiple_UFD_Descriptor(comIfNum,		/*通讯接口序号*/							\
+																datIfNum	 	/*数据接口序号*/							\
+																)																				\
     0x05,                                   /* bFunctionLength */       \
-    CDC_CS_INTERFACE,                       /* bDescriptorType */       \
-    CDC_CALL_MANAGEMENT,                    /* bDescriptorSubtype */    \
-    0x03,                                   /* bmCapabilities */        \
-    datIfNum,                               /* bDataInterface */        \
-/* Abstract Control Management Functional Descriptor */                 \
-    0x04,                                   /* bFunctionLength */       \
-    CDC_CS_INTERFACE,                       /* bDescriptorType */       \
-    CDC_ABSTRACT_CONTROL_MANAGEMENT,        /* bDescriptorSubtype */    \
-    0x02,                                   /* bmCapabilities */        \
-/* Union Functional Descriptor */                                       \
-    0x05,                                   /* bFunctionLength */       \
-    CDC_CS_INTERFACE,                       /* bDescriptorType */       \
-    CDC_UNION,                              /* bDescriptorSubtype */    \
+    0x24,                       						/* bDescriptorType */       \
+    0x06,                              			/* bDescriptorSubtype */    \
     comIfNum,                               /* bMasterInterface */      \
-    datIfNum,                               /* bSlaveInterface0 */      \
-/* Endpoint, Interrupt IN */                /* event notification */    \
-    USB_ENDPOINT_DESC_SIZE,                 /* bLength */               \
-    USB_ENDPOINT_DESCRIPTOR_TYPE,           /* bDescriptorType */       \
-    comInEp,                                /* bEndpointAddress */      \
-    USB_ENDPOINT_TYPE_INTERRUPT,            /* bmAttributes */          \
-    WBVAL(0x0040),                          /* wMaxPacketSize */        \
-    0x01,                                   /* bInterval */             \
-                                                                        \
-/* CDC Data Interface Descriptor */                                     \
+    datIfNum                               	/* bSlaveInterface0 */ 
+
+//================ENDP描述符Endpoint	Descriptor
+#define Multiple_ENDP_Descriptor(NumOfEp,		/*端点号*/										\
+																TypeOfEp,	 	/*端点类型:CONTROL,ISOCHRONOUS,BULK,INTERRUPT*/	\
+																SizeOfEp	 	/*端点大小*/									\
+																)																				\
+    0x07,                 									/* bLength */               \
+    0x05,           												/* bDescriptorType */       \
+    NumOfEp,                                /* bEndpointAddress */      \
+    TypeOfEp,            										/* bmAttributes */          \
+    SizeOfEp&0xFF,(SizeOfEp>>8)&0xFF,     	/* wMaxPacketSize */        \
+    0x00	                               		/* bInterval */           
+
+//================DATA述符CDC Data Interface Descriptor
+#define Multiple_DATAIF_Descriptor(datIfNum			/*数据接口序号*/			)		\
     USB_INTERFACE_DESC_SIZE,                /* bLength */               \
     USB_INTERFACE_DESCRIPTOR_TYPE,          /* bDescriptorType */       \
     datIfNum,                               /* bInterfaceNumber */      \
@@ -293,29 +270,19 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
     CDC_DATA_INTERFACE_CLASS,               /* bInterfaceClass */       \
     0x00,                                   /* bInterfaceSubClass */    \
     0x00,                                   /* bInterfaceProtocol */    \
-    0x00,                                   /* iInterface */            \
-/* Endpoint, Bulk OUT */                                                \
-    USB_ENDPOINT_DESC_SIZE,                 /* bLength */               \
-    USB_ENDPOINT_DESCRIPTOR_TYPE,           /* bDescriptorType */       \
-    datOutEp,                               /* bEndpointAddress */      \
-    USB_ENDPOINT_TYPE_BULK,                 /* bmAttributes */          \
-    WBVAL(VIRTUAL_COM_PORT_DATA_SIZE),      /* wMaxPacketSize */        \
-    0x00,                                   /* bInterval */             \
-/* Endpoint, Bulk IN */                                                 \
-    USB_ENDPOINT_DESC_SIZE,                 /* bLength */               \
-    USB_ENDPOINT_DESCRIPTOR_TYPE,           /* bDescriptorType */       \
-    datInEp,                                /* bEndpointAddress */      \
-    USB_ENDPOINT_TYPE_BULK,                 /* bmAttributes */          \
-    WBVAL(VIRTUAL_COM_PORT_DATA_SIZE),      /* wMaxPacketSize */        \
-    0x00																		/* bInterval */
+    0x00                                   	/* iInterface */            
+		
 
-//CDC接口描述符设置
-#define CDC_IF_DESC_SET( 					comIfNum,		/*通讯接口序号*/				\
-																	datIfNum, 	/*数据接口序号*/				\
-																	comInEp, 		/*通讯（IN）端点*/			\
-																	datOutEp, 	/*数据（OUT）端点*/		\
-																	datInEp			/*数据（IN）端点*/	)		\
-/* CDC Communication Interface Descriptor */                            \
+//IAD_CDC描述符设置
+#define IAD_CDC_IF_DESC_SET( 			comIfNum,		/*通讯接口序号*/						\
+																	datIfNum, 	/*数据接口序号*/						\
+																	comInEp, 		/*通讯（IN）端点*/					\
+																	datOutEp, 	/*数据（OUT）端点*/				\
+																	datInEp			/*数据（IN）端点*/					\
+																	)																			\
+/* IAD描述符配置 */                                  										\
+    Multiple_IAD_DESCRIPTOR(comIfNum),																	\
+/* CDC Communication Interface Descriptor */                    				\
     Multiple_CDC_Descriptor(comIfNum),																	\
 /* Header Functional Descriptor */                                      \
 		Multiple_HDF_Descriptor(CDC_V1_10),																	\
@@ -324,74 +291,15 @@ extern u8 Virtual_Com_Port_StringSerial[VIRTUAL_COM_PORT_SIZ_STRING_SERIAL];
 /* Abstract Control Management Functional Descriptor */                 \
 		Multiple_ACM_Descriptor(),																					\
 /* Union Functional Descriptor */                                       \
-    0x05,                                   /* bFunctionLength */       \
-    CDC_CS_INTERFACE,                       /* bDescriptorType */       \
-    CDC_UNION,                              /* bDescriptorSubtype */    \
-    comIfNum,                               /* bMasterInterface */      \
-    datIfNum,                               /* bSlaveInterface0 */      \
+		Multiple_UFD_Descriptor(comIfNum,datIfNum),													\
 /* Endpoint, Interrupt IN */                /* event notification */    \
-    USB_ENDPOINT_DESC_SIZE,                 /* bLength */               \
-    USB_ENDPOINT_DESCRIPTOR_TYPE,           /* bDescriptorType */       \
-    comInEp,                                /* bEndpointAddress */      \
-    USB_ENDPOINT_TYPE_INTERRUPT,            /* bmAttributes */          \
-    WBVAL(0x0040),                          /* wMaxPacketSize */        \
-    0x01,                                   /* bInterval */             \
-                                                                        \
-/* CDC Data Interface Descriptor */                                     \
-    USB_INTERFACE_DESC_SIZE,                /* bLength */               \
-    USB_INTERFACE_DESCRIPTOR_TYPE,          /* bDescriptorType */       \
-    datIfNum,                               /* bInterfaceNumber */      \
-    0x00,                                   /* bAlternateSetting */     \
-    0x02,                                   /* bNumEndpoints */         \
-    CDC_DATA_INTERFACE_CLASS,               /* bInterfaceClass */       \
-    0x00,                                   /* bInterfaceSubClass */    \
-    0x00,                                   /* bInterfaceProtocol */    \
-    0x00,                                   /* iInterface */            \
-/* Endpoint, Bulk OUT */                                                \
-    USB_ENDPOINT_DESC_SIZE,                 /* bLength */               \
-    USB_ENDPOINT_DESCRIPTOR_TYPE,           /* bDescriptorType */       \
-    datOutEp,                               /* bEndpointAddress */      \
-    USB_ENDPOINT_TYPE_BULK,                 /* bmAttributes */          \
-    WBVAL(VIRTUAL_COM_PORT_DATA_SIZE),      /* wMaxPacketSize */        \
-    0x00,                                   /* bInterval */             \
-/* Endpoint, Bulk IN */                                                 \
-    USB_ENDPOINT_DESC_SIZE,                 /* bLength */               \
-    USB_ENDPOINT_DESCRIPTOR_TYPE,           /* bDescriptorType */       \
-    datInEp,                                /* bEndpointAddress */      \
-    USB_ENDPOINT_TYPE_BULK,                 /* bmAttributes */          \
-    WBVAL(VIRTUAL_COM_PORT_DATA_SIZE),      /* wMaxPacketSize */        \
-    0x00																		/* bInterval */
-
-//IAD_CDC描述符设置
-#define IAD_CDC_IF_DESC_SET_bac( 			comIfNum,		/*通讯接口序号*/					\
-																	datIfNum, 	/*数据接口序号*/					\
-																	comInEp, 		/*通讯（IN）端点*/				\
-																	datOutEp, 	/*数据（OUT）端点*/			\
-																	datInEp			/*数据（IN）端点*/				\
-																	)																		\
-		/* IAD描述符配置 */                                  							\
-    0x08,                                   /* bLength */           	\
-    0x0B,                                   /* bDescriptorType */    	\
-    comIfNum,                               /* bFirstInterface */  		\
-    0x02,                                   /* bInterfaceCount */   	\
-    USB_Communications_DeviceClass,      		/* bFunctionClass */     	\
-    CDC_ABSTRACT_CONTROL_MODEL,             /* bFunctionSubClass */  	\
-    0x01,                                   /* bFunctionProcotol */ 	\
-    0x00,                                   /* iInterface */       		\
-		/* CDC接口描述符配置 */                                     				\
-    CDC_IF_DESC_SET(comIfNum,	datIfNum,	comInEp,	datOutEp,	datInEp)
-
-//IAD_CDC描述符设置
-#define IAD_CDC_IF_DESC_SET( 			comIfNum,		/*通讯接口序号*/					\
-																	datIfNum, 	/*数据接口序号*/					\
-																	comInEp, 		/*通讯（IN）端点*/				\
-																	datOutEp, 	/*数据（OUT）端点*/			\
-																	datInEp			/*数据（IN）端点*/				\
-																	)																		\
-		/* IAD描述符配置 */                                  							\
-    Multiple_IAD_DESCRIPTOR(comIfNum),														\
-		/* CDC接口描述符配置 */                                     				\
-    CDC_IF_DESC_SET(comIfNum,	datIfNum,	comInEp,	datOutEp,	datInEp)
+		Multiple_ENDP_Descriptor(comInEp,USB_ENDPOINT_TYPE_INTERRUPT,VIRTUAL_COM_PORT_DATA_SIZE),		\
+/* CDC Data Interface Descriptor */                                     												\
+		Multiple_DATAIF_Descriptor(datIfNum),																												\
+/* Endpoint, Bulk OUT */                                                												\
+		Multiple_ENDP_Descriptor(datOutEp,USB_ENDPOINT_TYPE_BULK,VIRTUAL_COM_PORT_DATA_SIZE),				\
+/* Endpoint, Bulk IN */                                                 												\
+		Multiple_ENDP_Descriptor(datInEp,USB_ENDPOINT_TYPE_BULK,VIRTUAL_COM_PORT_DATA_SIZE)
 	
 
 

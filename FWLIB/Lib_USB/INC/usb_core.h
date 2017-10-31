@@ -159,7 +159,7 @@ typedef struct _DEVICE_PROP			//设备属性结构--USB 内核在必要时将控制权交给用户程
   u8* (*GetDeviceDescriptor)(u16 Length);			//内核得到设备描述符
   u8* (*GetConfigDescriptor)(u16 Length);			//内核得到配置描述符
   u8* (*GetStringDescriptor)(u16 Length);			//内核得到字符串描述符
-	u8* (*GetQualifierDescriptor)(u16 Length);			//内核得到字符串描述符
+//	u8* (*GetQualifierDescriptor)(u16 Length);			//内核得到字符串描述符
 	
 	/* 这个字段不是用于当前库版本。它是只保持兼容以前的版本*/
   u8* RxEP_buffer;
