@@ -22,6 +22,7 @@
 #include "stm32f10x_tim.h"
 #include "stm32f10x_gpio.h"
 #include "stm32f10x_rcc.h"
+#include "stm32f10x_nvic.h"
 
 //#include "STM32_TIM.H"
 
@@ -34,7 +35,10 @@ typedef enum
 	PWM_OUTChannel4,
 } PWM_OUTChannelTypeDef;
 
-void PWM_OUT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本
-void PWM_OUT2(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本
-void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比
+void PWM_OUT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1000
+void PWM_OUT2(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
+void PWM_OUT_COUNT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
+void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比---LED
+void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count);		//设置计数值
+void PWM_CountServer(void);			//计数服务程序
 #endif

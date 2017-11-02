@@ -313,6 +313,10 @@ void WOW_Configuration(void)
 	Virtual_COM_Port_IAD_Configuration();
 #endif
 
+//*********************************ICCARD*********************************//
+#ifdef ICCARD
+	ICCARD_Configuration();
+#endif
 
 
 
@@ -612,6 +616,13 @@ void WOW_Server(void)
 #ifdef Virtual_COM_Port_IAD
 	Virtual_COM_Port_IAD_Server();
 #endif
+
+//*********************************ICCARD*********************************//
+#ifdef ICCARD
+	ICCARD_Server();
+#endif
+
+
 
 
 
