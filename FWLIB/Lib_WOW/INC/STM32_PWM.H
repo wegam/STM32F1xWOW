@@ -35,10 +35,15 @@ typedef enum
 	PWM_OUTChannel4,
 } PWM_OUTChannelTypeDef;
 
+extern u32 Tim1_Count;
+extern u32 Tim2_Count;
+extern u32 Tim3_Count;
+extern u32 Tim4_Count;
+
 void PWM_OUT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1000
 void PWM_OUT2(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
 void PWM_OUT_COUNT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
 void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比---LED
 void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count);		//设置计数值
-void PWM_CountServer(void);			//计数服务程序
+u8 PWM_CountServer(void);			//计数服务程序
 #endif

@@ -50,7 +50,11 @@ ADC的输入时钟不得超过14MHz，它是由PCLK2经分频产生。
 *	CH0	CH1	CH2	CH3	CH4	CH5	CH6	CH7	CH8	CH9	CH10	CH11	CH12	CH13	CH14	CH15
 *	PA0	PA1	PA2	PA3	PA4	PA5	PA6	PA7	PB0	PB1	PC0		PC1		PC2		PC3		PC4		PC5				
 *****************************************************************************
-
+CH16 内部温度传感器
+CH17 内部参考电压
+*****************************************************************************
+注入组介绍：注入通道组中可以安排最多4个通道
+规则组介绍：规则通道组中可以安排最多16个通道
 ################################################################################
 ###############################################################################*/
 
@@ -74,7 +78,41 @@ void ADC1_InjectedConfiguration(void)			//ADC1注入通道组配置
 }
 /*******************************************************************************
 * 函数名		:	
-* 功能描述	:	ADC1规则通道组配置 
+* 功能描述	:	ADC1规则通道组配置--普通方式
+* 输入		:	ADC_Channel_x->通道号:ADC_Channel_0~ADC_Channel_15
+						ADC_mode->
+						ADC_NbrOfChannel->顺序进行规则转换的ADC通道的数目
+* 输出		:
+* 返回 		:
+*******************************************************************************/
+void ADC1_DiscConfigurationNR(u32	*ADC_DATA,					//数据寄存器
+															u32	DMA_BufferSize,			//
+															u8	ADC_Channel_x,			//
+															u8	ADC_NbrOfChannel, 	//
+															u8	Rank,								//
+															u8	ADC_SampleTime			//
+															)				//ADC1规则通道组配置
+{
+	
+	//由时钟控制器提供的ADCCLK时钟和PCLK2(APB2时钟)同步。
+	//RCC控制器为ADC时钟提供一个专用的可编程预分频器。
+	//1)==========打开ADC时钟，并设置分频因子	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1,ENABLE);//使能ADC时钟
+	//2)==========根据所选的通道，打开相应GPIO时钟，配置相应GPIO为模拟输入
+	ADC_PinConf(ADC_Channel_x);				//ADC管脚配置 依据STM32F107VC引脚分布	
+	//5)==========设置ADC的规则系列相关信息---通道选择
+	ADC1_DMAConfiguration(ADC_DATA,DMA_BufferSize); 		//ADC1 DMA配置	
+	//3)==========设置ADC的工作模式
+	ADC1_InitStructure(ADC_NbrOfChannel);				//ADC初始化	
+	//4)==========设置ADC的规则系列相关信息---通道选择
+	//ADC1,ADC 通道x,规则采样顺序值为y,采样时间为239.5 周期
+	ADC_RegularChannelConfig(ADC1, ADC_Channel_x, Rank,ADC_SampleTime);	
+	//6)==========开启ADC转换并校准	
+	ADC1_Cmd(ENABLE);					//开启ADC1转换
+}
+/*******************************************************************************
+* 函数名		:	
+* 功能描述	:	ADC1规则通道组配置--DMA方式 
 * 输入		:	ADC_Channel_x->通道号:ADC_Channel_0~ADC_Channel_15
 						ADC_mode->
 						ADC_NbrOfChannel->顺序进行规则转换的ADC通道的数目
@@ -115,20 +153,19 @@ void ADC1_DiscConfiguration(u32 *ADC_DATA,u32 DMA_BufferSize,u8 ADC_Channel_x,u8
 *******************************************************************************/
 void ADC_TempSensorConfiguration(u32 *ADC_DATA)
 {
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1,ENABLE);//使能ADC时钟
-	ADC1_InitStructure(1);				//ADC初始化
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_16, 1,ADC_SampleTime_239Cycles5);
-	ADC1_DMAConfiguration(ADC_DATA,1); 		//ADC1 DMA配置
-	ADC_DMACmd(ADC1, ENABLE);   //ADC命令，使能 
-	ADC_TempSensorVrefintCmd(ENABLE);	//使能温度传感器和内部参考电压通道	
-	ADC1_Cmd(ENABLE);					//开启ADC1转换
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1,ENABLE);			//使能ADC时钟
+	ADC1_InitStructure(1);																	//ADC初始化
+	ADC_RegularChannelConfig(ADC1, ADC_Channel_16, 1,ADC_SampleTime_239Cycles5);	//选择ADC，通道，顺序及转换周期
+	ADC1_DMAConfiguration(ADC_DATA,1); 											//ADC1_DMA配置
+	ADC_DMACmd(ADC1, ENABLE);   														//ADC命令，使能DMA的ADC转换
+	ADC_TempSensorVrefintCmd(ENABLE);												//使能温度传感器和内部参考电压通道	
+	ADC1_Cmd(ENABLE);																				//开启ADC1转换
 	
-	ADC_ResetCalibration(ADC1);   //重新校准 
-	while(ADC_GetResetCalibrationStatus(ADC1));  //等待重新校准完成
-	ADC_StartCalibration(ADC1); 	//开始校准
-	while(ADC_GetCalibrationStatus(ADC1));    //等待校准完成
-	ADC_SoftwareStartConvCmd(ADC1, ENABLE); 	//连续转换开始，ADC通过DMA方式不断的更新RAM区。
-
+	ADC_ResetCalibration(ADC1);   													//重新校准 
+	while(ADC_GetResetCalibrationStatus(ADC1)); 	 					//等待重新校准完成
+	ADC_StartCalibration(ADC1); 														//开始校准
+	while(ADC_GetCalibrationStatus(ADC1));    							//等待校准完成
+	ADC_SoftwareStartConvCmd(ADC1, ENABLE); 								//连续转换开始，ADC通过DMA方式不断的更新RAM区。
 }
 /*******************************************************************************
 *函数名		:	Get_ADC_Temperature
@@ -147,20 +184,20 @@ float Get_ADC_Temperature(u32 ADC_DATA)
 }
 /*******************************************************************************
 * 函数名		:	ADC_PinConf
-* 功能描述	:	打开相应通道的GPIO时钟，将相应的GPIO_Pin配置为模拟输入模式 
-* 输入		:	
+* 功能描述	:	根据所选的通道，打开相应GPIO时钟，配置相应GPIO为模拟输入 
+* 输入		:	ADC_Channel_x--ADC通道
 * 输出		:
 * 返回 		:
 *******************************************************************************/
-void	ADC_PinConf(u8 ADC_Channel_x)				//ADC管脚配置 依据STM32F107VC引脚分布
+void	ADC_PinConf(u8 ADC_Channel_x)							//ADC管脚配置 依据STM32F107VC引脚分布
 {
 	GPIO_InitTypeDef GPIO_InitStructure;					//GPIO结构体
 	GPIO_TypeDef* GPIOx=0;
 	u16 GPIO_Pin_x=0;
 //	ErrorStatus status = ERROR;
 	/*****************************ADC管脚****************************************
-	*	CH0	CH1	CH2	CH3	CH4	CH5	CH6	CH7	CH8	CH9	CH10	CH11	CH12	CH13	CH14	CH15
-	*	PA0	PA1	PA2	PA3	PA4	PA5	PA6	PA7	PB0	PB1	PC0		PC1		PC2		PC3		PC4		PC5				
+	*	CH0	CH1	CH2	CH3	CH4	CH5	CH6	CH7	CH8	CH9	CH10	CH11	CH12	CH13	CH14	CH15	CH16	CH17
+	*	PA0	PA1	PA2	PA3	PA4	PA5	PA6	PA7	PB0	PB1	PC0		PC1		PC2		PC3		PC4		PC5		温度	参考电压		
 	*****************************************************************************/
 	//1)**********打开相应GPIO时钟	
 	if(ADC_Channel_x<=ADC_Channel_7)
@@ -245,22 +282,22 @@ void ADC1_InitStructure(u8 ADC_NbrOfChannel)				//ADC初始化
 *******************************************************************************/
 void ADC1_DMAConfiguration(u32 *ADC_DATA,u32 DMA_BufferSize) 		//ADC1 DMA配置
 {  
-	DMA_InitTypeDef DMA_InitStructure; 
+	DMA_InitTypeDef DMA_InitStructure; 																					//DMA结构体
 	
 	DMA_DeInit(DMA1_Channel1); 																									//将DMA的通道1寄存器重设为缺省值
-	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&ADC1->DR; 									//DMA外设ADC基地址
-	DMA_InitStructure.DMA_MemoryBaseAddr = (u32)ADC_DATA; 											//DMA内存基地址
-	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC; 													//内存作为数据传输的目的地
-	DMA_InitStructure.DMA_BufferSize = 1; 													//DMA通道的DMA缓存的大小
+	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&ADC1->DR; 									//DMA外设基地址---ADC
+	DMA_InitStructure.DMA_MemoryBaseAddr = (u32)ADC_DATA; 											//DMA内存基地址---ADC存储变量地址
+	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC; 													//设置源端---外设作为数据传输的来源
+	DMA_InitStructure.DMA_BufferSize = 1; 																			//DMA通道的DMA缓存的大小
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable; 						//外设地址寄存器不变
-	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Disable; 										//内存地址寄存器递增
-	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; //数据宽度为16位
-	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;					//数据宽度为16位
+	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Disable; 										//内存地址寄存器不变
+	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; //外设数据宽度为16位
+	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;					//内存数据宽度为16位
 	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular; 														//工作在循环缓存模式---不停地采集数据
-	DMA_InitStructure.DMA_Priority = DMA_Priority_High; 												//DMA通道 x拥有高优先级
+	DMA_InitStructure.DMA_Priority = DMA_Priority_High; 												//DMA通道x拥有高优先级
 	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable; 																//DMA通道x没有设置为内存到内存传输
 	DMA_Init(DMA1_Channel1, &DMA_InitStructure); 																//根据DMA_InitStruct中指定的参数初始化DMA的通道
-	DMA_Cmd(DMA1_Channel1,ENABLE);
+	DMA_Cmd(DMA1_Channel1,ENABLE);																							//使能DMA通道
 }
 /*******************************************************************************
 * 函数名		:	ADC1_Cmd

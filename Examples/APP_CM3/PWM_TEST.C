@@ -39,7 +39,7 @@ void PWM_TEST_Configuration(void)
 //	PWM_OUT2(TIM1,PWM_OUTChannel1,2400,600);		//PWM设定
 //	PWM_OUT2(TIM3,PWM_OUTChannel3,2400,600);		//PWM设定
 //	PWM_OUT2(TIM4,PWM_OUTChannel2,2400,600);		//PWM设定
-	PWM_OUT_COUNT(TIM2,PWM_OUTChannel1,10,500);		//sys_led
+	PWM_OUT_COUNT(TIM2,PWM_OUTChannel1,10000,200);		//sys_led
 	
 //	GPIO_Configuration_IPD(GPIOA,	GPIO_Pin_4);			//将GPIO相应管脚配置为上拉输入模式----V20170605--BUTTON
 //	GPIO_Configuration_IPD(GPIOA,	GPIO_Pin_5);			//将GPIO相应管脚配置为上拉输入模式----V20170605
@@ -63,12 +63,17 @@ void PWM_TEST_Configuration(void)
 *******************************************************************************/
 void PWM_TEST_Server(void)
 {
-	PWM_CountServer();
-	systime++;
-	if(systime>=500000)
+	if(PWM_CountServer()	==1)
 	{
-		systime	=	0;
-		SetPWM_Num(TIM2,10);		//设置计数值
+	}
+	else
+	{
+		systime++;
+		if(systime>=100)
+		{
+			systime	=	0;
+			SetPWM_Num(TIM2,10);		//设置计数值
+		}
 	}
 	
 	

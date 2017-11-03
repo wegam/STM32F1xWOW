@@ -829,13 +829,13 @@ void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count)
 {
 	switch (*(u32*)&TIMx)
 	{
-		case TIM1_BASE:Tim1_Count	=	PWM_Count;	TIM_Cmd(TIM1, ENABLE);	//使能TIMx计数
+		case TIM1_BASE:Tim1_Count	=	PWM_Count;	TIM1->CNT	=	0;	TIM1->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM1->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
 			break;
-		case TIM2_BASE:Tim2_Count	=	PWM_Count;	TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
+		case TIM2_BASE:Tim2_Count	=	PWM_Count;	TIM2->CNT	=	0;	TIM2->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM2->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
 			break;
-		case TIM3_BASE:Tim3_Count	=	PWM_Count;	TIM_Cmd(TIM3, ENABLE);	//使能TIMx计数
+		case TIM3_BASE:Tim3_Count	=	PWM_Count;	TIM3->CNT	=	0;	TIM3->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM3->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
 			break;
-		case TIM4_BASE:Tim4_Count	=	PWM_Count;	TIM_Cmd(TIM4, ENABLE);	//使能TIMx计数
+		case TIM4_BASE:Tim4_Count	=	PWM_Count;	TIM4->CNT	=	0;	TIM4->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM4->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
 			break;
 		default	:
 			break;
@@ -847,9 +847,9 @@ void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count)
 *输入				: 
 *返回值			:	无
 *******************************************************************************/
-void PWM_CountServer(void)
+u8 PWM_CountServer(void)
 {
-	if(TIM_GetITStatus(TIM1,TIM_IT_Update))
+	if(TIM1->SR & TIM_IT_Update	&&	TIM1->DIER & TIM_IT_Update)
 	{
 		if(Tim1_Count>0)
 		{
@@ -857,22 +857,31 @@ void PWM_CountServer(void)
 		}
 		else
 		{
-			TIM_Cmd(TIM1, DISABLE);
+			TIM1->CNT	=	0;
+			/* Disable the TIM Counter */
+			TIM1->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
 		}
+		TIM_ClearFlag(TIM1, TIM_FLAG_Update);
+		return 1;
 	}
-	else if(TIM_GetITStatus(TIM2,TIM_IT_Update)	!=	RESET)
+//	else if(TIM_GetITStatus(TIM2,TIM_IT_Update)	!=	RESET)
+	else if(TIM2->SR & TIM_IT_Update	&&	TIM2->DIER & TIM_IT_Update)
 	{
 		if(Tim2_Count>0)
 		{
 			Tim2_Count--;
 		}
 		else
-		{
-			TIM_Cmd(TIM2, DISABLE);
+		{	
+			TIM2->CNT	=	0;
+			/* Disable the TIM Counter */
+			TIM2->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
 		}
 		TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+		return 1;
+
 	}
-	else if(TIM_GetITStatus(TIM3,TIM_IT_Update))
+	else if(TIM3->SR & TIM_IT_Update	&&	TIM3->DIER & TIM_IT_Update)
 	{
 		if(Tim3_Count>0)
 		{
@@ -880,10 +889,14 @@ void PWM_CountServer(void)
 		}
 		else
 		{
-			TIM_Cmd(TIM3, DISABLE);
+			TIM3->CNT	=	0;
+			/* Disable the TIM Counter */
+			TIM3->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
 		}
+		TIM_ClearFlag(TIM3, TIM_FLAG_Update);
+		return 1;
 	}
-	else if(TIM_GetITStatus(TIM4,TIM_IT_Update))
+	else if(TIM4->SR & TIM_IT_Update	&&	TIM4->DIER & TIM_IT_Update)
 	{
 		if(Tim4_Count>0)
 		{
@@ -891,9 +904,14 @@ void PWM_CountServer(void)
 		}
 		else
 		{
-			TIM_Cmd(TIM4, DISABLE);
+			TIM4->CNT	=	0;
+			/* Disable the TIM Counter */
+			TIM4->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
 		}
+		TIM_ClearFlag(TIM4, TIM_FLAG_Update);
+		return 1;
 	}
+	return 0;
 }
 	
 //	if(PWM_Count	==	0)
