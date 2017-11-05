@@ -161,7 +161,7 @@ void ADC_TempSensorConfiguration(u32 *ADC_DATA)
 	ADC_TempSensorVrefintCmd(ENABLE);												//使能温度传感器和内部参考电压通道	
 	ADC1_Cmd(ENABLE);																				//开启ADC1转换
 	
-	ADC_ResetCalibration(ADC1);   													//重新校准 
+	ADC_ResetCalibration(ADC1);   													//重新校准
 	while(ADC_GetResetCalibrationStatus(ADC1)); 	 					//等待重新校准完成
 	ADC_StartCalibration(ADC1); 														//开始校准
 	while(ADC_GetCalibrationStatus(ADC1));    							//等待校准完成

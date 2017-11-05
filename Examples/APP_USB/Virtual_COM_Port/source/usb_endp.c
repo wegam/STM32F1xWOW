@@ -49,6 +49,12 @@ void EP3_OUT_Callback(void)
 	
 	//----添加程序---USB发送给串口
 	USB_To_USART_Send_Data(buffer_out,count_out);
+	
+	buffer_out[count_out]	=	0xFF;
+	//返回数据
+	UserToPMABufferCopy(buffer_out, ENDP1_TXADDR, count_out+1);
+	SetEPTxCount(ENDP1, count_out+1);																		//设置端点数据长度
+	SetEPTxValid(ENDP1);																							//使能端点
 }
 
 /*******************************************************************************
