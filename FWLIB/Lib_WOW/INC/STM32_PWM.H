@@ -34,7 +34,27 @@ typedef enum
 	PWM_OUTChannel3,
 	PWM_OUTChannel4,
 } PWM_OUTChannelTypeDef;
-
+typedef struct
+{
+	GPIO_TypeDef* GPIOX1;			//x=A/B/C/D/E/F/G
+	GPIO_TypeDef** GPIOX2;			//x=A/B/C/D/E/F/G
+	TIM_TypeDef	TIMx;
+	GPIO_TypeDef GPIOx;			//x=A/B/C/D/E/F/G
+	u16 GPIO_Pin_n;						//n=0~15;
+	double PWM_Frequency;			//频率
+	u8 	PWM_Ratio;						//占空比 1%精度，默认50%（未设置此参数时）		
+}PWM_BasicDataDef;
+typedef struct
+{
+	u8 	Pulse;								//计算占空比，Pulse<=PWM_Ratio为高，Pulse》=PWM_Cycle为一个计算周期，清0
+	u8 	PWM_Cycle ;						//根据占空比需要的计数值，如1%占空比，则计数100,50%计数2就可以
+	u32 PWM_Count;						//输出脉冲数，每计一周期脉冲数增加一个，计数达到PWM_Num停止输出，需要再次输出时则清0此计数，重新开始计数
+}PWM_RunDataDef;
+typedef struct
+{
+	PWM_BasicDataDef	PWM_BasicData;
+	PWM_RunDataDef		PWM_RunData;
+}PWM_TimDef;
 extern u32 Tim1_Count;
 extern u32 Tim2_Count;
 extern u32 Tim3_Count;
@@ -43,6 +63,9 @@ extern u32 Tim4_Count;
 void PWM_OUT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1000
 void PWM_OUT2(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
 void PWM_OUT_COUNT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
+void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim);			//PWM输出配置
+void PWM_OUT_TIMSet(PWM_TimDef* PWM_Tim,u32 PWM_Count);			//PWM输出配置
+u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim);			//PWM输出配置
 void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比---LED
 void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count);		//设置计数值
 u8 PWM_CountServer(void);			//计数服务程序

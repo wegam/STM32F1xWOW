@@ -15,6 +15,8 @@
 
 #define RxBufferSize	16
 
+PWM_TimDef* PWM_Tim;
+u32 p	=	0;
 u16 systime	=	0;
 /*******************************************************************************
 * 函数名		:	
@@ -39,19 +41,28 @@ void PWM_TEST_Configuration(void)
 //	PWM_OUT2(TIM1,PWM_OUTChannel1,2400,600);		//PWM设定
 //	PWM_OUT2(TIM3,PWM_OUTChannel3,2400,600);		//PWM设定
 //	PWM_OUT2(TIM4,PWM_OUTChannel2,2400,600);		//PWM设定
-	PWM_OUT_COUNT(TIM2,PWM_OUTChannel1,10000,200);		//sys_led
+//	PWM_OUT_COUNT(TIM2,PWM_OUTChannel1,10000,200);		//sys_led
 	
 //	GPIO_Configuration_IPD(GPIOA,	GPIO_Pin_4);			//将GPIO相应管脚配置为上拉输入模式----V20170605--BUTTON
 //	GPIO_Configuration_IPD(GPIOA,	GPIO_Pin_5);			//将GPIO相应管脚配置为上拉输入模式----V20170605
 //	GPIO_Configuration_IPD(GPIOA,	GPIO_Pin_6);			//将GPIO相应管脚配置为上拉输入模式----V20170605
 	
-//	PWM_OUT(TIM2,PWM_OUTChannel1,5,500);		//sys_led
+//	PWM_OUT(TIM2,PWM_OUTChannel1,38000,500);		//sys_led
 //	PWM_OUT(TIM3,PWM_OUTChannel1,20000,30);		//PWM设定
 //	PWM_OUT(TIM4,PWM_OUTChannel1,20000,40);		//PWM设定
 //	
 //	PWM_OUT(TIM1,PWM_OUTChannel2,20000,50);		//PWM设定
 //	PWM_OUT(TIM2,PWM_OUTChannel2,20000,500);	//PWM设定
-	SetPWM_Num(TIM2,10);		//设置计数值
+
+//	SetPWM_Num(TIM2,10);		//设置计数值
+
+	PWM_Tim->PWM_BasicData.GPIOX1	=	GPIOA;
+	PWM_Tim->PWM_BasicData.GPIO_Pin_n	=	GPIO_Pin_0;
+	
+	PWM_Tim->PWM_BasicData.TIMx	=	*(TIM_TypeDef*)TIM1;
+	PWM_Tim->PWM_BasicData.PWM_Frequency	=	1;
+	PWM_Tim->PWM_BasicData.PWM_Ratio	=	(u8)1000;
+	PWM_OUT_TIMConf(PWM_Tim);										//PWM输出配置
 
 }
 /*******************************************************************************
@@ -63,7 +74,7 @@ void PWM_TEST_Configuration(void)
 *******************************************************************************/
 void PWM_TEST_Server(void)
 {
-	if(PWM_CountServer()	==1)
+	if(PWM_OUT_TIMServer(PWM_Tim)	==1)
 	{
 	}
 	else
@@ -72,9 +83,22 @@ void PWM_TEST_Server(void)
 		if(systime>=100)
 		{
 			systime	=	0;
-			SetPWM_Num(TIM2,10);		//设置计数值
+			PWM_OUT_TIMSet(PWM_Tim,10);		//设置计数值
 		}
 	}
+	//========================
+//	if(PWM_CountServer()	==1)
+//	{
+//	}
+//	else
+//	{
+//		systime++;
+//		if(systime>=100)
+//		{
+//			systime	=	0;
+//			SetPWM_Num(TIM2,10);		//设置计数值
+//		}
+//	}
 	
 	
 
