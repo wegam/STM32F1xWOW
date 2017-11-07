@@ -15,9 +15,13 @@
 
 #define RxBufferSize	16
 
-PWM_TimDef* PWM_Tim;
-u32 p	=	0;
+PWM_TimDef* 	PWM_Tim;
+volatile GPIO_TypeDef* GPIOx;			//x=A/B/C/D/E/F/G
+volatile TIM_TypeDef * TIMx;
+volatile u32* p	=	0;
+volatile u32 temp	=	0;
 u16 systime	=	0;
+volatile u16 Pin	=	0;
 /*******************************************************************************
 * 函数名		:	
 * 功能描述	:	 
@@ -56,13 +60,40 @@ void PWM_TEST_Configuration(void)
 
 //	SetPWM_Num(TIM2,10);		//设置计数值
 
-	PWM_Tim->PWM_BasicData.GPIOX1	=	GPIOA;
-	PWM_Tim->PWM_BasicData.GPIO_Pin_n	=	GPIO_Pin_0;
+//	PWM_Tim->PWM_BasicData->GPIOx	=	GPIOA;
+//	PWM_Tim->PWM_BasicData->TIMx	=	TIM1;
+//	
+//	GPIOx	=	PWM_Tim->PWM_BasicData->GPIOx;
+//	TIMx	=	PWM_Tim->PWM_BasicData->TIMx;
+
+//	PWM_Tim->PWM_RunData->Pulse	=	0x20;
+//	PWM_Tim->PWM_RunData->PWM_Count	=	0x30;
+//	PWM_Tim->PWM_RunData->PWM_Cycle	=	0x50;
+
+//	PWM_OUT_TIMConf(PWM_Tim);										//PWM输出配置
+//	
+//	GPIOx	=	PWM_Tim->PWM_BasicData->GPIOx;
+//	TIMx	=	PWM_Tim->PWM_BasicData->TIMx;
 	
-	PWM_Tim->PWM_BasicData.TIMx	=	*(TIM_TypeDef*)TIM1;
-	PWM_Tim->PWM_BasicData.PWM_Frequency	=	1;
-	PWM_Tim->PWM_BasicData.PWM_Ratio	=	(u8)1000;
+
+//	PWM_OUT_TIMSet(PWM_Tim,10);		//设置计数值
+
+	PWM_Tim->GPIOx	=	GPIOA;
+	PWM_Tim->TIMx		=	TIM1;
+	
+	PWM_Tim->Pulse	=	0x10;
+	PWM_Tim->PWM_Count	=	0x20;
+	
+	GPIOx	=	PWM_Tim->GPIOx;
+	TIMx	=	PWM_Tim->TIMx;
+	
 	PWM_OUT_TIMConf(PWM_Tim);										//PWM输出配置
+	
+	GPIOx	=	PWM_Tim->GPIOx;
+	TIMx	=	PWM_Tim->TIMx;
+	
+	
+
 
 }
 /*******************************************************************************
@@ -76,11 +107,12 @@ void PWM_TEST_Server(void)
 {
 	if(PWM_OUT_TIMServer(PWM_Tim)	==1)
 	{
+		systime	=	0;
 	}
 	else
 	{
 		systime++;
-		if(systime>=100)
+		if(systime>=1000)
 		{
 			systime	=	0;
 			PWM_OUT_TIMSet(PWM_Tim,10);		//设置计数值

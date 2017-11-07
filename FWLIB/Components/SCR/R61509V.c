@@ -592,9 +592,9 @@ void R61509V_PowerOn( void )
 **************************************************************************************************/
 void R61509V_DrawPixelEx( u16 x, u16 y, u16 color )
 {
-	t_Point p;
-	p.x	= x;
-	p.y	= y;
+//	t_Point p;
+//	p.x	= x;
+//	p.y	= y;
 //	R61509V_DrawDot(p,color);		//»­µã
 }
 
@@ -1785,7 +1785,7 @@ void R61509V_Fill(
 {          
 	unsigned int i;
 	unsigned int j;	
-	u16 x1=0,y1=0,x2=0,y2=0;
+//	u16 x1=0,y1=0,x2=0,y2=0;
 
 //	switch(Sreen_Rotate)
 //	{
