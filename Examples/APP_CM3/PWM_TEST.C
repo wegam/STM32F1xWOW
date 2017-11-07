@@ -65,7 +65,7 @@ void PWM_TEST_Server(void)
 		if(systime>=1000)
 		{
 			systime	=	0;
-			PWM_OUT_TIMSet(&PWM_Tim,50);		//设置计数值
+			PWM_OUT_TIMSet(&PWM_Tim,10);		//设置计数值
 		}
 	}
 	//========================

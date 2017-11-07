@@ -778,7 +778,7 @@ void SSD1963_ShowString(
 )						//¸ßÍ¨×Ö¿â²âÊÔ³ÌÐò
 {
 	u8 temp;
-	u8 mode=0;
+//	u8 mode=0;
 	u8 i,j;
 	u16 colortemp=SSD1963_POINT_COLOR;
 	if(font==12)
