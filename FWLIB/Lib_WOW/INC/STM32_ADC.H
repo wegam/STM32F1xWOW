@@ -22,7 +22,13 @@
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_dma.h"
 
-void ADC1_DiscConfiguration(u32 *ADC_DATA,u32 DMA_BufferSize,u8 ADC_Channel_x,u8 ADC_NbrOfChannel, u8 Rank, u8 ADC_SampleTime);				//ADC1规则通道组配置
+
+void ADC1_DiscConfigurationNR(u32 *ADC_DATA,u32 DMA_BufferSize,u8 ADC_Channel_x,u8 ADC_NbrOfChannel, u8 Rank, u8 ADC_SampleTime);				//ADC1规则通道组配置--普通方式
+void ADC1_DiscConfigurationDMA(u32 *ADC_DATA,u32 DMA_BufferSize,u8 ADC_Channel_x,u8 ADC_NbrOfChannel, u8 Rank, u8 ADC_SampleTime);			//ADC1规则通道组配置--DMA方式
+
+
+void ADC1_DiscConfiguration(u32 *ADC_DATA,u32 DMA_BufferSize,u8 ADC_Channel_x,u8 ADC_NbrOfChannel, u8 Rank, u8 ADC_SampleTime);					//ADC1规则通道组配置
+
 void ADC_TempSensorConfiguration(u32 *ADC_DATA);								//STM32内部温度传感器配置
 float Get_ADC_Temperature(u32 ADC_DATA);												//获取内部温度传感器温度
 void ADC_PinConf(u8 ADC_Channel_x);															//根据所选的通道，打开相应GPIO时钟，配置相应GPIO为模拟输入，依据STM32F107VC引脚分布

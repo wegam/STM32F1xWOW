@@ -14,6 +14,7 @@
 #include "STM32F10x_BitBand.H"
 
 #define RxBufferSize	16
+#define Ncycle	0
 
 PWM_TimDef 	PWM_Tim;
 volatile GPIO_TypeDef* 	GPIOx;			//x=A/B/C/D/E/F/G
@@ -35,12 +36,12 @@ void PWM_TEST_Configuration(void)
 	GPIO_DeInitAll();													//将所有的GPIO关闭----V20170605
 	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 
-	PWM_Tim.PWM_BasicData.GPIOx	=	GPIOA;
+	PWM_Tim.PWM_BasicData.GPIOx	=	GPIOB;
 	PWM_Tim.PWM_BasicData.GPIO_Pin_n	=	GPIO_Pin_0;
 	
 	PWM_Tim.PWM_BasicData.TIMx	=	TIM1;
-	PWM_Tim.PWM_BasicData.PWM_Frequency	=	2;
-	PWM_Tim.PWM_BasicData.PWM_Ratio	=	90;
+	PWM_Tim.PWM_BasicData.PWM_Frequency	=	100000;
+	PWM_Tim.PWM_BasicData.PWM_Ratio	=	50;
 	
 	PWM_OUT_TIMConf(&PWM_Tim);			//PWM输出配置
 	
@@ -62,10 +63,10 @@ void PWM_TEST_Server(void)
 	else
 	{
 		systime++;
-		if(systime>=1000)
+		if(systime>=2000)
 		{
 			systime	=	0;
-			PWM_OUT_TIMSet(&PWM_Tim,10);		//设置计数值
+			PWM_OUT_TIMSet(&PWM_Tim,2500*Ncycle);		//设置计数值
 		}
 	}
 	//========================

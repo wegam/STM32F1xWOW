@@ -300,7 +300,7 @@ void RCC_PCLK1Config(u32 RCC_HCLK);											//设置低速AHB时钟（PCLK1）
 void RCC_PCLK2Config(u32 RCC_HCLK);											//设置高速AHB时钟（PCLK2）
 void RCC_ITConfig(u8 RCC_IT, FunctionalState NewState);	//使能或者失能指定的RCC中断
 void RCC_USBCLKConfig(u32 RCC_USBCLKSource);						//设置USB时钟（USBCLK）
-void RCC_ADCCLKConfig(u32 RCC_PCLK2);										//设置ADC分频时钟（ADCCLK）
+void RCC_ADCCLKConfig(u32 RCC_PCLK2);										//设置ADC时钟（ADCCLK）
 void RCC_LSEConfig(u8 RCC_LSE);													//设置外部低速晶振（LSE）
 void RCC_LSICmd(FunctionalState NewState);							//使能或者失能内部低速晶振（LSI）
 void RCC_RTCCLKConfig(u32 RCC_RTCCLKSource);						//设置RTC时钟（RTCCLK）
