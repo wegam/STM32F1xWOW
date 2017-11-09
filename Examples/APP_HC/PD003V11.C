@@ -84,6 +84,11 @@ void PD003V11_Configuration(void)
 	
 	RS485_Bus_TXEN;		//rs485总线接收使能
 //	USART_DMASend(USART3,(u32*)txBuffer_PD,BufferSize);			//自定义printf串口DMA发送程序
+	
+	GPIO_Configuration_OPP50	(GPIOB,GPIO_Pin_12);			//将GPIO相应管脚配置为APP(复用推挽)输出模式，最大速度50MHz----V20170605
+	GPIO_Configuration_OPP50	(GPIOB,GPIO_Pin_13);			//将GPIO相应管脚配置为APP(复用推挽)输出模式，最大速度50MHz----V20170605
+	GPIO_Configuration_OPP50	(GPIOB,GPIO_Pin_14);			//将GPIO相应管脚配置为APP(复用推挽)输出模式，最大速度50MHz----V20170605
+	GPIO_Configuration_OPP50	(GPIOB,GPIO_Pin_15);			//将GPIO相应管脚配置为APP(复用推挽)输出模式，最大速度50MHz----V20170605
 
 }
 /*******************************************************************************
@@ -98,8 +103,43 @@ void PD003V11_Server(void)
 	u16 len	=	0;
 	IWDG_Feed();								//独立看门狗喂狗
 	DelayTime++;
-	if(DelayTime>=1000)
+	if(DelayTime>=2000)
+	{
 		DelayTime	=	0;
+		if(testFlg!=0)
+		{
+			testFlg=0;
+		}
+		else
+		{
+			testFlg	=	1;
+		}
+	}
+	
+	if(DelayTime	<=	100)
+	{
+		if(testFlg	!=0)
+		{
+			PB12	=	1;
+			PB13	=	0;
+			PB14	=	1;
+			PB15	=	0;
+		}
+		else
+		{
+			PB12	=	0;
+			PB13	=	1;
+			PB14	=	0;
+			PB15	=	1;
+		}
+	}
+	else
+	{
+		PB12	=	0;
+		PB13	=	0;
+		PB14	=	0;
+		PB15	=	0;
+	}
 //	if(DelayTime	==	0)
 //	{
 //		RS485_DMAPrintf(&RS4852,"测试o数据123\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数

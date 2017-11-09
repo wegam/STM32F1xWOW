@@ -86,8 +86,8 @@ void DAC_GPIO_Configuration(void)
 	//1)**********配置DAC管脚	
 	GPIO_InitStructure.GPIO_Pin =GPIO_Pin_4|GPIO_Pin_5;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;								//模拟输入
-	GPIO_Init(GPIOA,&GPIO_InitStructure);												//配置引脚
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;								//复用推挽
+	GPIO_Init(GPIOA,&GPIO_InitStructure);													//配置引脚
 	
 }
 /*******************************************************************************
@@ -142,7 +142,7 @@ void DAC_MODE_Configuration(void)
 	DAC_Cmd(DAC_Channel_2,ENABLE);
 	//5)**********向输出寄存器写数据，数据可根据上边公式得到
 	//Vout = VREF×DOR/4095 = 参考电压×DAC数据寄存器值/4095
-	DAC_SetChannel1Data(DAC_Align_12b_R,4095);
+	DAC_SetChannel1Data(DAC_Align_12b_R,2095);
 	DAC_SetChannel2Data(DAC_Align_12b_R,4095);
 	//4)**********触发输出
 	DAC_SoftwareTriggerCmd(DAC_Channel_1,ENABLE);
@@ -183,7 +183,7 @@ void DAC_DMA_Configuration(u32 *MemoryAddr)
 
 	/* DAC channel1 Configuration */
 	DAC_InitStructure.DAC_Trigger = DAC_Trigger_T6_TRGO;
-	DAC_InitStructure.DAC_WaveGeneration = DAC_WaveGeneration_None;
+	DAC_InitStructure.DAC_WaveGeneration = DAC_WaveGeneration_Noise;
 	DAC_InitStructure.DAC_LFSRUnmask_TriangleAmplitude = DAC_TriangleAmplitude_4095;
 	DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Disable;
 	DAC_Init(DAC_Channel_2, &DAC_InitStructure);

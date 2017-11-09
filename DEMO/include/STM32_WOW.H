@@ -44,6 +44,11 @@
 #ifdef	ADC_TEST
 	#include "ADC_TEST.H"
 #endif
+
+//***********************************DAC_TEST***********************************//
+#ifdef	DAC_TEST
+	#include "DAC_TEST.H"
+#endif
 //***********************************ADC_TEST***********************************//
 #ifdef ADC_Temperature
 	#include "ADC_Temperature.H"

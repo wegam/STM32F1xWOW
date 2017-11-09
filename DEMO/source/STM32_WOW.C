@@ -68,6 +68,10 @@ void WOW_Configuration(void)
 #ifdef ADC_TEST	
 	ADC_TEST_Configuration();
 #endif
+//***********************************DAC_TEST***********************************//
+#ifdef DAC_TEST	
+	DAC_TEST_Configuration();
+#endif
 	
 //***********************************ADC_TEST***********************************//
 #ifdef ADC_Temperature	
@@ -378,6 +382,11 @@ void WOW_Server(void)
 #ifdef ADC_TEST	
 	ADC_TEST_Server();
 #endif
+//***********************************DAC_TEST***********************************//
+#ifdef DAC_TEST	
+	DAC_TEST_Server();
+#endif
+
 //***********************************ADC_TEST***********************************//
 #ifdef ADC_Temperature	
 	ADC_Temperature_Server();
