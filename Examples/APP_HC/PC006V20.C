@@ -18,8 +18,6 @@
 #include "PC006V20.H"
 
 #include "STM32_GPIO.H"
-#include "CD4511.H"
-#include "CD4511BM_TEST.H"
 #include "STM32_PWM.H"
 #include "STM32_SYS.H"
 #include "STM32_SYSTICK.H"
@@ -32,9 +30,6 @@
 u16 Time=0;
 u16 data=0;
 u8 Flag=0;
-
-
-CD4511_Pindef CD4511_Pin;
 
 
 
