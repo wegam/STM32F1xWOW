@@ -2,7 +2,7 @@
 #include "STM32_GPIO.H"
 //#include "STM32F10x_BitBand.H"
 
-#define	TM1618_DelayTime	1
+#define	TM1618_DelayTime	10
 
 unsigned char TM1618_Daddr[]={0XC0,0XC2,0XC4,0XC6,0XC8,0XCA,0XCC,0XCE};			//œ‘ æµÿ÷∑
 unsigned char TM1618_SegCode[]={0x3F,0X06,0X5B,0X4F,0x66,0X6D,0X7D,0x07,0x7f,0x6f,0x00,0xff};

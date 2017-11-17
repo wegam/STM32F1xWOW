@@ -39,12 +39,17 @@ u8 Flag=0;
 void PC006V21_Configuration(void)
 {
 	SYS_Configuration();											//系统配置 STM32_SYS.H	
-	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);			//SYS-LED 1HZ 50%
+	PWM_OUT(TIM1,PWM_OUTChannel1,1,500);			//SYS-LED 1HZ 50%
 	SysTick_Configuration(1000);							//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	//位
 	GPIO_Configuration_OPP50	(GPIOA,		GPIO_Pin_6);			//CCW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	GPIO_Configuration_OPP50	(GPIOA,		GPIO_Pin_7);			//CW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
+	
+	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_12);			//CW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
+	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_13);			//CW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
+	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_14);			//CW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
+	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_15);			//CW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	
 }
 
@@ -82,6 +87,14 @@ void PC006V21_Server(void)
 	else
 	{
 		SYSTime	=	0;			//清零计数
+	}
+	
+	if(SYSTime	%500	==0)
+	{
+		GPIO_Toggle	(GPIOB,		GPIO_Pin_12);		//将GPIO相应管脚输出翻转----V20170605
+		GPIO_Toggle	(GPIOB,		GPIO_Pin_13);		//将GPIO相应管脚输出翻转----V20170605
+		GPIO_Toggle	(GPIOB,		GPIO_Pin_14);		//将GPIO相应管脚输出翻转----V20170605
+		GPIO_Toggle	(GPIOB,		GPIO_Pin_15);		//将GPIO相应管脚输出翻转----V20170605
 	}
 }
 

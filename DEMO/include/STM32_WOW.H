@@ -103,6 +103,10 @@
 	#include "TM1618_TEST.H"
 #endif
 
+//***********************************TM1638_TEST***********************************//
+#ifdef TM1638_TEST
+	#include "TM1638_TEST.H"
+#endif
 //***********************************VirtualCom***********************************//
 #ifdef VirtualCom
 	#include "VirtualCom.H"
