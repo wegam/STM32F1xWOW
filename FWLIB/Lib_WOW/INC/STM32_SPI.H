@@ -70,6 +70,8 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx);					//普通SPI接口配置
 
 u8	STM32_SPI_ReadWriteByte(SPI_TypeDef* SPIx,unsigned char byte);
 
+u8	STM32_SPI_ReadWriteData(SPI_TypeDef* SPIx,unsigned char data);
+
 void STM32_SPI_SendBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *SendBuffer);
 void STM32_SPI_ReceiveBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *RevBuffer);
 u8	STM32_SPI_ReadWriteBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *SendBuffer,u8 *RevBuffer);		//连接读数据

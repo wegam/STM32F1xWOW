@@ -69,6 +69,11 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
 		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 		GPIO_Init(GPIOA, &GPIO_InitStructure);		
 	}
 	else if(SPIx==SPI2)
@@ -81,6 +86,11 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;  //复用推挽输出
+		GPIO_Init(GPIOB, &GPIO_InitStructure);
+		
+		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;  //复用推挽输出
 		GPIO_Init(GPIOB, &GPIO_InitStructure);
 	}
 	else if(SPIx==SPI3)
@@ -98,7 +108,7 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 		//2.2)**********SPI_NSS配置		
 		GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_15;
 		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-		GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;  		//复用推挽输出
+		GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_Out_PP;  		//复用推挽输出
 		GPIO_Init(GPIOA, &GPIO_InitStructure);
 	}
 	//3)**********SPI配置选项
@@ -108,7 +118,7 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;																//时钟极性     	（低或高）
 	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;															//时钟相位     	（第一个或第二个跳变沿）
 	SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;																	//片选方式     	（硬件或软件方式）--硬件：自动控制NSS脚
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128;			//波特率预分频 	（从2---256分频）
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;			//波特率预分频 	（从2---256分频）
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;												//最先发送的位 	（最低位，还是最高位在先）
 	SPI_InitStructure.SPI_CRCPolynomial = 7;																	//设置crc多项式	（数字）如7
 	SPI_Init(SPIx,&SPI_InitStructure);
@@ -116,7 +126,7 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 	//3)**********使能SPIx_NESS为主输出模式	//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
 	SPI_SSOutputCmd(SPIx, ENABLE);								//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
 	//4)**********使能SPI
-	SPI_Cmd(SPIx, DISABLE);				//使能SPI
+	SPI_Cmd(SPIx, ENABLE);				//使能SPI
 }
 /*******************************************************************************
 *函数名			:	function
@@ -144,6 +154,34 @@ u8	STM32_SPI_ReadWriteByte(SPI_TypeDef* SPIx,unsigned char byte)
 *输入				: 
 *返回值			:	无
 *******************************************************************************/
+u8	STM32_SPI_ReadWriteData(SPI_TypeDef* SPIx,unsigned char data)
+{
+	unsigned char ReadData	=	0;
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_ResetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_15);break;
+	}
+	SPI_Cmd(SPIx, ENABLE);
+	
+	ReadData	=	STM32_SPI_ReadWriteByte(SPIx,data);
+	
+	SPI_Cmd(SPIx, DISABLE);
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_SetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_15);break;
+	}
+	return	ReadData;
+}
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	无
+*******************************************************************************/
 void STM32_SPI_SendBuffer(
 													SPI_TypeDef* SPIx,
 													u32 BufferSize,
@@ -151,13 +189,25 @@ void STM32_SPI_SendBuffer(
 )					//发送数据
 {
 	u32 bufferNum=0;
-
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_ResetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_15);break;
+	}
 	SPI_Cmd(SPIx, ENABLE);
 	for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
 	{
 		STM32_SPI_ReadWriteByte(SPIx,SendBuffer[bufferNum]);
 	}
-	SPI_Cmd(SPIx, DISABLE);	
+	SPI_Cmd(SPIx, DISABLE);
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_SetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_15);break;
+	}
+	
 }
 /*******************************************************************************
 *函数名			:	function
@@ -172,13 +222,24 @@ void STM32_SPI_ReceiveBuffer(
 )					//发送数据
 {
 	u32 bufferNum=0;
-	
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_ResetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_15);break;
+	}
 	SPI_Cmd(SPIx, ENABLE);
 	for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
 	{
 		RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPIx,0xFF);
 	}
 	SPI_Cmd(SPIx, DISABLE);	
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_SetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_15);break;
+	}
 }
 /*******************************************************************************
 *函数名			:	function
@@ -189,13 +250,24 @@ void STM32_SPI_ReceiveBuffer(
 u8	STM32_SPI_ReadWriteBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *SendBuffer,u8 *RevBuffer)		//连接读数据
 {
 	u32 bufferNum=0;
-	
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_ResetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_ResetBits(GPIOA,GPIO_Pin_15);break;
+	}
 	SPI_Cmd(SPIx, ENABLE);
 	for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
 	{
 		RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPIx,RevBuffer[bufferNum]);
 	}
 	SPI_Cmd(SPIx, DISABLE);
+	switch(*(u32*)&SPIx)
+	{
+		case	SPI1_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_4);break;
+		case	SPI2_BASE:GPIO_SetBits(GPIOB,GPIO_Pin_12);break;
+		case	SPI3_BASE:GPIO_SetBits(GPIOA,GPIO_Pin_15);break;
+	}
 	
 	return 0;
 }

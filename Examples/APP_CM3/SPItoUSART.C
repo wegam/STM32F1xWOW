@@ -14,7 +14,9 @@
 
 
 u8 ch[120]="USART_BASIC_Configuration(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPreemptionPriority,u8 NVIC_SubPriority)\n";
-
+u8 ch2[17]={0xC0,0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
+u8 ch3[17]={0xC0,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+u8 ch4[17]={0xC0};
 
 u32	SYSTIME	=	0;
 
@@ -34,7 +36,7 @@ void SPItoUSART_Configuration(void)
 	
 	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
-	PWM_OUT(TIM2,PWM_OUTChannel1,1,20);
+	PWM_OUT(TIM2,PWM_OUTChannel1,100,20);
 
 //	GPIO_Configuration(GPIOB,GPIO_Pin_4,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);			//GPIO配置
 	
@@ -49,6 +51,12 @@ void SPItoUSART_Configuration(void)
 	
 
 //	PWM_Configuration(TIM2,7200,200,20);
+	STM32_SPI_ReadWriteData(SPI1,0x8F);
+	STM32_SPI_ReadWriteData(SPI1,0x40);
+//	STM32_SPI_ReadWriteData(SPI1,0xC0);
+	
+	ch3[0]=0xC0;
+	ch4[0]=0xC0;
 
 }
 /*******************************************************************************
@@ -66,9 +74,22 @@ void SPItoUSART_Server(void)
 		SYSTIME	=	0;
 	}
 	
-	if(SYSTIME	==	0)
+//	if(SYSTIME	==	0)
+//	{
+//		STM32_SPI_SendBuffer(SPI1,120,ch);
+//	}
+	
+	if(SYSTIME%3	==	0)
 	{
-		STM32_SPI_SendBuffer(SPI1,120,ch);
+		STM32_SPI_SendBuffer(SPI1,17,ch2);
+	}
+	else if(SYSTIME%3	==	1)
+	{
+		STM32_SPI_SendBuffer(SPI1,17,ch3);
+	}
+	else if(SYSTIME%3	==	2)
+	{
+		STM32_SPI_SendBuffer(SPI1,17,ch4);
 	}
 
 }

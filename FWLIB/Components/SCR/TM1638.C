@@ -24,6 +24,23 @@
 #define	STB_Port	GPIOD
 #define	STB_Pin		GPIO_Pin_2
 
+
+////TM1638模块引脚定义
+//#define	DIO	PA7
+//#define	CLK	PA5
+//#define	STB	PA4
+
+//#define	DIO_Port	GPIOA
+//#define	DIO_Pin		GPIO_Pin_7
+
+//#define	CLK_Port	GPIOA
+//#define	CLK_Pin		GPIO_Pin_5
+
+//#define	STB_Port	GPIOA
+//#define	STB_Pin		GPIO_Pin_4
+
+
+
 //共阴数码管显示代码
 unsigned char code[]={0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
 
