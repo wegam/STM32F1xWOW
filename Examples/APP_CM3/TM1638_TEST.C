@@ -3,7 +3,6 @@
 #include "TM1638_TEST.H"
 
 #include "TM1638.H"
-#include "TM16382.H"
 
 #include "STM32_PWM.H"
 #include "STM32_GPIO.H"
@@ -12,56 +11,13 @@
 #include "STM32_SYSTICK.H"
 #include "STM32F10x_BitBand.H"
 
-//#include "stdio.h"
-//#include "stm32f10x_type.h"
-//#include "STM32_SPI.H"
-//#include "STM32_PWM.H"
-//#include "STM32_ADC.H"
-//#include "STM32_USART.H"
-//#include "STM32F10x_BitBand.H"
-//#include "STM32_SYSTICK.H"
-
-//#include "STM32_SPI.H"
-
-/******************************MX25L4006E命令定义*******************************/
-
-
-//sbit stb=P3^4;		//片选，在上升或下降沿初始化串行接口，随后等待接收指令。
-//									//STB为低后的第一个字节作为指令，当处理指令时，当前其它处
-//									//理被终止。当STB 为高时，CLK 被忽略
-////_________________________________________________________________________________________________
-//sbit clk=P3^0;		//时钟上升沿输入串行数据。
-////__________________________________________________________________________________________________
-//sbit dio=P3^1;	  	//在时钟上升沿输入串行数据，从低位开始。
-
-//#define clk	PC8
-//#define	dio	PC9
-//#define	stb	PC10
-
-//#define	SEGEN		PC12
-//#define SEG1EN	PC10
-//#define	SEG2EN	PC11
-
-#define	delayt	5
-
-unsigned char seg4[]={0x3F,0X06,0X5B,0X4F,0x66,0X6D,0X7D,0x07,0x7f,0x6f,0x00,0xff};
-unsigned char addr[]={0XC0,0XC2,0XC4,0XC6,0XC8,0XCA,0XCC,0XCE};
-unsigned char s[8]={0};
-unsigned char d[8]={0};
-unsigned char flag=0;
-
-unsigned char num[8];		//各个数码管显示的值
-
-TM1638_Pindef	TM1638_1,TM1638_2;
-
-u32	dspdata=0;
 u16 us=0;
 u16	mm=0;
 u8	ss=0;
 u8	hh=0;
 
 u32	SYSTIME	=	0;
-unsigned char i;
+
 /*******************************************************************************
 * 函数名		:	
 * 功能描述	:	 
@@ -75,8 +31,6 @@ void TM1638_Configuration(void)
 	
 	GPIO_DeInitAll();							//将所有的GPIO关闭----V20170605
 	
-	TM1638_PinSet();
-	
 	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	IWDG_Configuration(1000);			//独立看门狗配置---参数单位ms	
@@ -84,12 +38,8 @@ void TM1638_Configuration(void)
 	PWM_OUT(TIM2,PWM_OUTChannel1,5000,20);						//PWM设定-20161127版本
 	
 	init_TM1638();
-	
-	for(i=0;i<8;i++)
-	Write_DATA(i<<1,code[0]);	               //初始化寄存器
-	
-//	TM1638_WriteByte(&TM1638_1,5);
-	
+
+	Write_COM(0x40);					//地址自增命令
 
 }
 /*******************************************************************************
@@ -106,15 +56,77 @@ void TM1638_Server(void)
 	SYSTIME++;
 	if(SYSTIME>=99999999)
 		SYSTIME	=	0;
-	i=0;
-	Write_DATA(i++<<1,code[SYSTIME/10000000]);
-	Write_DATA(i++<<1,code[SYSTIME%10000000/100000]);
-	Write_DATA(i++<<1,code[SYSTIME%1000000/100000]);
-	Write_DATA(i++<<1,code[SYSTIME%100000/10000]);
-	Write_DATA(i++<<1,code[SYSTIME%10000/1000]);
-	Write_DATA(i++<<1,code[SYSTIME%1000/100]);
-	Write_DATA(i++<<1,code[SYSTIME%100/10]);
-	Write_DATA(i++<<1,code[SYSTIME%10]);
+	Write_DataNum(0,SYSTIME);
+//	if(SYSTIME	==	0)
+//	{
+//		mm++;
+//		if(mm>15)
+//			mm=0;
+//		Write_COM(0x44);			//固定地址
+//		STB=0;
+//		TM1638_Write(0xCE);		//写地址
+//		Write_DATA(i++<<1,code[mm]);
+//		STB=1;
+//	}
+//	if(SYSTIME	==	99999)
+//	{
+//		Write_COM(0x8c);       //亮度 (0x88-0x8f)8级亮度可调
+//		Write_COM(0x40);       //采用地址自动加1
+//		STB=0;		           //
+//		TM1638_Write(0xC0);    //设置起始地址
+//		i	=	0;
+//		Write_DATA(0,code[SYSTIME/10000000]);
+//		Write_DATA(2,code[SYSTIME%10000000/100000]);
+//		Write_DATA(4,code[SYSTIME%1000000/100000]);
+//		Write_DATA(6,code[SYSTIME%100000/10000]);
+//		Write_DATA(8,code[SYSTIME%10000/1000]);
+//		Write_DATA(10,code[SYSTIME%1000/100]);
+//		Write_DATA(12,code[SYSTIME%100/10]);
+//		Write_DATA(14,code[SYSTIME%10]);
+//		STB=1;
+//	}
+
+//	if(SYSTIME%1000	==	0)
+//	{
+//		mm++;
+//		if(mm>15)
+//			mm=0;
+//		Write_DataAI(1,code[mm]);
+//	}
+//	if(SYSTIME%10	==	0)
+//	{
+//		mm++;
+//		if(mm>15)
+//			mm=0;
+//		Write_DataFX(0,code[mm]);
+//		Write_DataFX(1,code[mm]);
+//		Write_DataFX(2,code[mm]);
+//		Write_DataFX(3,code[mm]);
+//		Write_DataFX(4,code[mm]);
+//		Write_DataFX(5,code[mm]);
+//		Write_DataFX(6,code[mm]);
+//		Write_DataFX(7,code[mm]);
+//	}
+	
+//	if(SYSTIME%100	==	0)
+//	{
+//		mm++;
+//		if(mm>15)
+//			mm=0;
+//		Write_DataNum(0,code[mm]);
+//	}
+		
+	
+//	i	=	0;
+//	Write_DATA(i++<<1,code[SYSTIME/10000000]);
+//	Write_DATA(i++<<1,code[SYSTIME%10000000/100000]);
+//	Write_DATA(i++<<1,code[SYSTIME%1000000/100000]);
+//	Write_DATA(i++<<1,code[SYSTIME%100000/10000]);
+//	Write_DATA(i++<<1,code[SYSTIME%10000/1000]);
+//	Write_DATA(i++<<1,code[SYSTIME%1000/100]);
+//	Write_DATA(i++<<1,code[SYSTIME%100/10]);
+//	Write_DATA(i++<<1,code[SYSTIME%10]);
+
 //	Write_DATA(i<1,code[SYSTIME/10000]);
 //	for(i	=	0;i<5;i++)
 //	{
@@ -136,65 +148,6 @@ void TM1638_Server(void)
 //	init_TM1638();
 //	TM1638_DIS();
 }
-/*******************************************************************************
-*函数名			:	function
-*功能描述		:	函数功能说明
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-void TM1638_PinSet(void)
-{
-	TM1638_1.TM1638_CLK_PORT=GPIOC;
-	TM1638_1.TM1638_CLK_Pin=GPIO_Pin_11;
-	
-	TM1638_1.TM1638_DIO_PORT=GPIOC;
-	TM1638_1.TM1638_DIO_Pin=GPIO_Pin_12;	
-	
-	TM1638_1.TM1638_STB_PORT=GPIOD;
-	TM1638_1.TM1638_STB_Pin=GPIO_Pin_2;
-	
-	
-	TM1638_PinConf(&TM1638_1);
-
-	
-//	GPIO_Configuration_OPP50	(GPIOC,	GPIO_Pin_12);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	
-//	PC12=1;
-}
-
-/*******************************************************************************
-*函数名			:	function
-*功能描述		:	函数功能说明
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-void TM1638_DIS(void)
-{
-	if(us++>=1000)
-	{
-		us=0;
-		mm++;
-		if(mm>=60)
-		{
-			mm=0;
-			ss++;
-		}
-		if(ss>=60)
-		{
-			ss=0;
-			hh++;
-		}
-		if(hh>=24)
-		{
-			hh=0;
-		}
-		
-		dspdata=(u32)mm+(u32)ss*100+(u32)((ss%10)*10+(ss/10))*10000+(u32)((mm%10)*10+(mm/10))*1000000;
-		TM1638_WriteData(&TM1638_1,dspdata/10000);
-	}
-}
-
-
 #endif
 
 

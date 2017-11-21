@@ -52,247 +52,54 @@ void SPI_Server(void)
 *输入				: 
 *返回值			:	无
 *******************************************************************************/
-void STM32_SPI_ConfigurationNR(SPI_Conf_TypeDef *SPI_Conf)
+void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 {
 		//1)**********定义相关结构体
 	SPI_InitTypeDef  SPI_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	//2)**********相关GPIO配置
-	if(SPI_Conf->SPIx==SPI1)
+	if(SPIx==SPI1)
 	{
 		//PA4-NSS;PA5-SCK;PA6-MISO;PA7-MOSI;
 		//2.1)**********打开SPI时钟	
 		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1 ,ENABLE);			//开启SPI时钟	
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO|RCC_APB2Periph_GPIOA, ENABLE);	
-		
-		if((SPI_Conf->SPI_CS_PORT==GPIOA)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_4))			//如果SPI_NSS为SPI_NSS_Soft（软件控制方式）
-		{
-//			SPI_SSOutputCmd(Pinfo->sSPIx, ENABLE);			//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-			SPI1_CsFlg=1;		//如果使用纯硬件SPI1（含CS脚），SPI1_CsFlg=1，否则SPI1_CsFlg=0；
-			GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
-			GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(GPIOA, &GPIO_InitStructure);
-		}
-		else
-		{
-//			SPI_SSOutputCmd(Pinfo->sSPIx, DISABLE);			//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-			SPI1_CsFlg=0;		//如果使用纯硬件SPI1（含CS脚），SPI1_CsFlg=1，否则SPI1_CsFlg=0；
-			//开CS-GPIO时钟
-			if(SPI_Conf->SPI_CS_PORT==GPIOA)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_13)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_14)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))
-				{
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO, ENABLE);
-					//GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable,ENABLE);			//关闭SW功能
-					GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);		//关闭JTAG,SW功能开启
-				}
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOB)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_3)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_4))
-				{
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_AFIO, ENABLE);
-					GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);				//关闭JTAG
-				}
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOC)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_14)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC |RCC_APB2Periph_AFIO, ENABLE);
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOD)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOE)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOE, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOF)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOF, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOG)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOG, ENABLE);
-			}
-			//SCK,MISO,MOSI配置
-			GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(GPIOA, &GPIO_InitStructure);
-			//CS配置
-			GPIO_InitStructure.GPIO_Pin 	= SPI_Conf->SPI_CS_PIN;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_Out_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(SPI_Conf->SPI_CS_PORT, &GPIO_InitStructure);
-		}
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO|RCC_APB2Periph_GPIOA, ENABLE);			
+
+		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_Init(GPIOA, &GPIO_InitStructure);		
 	}
-	else if(SPI_Conf->SPIx==SPI2)
+	else if(SPIx==SPI2)
 	{
 		//PB12-NSS;PB13-SCK;PB14-MISO;PB15-MOSI;
 		//2.2)**********打开SPI时钟
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2 ,ENABLE);				//开启SPI时钟			
 		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO|RCC_APB2Periph_GPIOB, ENABLE);
-		
-		if((SPI_Conf->SPI_CS_PORT==GPIOB)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_12))			//如果SPI_NSS为SPI_NSS_Soft（软件控制方式）
-		{
-			SPI2_CsFlg=1;		//如果使用纯硬件SPI2（含CS脚），SPI2_CsFlg=1，否则SPI2_CsFlg=0；
-			SPI_SSOutputCmd(SPI_Conf->SPIx, ENABLE);			//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-			GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;  //复用推挽输出
-			GPIO_Init(GPIOB, &GPIO_InitStructure);	
-		}
-		else
-		{
 			
-//			SPI_SSOutputCmd(Pinfo->sSPIx, DISABLE);			//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-			SPI2_CsFlg=0;		//如果使用纯硬件SPI2（含CS脚），SPI2_CsFlg=1，否则SPI2_CsFlg=0；
-			//开CS-GPIO时钟
-			if(SPI_Conf->SPI_CS_PORT==GPIOA)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_13)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_14)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))
-				{
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO, ENABLE);
-					//GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable,ENABLE);			//关闭SW功能
-					GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);		//关闭JTAG,SW功能开启
-				}
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOB)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_3)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_4))
-				{
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_AFIO, ENABLE);
-					GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);				//关闭JTAG
-				}
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOC)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_14)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC |RCC_APB2Periph_AFIO, ENABLE);
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOD)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOE)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOE, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOF)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOF, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOG)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOG, ENABLE);
-			}
-			//SCK,MISO,MOSI配置
-			GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(GPIOB, &GPIO_InitStructure);
-			//CS配置
-			GPIO_InitStructure.GPIO_Pin 	= SPI_Conf->SPI_CS_PIN;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_Out_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(SPI_Conf->SPI_CS_PORT, &GPIO_InitStructure);
-		}
+		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;  //复用推挽输出
+		GPIO_Init(GPIOB, &GPIO_InitStructure);
 	}
-	else if(SPI_Conf->SPIx==SPI3)
+	else if(SPIx==SPI3)
 	{
 		//PA15-NSS;PB3-SCK;PB4-MISO;PB5-MOSI;
 		//2.2)**********打开SPI时钟
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3 ,ENABLE);			
 		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO|RCC_APB2Periph_GPIOA|RCC_APB2Periph_GPIOB, ENABLE);
 		
-		if((SPI_Conf->SPI_CS_PORT==GPIOA)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))			//如果SPI_NSS为SPI_NSS_Soft（软件控制方式）
-		{
-			SPI3_CsFlg=1;		//如果使用纯硬件SPI3（含CS脚），SPI3_CsFlg=1，否则SPI3_CsFlg=0；
-			
-			GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;  		//复用推挽输出
-			GPIO_Init(GPIOB, &GPIO_InitStructure);
-			
-			//2.2)**********SPI_NSS配置		
-			GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_15;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;  		//复用推挽输出
-			GPIO_Init(GPIOA, &GPIO_InitStructure);
-		}
-		else																										//如果SPI_NSS为SPI_NSS_Soft（软件控制方式）
-		{
-			SPI3_CsFlg=0;		//如果使用纯硬件SPI3（含CS脚），UseSPI3_flg=1，否则UseSPI3_flg=0；
-			//开CS-GPIO时钟
-			if(SPI_Conf->SPI_CS_PORT==GPIOA)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_13)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_14)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))
-				{
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO, ENABLE);
-					//GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable,ENABLE);			//关闭SW功能
-					GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);		//关闭JTAG,SW功能开启
-				}
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOB)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_3)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_4))
-				{
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_AFIO, ENABLE);
-					GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);				//关闭JTAG
-				}
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOC)
-			{
-				if((SPI_Conf->SPI_CS_PIN==GPIO_Pin_14)||(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC |RCC_APB2Periph_AFIO, ENABLE);
-				else
-					RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOD)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOE)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOE, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOF)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOF, ENABLE);
-			}
-			else if(SPI_Conf->SPI_CS_PORT==GPIOG)
-			{
-				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOG, ENABLE);
-			}
-			//SCK,MISO,MOSI配置
-			GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(GPIOB, &GPIO_InitStructure);
-			//CS配置
-			GPIO_InitStructure.GPIO_Pin 	= SPI_Conf->SPI_CS_PIN;
-			GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_Out_PP;
-			GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-			GPIO_Init(SPI_Conf->SPI_CS_PORT, &GPIO_InitStructure);
-		}			
+		GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;  		//复用推挽输出
+		GPIO_Init(GPIOB, &GPIO_InitStructure);
+		
+		//2.2)**********SPI_NSS配置		
+		GPIO_InitStructure.GPIO_Pin 	= GPIO_Pin_15;
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+		GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_AF_PP;  		//复用推挽输出
+		GPIO_Init(GPIOA, &GPIO_InitStructure);
 	}
 	//3)**********SPI配置选项
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;				//设置方向				（2线全双工、2线只接收、一线发送、一线接收）
@@ -300,73 +107,16 @@ void STM32_SPI_ConfigurationNR(SPI_Conf_TypeDef *SPI_Conf)
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;													//宽度         	（8或16位）
 	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;																//时钟极性     	（低或高）
 	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;															//时钟相位     	（第一个或第二个跳变沿）
-	if(SPI1_CsFlg==1||SPI2_CsFlg==1||SPI3_CsFlg==1)														//如果使用纯硬件SPI1（含CS脚），UseSPI1_flg=1，否则UseSPI1_flg=0；
-	{
-		SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;																//片选方式     	（硬件或软件方式）
-	}
-	else
-	{
-		SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;															//片选方式     	（硬件或软件方式）
-	}	
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_Conf->SPI_BaudRatePrescaler_x;				//波特率预分频 	（从2---256分频）
+	SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;																	//片选方式     	（硬件或软件方式）--硬件：自动控制NSS脚
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128;			//波特率预分频 	（从2---256分频）
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;												//最先发送的位 	（最低位，还是最高位在先）
 	SPI_InitStructure.SPI_CRCPolynomial = 7;																	//设置crc多项式	（数字）如7
-	SPI_Init(SPI_Conf->SPIx,&SPI_InitStructure);
+	SPI_Init(SPIx,&SPI_InitStructure);
 
-	SPI_Cmd(SPI_Conf->SPIx, DISABLE);				//使能SPI
-//	STM32_SPI_CS_LOW(SPI_Conf);				//CS_HIGH片选禁止	
-	STM32_SPI_CS_HIGH(SPI_Conf);				//CS_HIGH片选禁止
-	
-	//3)**********使能SPIx_NESS为主输出模式
-	if((SPI_Conf->SPIx->CR1&0X0200)!=SPI_NSS_Soft)						//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-	{
-		SPI_SSOutputCmd(SPI_Conf->SPIx, ENABLE);								//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-	}
-	else
-	{
-		SPI_SSOutputCmd(SPI_Conf->SPIx, DISABLE);								//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
-	}
-}
-/*******************************************************************************
-*函数名			:	STM32_SPI_CS_LOW
-*功能描述		:	片选使能
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-void STM32_SPI_CS_LOW(SPI_Conf_TypeDef *SPI_Conf)
-{
-	GPIO_ResetBits(SPI_Conf->SPI_CS_PORT, SPI_Conf->SPI_CS_PIN);		//CS_LOW片选使能
-}
-/*******************************************************************************
-*函数名			:	STM32_SPI_CS_HIGH
-*功能描述		:	片选禁止
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-void STM32_SPI_CS_HIGH(SPI_Conf_TypeDef *SPI_Conf)
-{
-	GPIO_SetBits(SPI_Conf->SPI_CS_PORT, SPI_Conf->SPI_CS_PIN);		//CS_HIGH禁止片选
-}
-
-/*******************************************************************************
-*函数名			:	function
-*功能描述		:	函数功能说明
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-void STM32_SPI_SendByte(SPI_Conf_TypeDef *SPI_Conf,u8 byte)
-{
-  /* 等待DR寄存器空 */
-  while (SPI_I2S_GetFlagStatus(SPI_Conf->SPIx, SPI_I2S_FLAG_TXE) == RESET);
-	 
-  /* Send byte through the SPI1 peripheral */
-  SPI_I2S_SendData(SPI_Conf->SPIx, byte);
-
-  /* Wait to receive a byte */
-  while (SPI_I2S_GetFlagStatus(SPI_Conf->SPIx, SPI_I2S_FLAG_RXNE) == RESET);
-
-  /* Return the byte read from the SPI bus */
-//  return SPI_I2S_ReceiveData(SPI_Conf->SPIx);
+	//3)**********使能SPIx_NESS为主输出模式	//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
+	SPI_SSOutputCmd(SPIx, ENABLE);								//如果在主机模式下的片选方式为硬件（SPI_NSS_Hard）方式，此处必须打开，否则NSS无信号
+	//4)**********使能SPI
+	SPI_Cmd(SPIx, DISABLE);				//使能SPI
 }
 /*******************************************************************************
 *函数名			:	function
@@ -374,19 +124,19 @@ void STM32_SPI_SendByte(SPI_Conf_TypeDef *SPI_Conf,u8 byte)
 *输入				: 
 *返回值			:	无
 *******************************************************************************/
-u8	STM32_SPI_ReadWriteByte(SPI_Conf_TypeDef *SPI_Conf,u8 byte)
+u8	STM32_SPI_ReadWriteByte(SPI_TypeDef* SPIx,unsigned char byte)
 {
 	  /* 等待DR寄存器空 */
-  while (SPI_I2S_GetFlagStatus(SPI_Conf->SPIx, SPI_I2S_FLAG_TXE) == RESET);
+  while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_TXE) == RESET);
 	 
   /* Send byte through the SPI1 peripheral */
-  SPI_I2S_SendData(SPI_Conf->SPIx, byte);
+  SPI_I2S_SendData(SPIx, byte);
 
   /* Wait to receive a byte */
-  while (SPI_I2S_GetFlagStatus(SPI_Conf->SPIx, SPI_I2S_FLAG_RXNE) == RESET);
+  while (SPI_I2S_GetFlagStatus(SPIx, SPI_I2S_FLAG_RXNE) == RESET);
 
   /* Return the byte read from the SPI bus */
-  return SPI_I2S_ReceiveData(SPI_Conf->SPIx);
+  return SPI_I2S_ReceiveData(SPIx);
 }
 /*******************************************************************************
 *函数名			:	function
@@ -395,87 +145,58 @@ u8	STM32_SPI_ReadWriteByte(SPI_Conf_TypeDef *SPI_Conf,u8 byte)
 *返回值			:	无
 *******************************************************************************/
 void STM32_SPI_SendBuffer(
-													SPI_Conf_TypeDef *SPI_Conf,
+													SPI_TypeDef* SPIx,
 													u32 BufferSize,
-													u8 *RevBuffer
+													u8 *SendBuffer
 )					//发送数据
 {
 	u32 bufferNum=0;
-	u8 SPI_PTflg=0;		//判断是否为全硬件SPI，SPI_PTflg=1全硬件SPI，SPI_PTflg=0
-	if(((SPI_Conf->SPIx==SPI1)&&((SPI_Conf->SPI_CS_PORT==GPIOA)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_4)))\
-		||((SPI_Conf->SPIx==SPI2)&&((SPI_Conf->SPI_CS_PORT==GPIOB)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_12)))\
-		||((SPI_Conf->SPIx==SPI3)&&((SPI_Conf->SPI_CS_PORT==GPIOA)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))))
-	{
-		SPI_PTflg=1;		//判断是否为全硬件SPI，SPI_PTflg=1全硬件SPI，SPI_PTflg=0
-	}
-	else
-	{
-		SPI_PTflg=0;		//判断是否为全硬件SPI，SPI_PTflg=1全硬件SPI，SPI_PTflg=0
-	}
-	
-	if(SPI_PTflg)
-	{
-		SPI_Cmd(SPI_Conf->SPIx, ENABLE);
-		for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
-		{
-			RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPI_Conf,0xFF);
-		}
-		SPI_Cmd(SPI_Conf->SPIx, DISABLE);	
-	}
-	else
-	{
-		GPIO_ResetBits(SPI_Conf->SPI_CS_PORT, SPI_Conf->SPI_CS_PIN);		//CS_LOW片选使能
-		SPI_Cmd(SPI_Conf->SPIx, ENABLE);
-		for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
-		{
-			RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPI_Conf,0xFF);
-		}
-		SPI_Cmd(SPI_Conf->SPIx, DISABLE);
-		GPIO_SetBits(SPI_Conf->SPI_CS_PORT, SPI_Conf->SPI_CS_PIN);		//CS_HIGH禁止片选
-	}
-}
 
+	SPI_Cmd(SPIx, ENABLE);
+	for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
+	{
+		STM32_SPI_ReadWriteByte(SPIx,SendBuffer[bufferNum]);
+	}
+	SPI_Cmd(SPIx, DISABLE);	
+}
 /*******************************************************************************
 *函数名			:	function
 *功能描述		:	函数功能说明
 *输入				: 
 *返回值			:	无
 *******************************************************************************/
-u8	STM32_SPI_ReadWriteBuffer(SPI_Conf_TypeDef *SPI_Conf,u32 BufferSize,u8 *SendBuffer,u8 *RevBuffer)		//连接读数据
+void STM32_SPI_ReceiveBuffer(
+													SPI_TypeDef* SPIx,
+													u32 BufferSize,
+													u8 *RevBuffer
+)					//发送数据
 {
 	u32 bufferNum=0;
-	u8 SPI_PTflg=0;		//判断是否为全硬件SPI，SPI_PTflg=1全硬件SPI，SPI_PTflg=0
-	if(((SPI_Conf->SPIx==SPI1)&&((SPI_Conf->SPI_CS_PORT==GPIOA)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_4)))\
-		||((SPI_Conf->SPIx==SPI2)&&((SPI_Conf->SPI_CS_PORT==GPIOB)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_12)))\
-		||((SPI_Conf->SPIx==SPI3)&&((SPI_Conf->SPI_CS_PORT==GPIOA)&&(SPI_Conf->SPI_CS_PIN==GPIO_Pin_15))))
-	{
-		SPI_PTflg=1;		//判断是否为全硬件SPI，SPI_PTflg=1全硬件SPI，SPI_PTflg=0
-	}
-	else
-	{
-		SPI_PTflg=0;		//判断是否为全硬件SPI，SPI_PTflg=1全硬件SPI，SPI_PTflg=0
-	}
 	
-	if(SPI_PTflg)
+	SPI_Cmd(SPIx, ENABLE);
+	for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
 	{
-		SPI_Cmd(SPI_Conf->SPIx, ENABLE);
-		for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
-		{
-			RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPI_Conf,SendBuffer[bufferNum]);
-		}
-		SPI_Cmd(SPI_Conf->SPIx, DISABLE);	
+		RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPIx,0xFF);
 	}
-	else
+	SPI_Cmd(SPIx, DISABLE);	
+}
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	无
+*******************************************************************************/
+u8	STM32_SPI_ReadWriteBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *SendBuffer,u8 *RevBuffer)		//连接读数据
+{
+	u32 bufferNum=0;
+	
+	SPI_Cmd(SPIx, ENABLE);
+	for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
 	{
-		GPIO_ResetBits(SPI_Conf->SPI_CS_PORT, SPI_Conf->SPI_CS_PIN);
-		SPI_Cmd(SPI_Conf->SPIx, ENABLE);
-		for(bufferNum=0;bufferNum<BufferSize;bufferNum++)
-		{
-			RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPI_Conf,SendBuffer[bufferNum]);
-		}
-		SPI_Cmd(SPI_Conf->SPIx, DISABLE);
-		GPIO_SetBits(SPI_Conf->SPI_CS_PORT, SPI_Conf->SPI_CS_PIN);
+		RevBuffer[bufferNum]=STM32_SPI_ReadWriteByte(SPIx,RevBuffer[bufferNum]);
 	}
+	SPI_Cmd(SPIx, DISABLE);
+	
 	return 0;
 }
 

@@ -4,34 +4,19 @@
 
 
 
-typedef enum
-{
-	TM1638_Cathode	=	0,			//共阴数码管
-	TM1638_Anode							//共阳数码管
-}SegPolarity_TypeDef;				//数码管极性
+void TM1638_Write(unsigned char	DATA);			//写数据函数
+unsigned char TM1638_Read(void);						//读数据函数
+void Write_COM(unsigned char cmd);					//发送命令字
+unsigned char Read_key(void);
+void Write_DATA(unsigned char add,unsigned char DATA);					//指定地址写入一字节数据
+void Write_DataFX(unsigned char add,unsigned char DATA);				//固定地址方式
+void Write_DataAI(unsigned char add,unsigned char DATA);				//地址自增
+void Write_allLED(unsigned char LED_flag);											//控制全部LED函数，LED_flag表示各个LED状态
 
 
-typedef struct	_TM1638_Pin
-{
-	//DIO
-	GPIO_TypeDef* 	TM1638_DIO_PORT;				//GPIOX
-	unsigned short 	TM1638_DIO_Pin;				//GPIO_Pin_x
-	
-	//CLK
-	GPIO_TypeDef* 	TM1638_CLK_PORT;				//GPIOX
-	unsigned short 	TM1638_CLK_Pin;				//GPIO_Pin_x
-	
-	//STB
-	GPIO_TypeDef* 	TM1638_STB_PORT;				//GPIOX
-	unsigned short 	TM1638_STB_Pin;				//GPIO_Pin_x
 
-
-}TM1638_Pindef;
-
-
-void TM1638_PinConf(TM1638_Pindef *Pinfo);
-void TM1638_WriteData(TM1638_Pindef *Pinfo,u16 Data);
-void TM1638_WriteDataN(TM1638_Pindef *Pinfo,u16 Data);		//反向信号写入
+void Write_DataNum(unsigned char Startadd,unsigned long Num);		//地址自增方式写入8位数据
+void init_TM1638(void);
 
 
 #endif

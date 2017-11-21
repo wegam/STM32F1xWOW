@@ -61,23 +61,18 @@ typedef struct	_SPI_Pin
 
 
 void SPI_Server(void);
-void STM32_SPI_ConfigurationNR(SPI_Conf_TypeDef *SPI_Conf);					//普通SPI接口配置
+
+void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx);					//普通SPI接口配置
 //void STM32_SPI_DMAConfigurationNR(SPI_Conf_TypeDef *SPI_Conf);			//SPI-DMA通讯方式配置---20170722未完成
 
 
 
 
-void STM32_SPI_CS_LOW(SPI_Conf_TypeDef *SPI_Conf);				//CS_LOW片选使能
-void STM32_SPI_CS_HIGH(SPI_Conf_TypeDef *SPI_Conf);				//CS_HIGH片选禁止
+u8	STM32_SPI_ReadWriteByte(SPI_TypeDef* SPIx,unsigned char byte);
 
-
-void STM32_SPI_SendByte(SPI_Conf_TypeDef *SPI_Conf,u8 byte);					//发送一字节数据
-
-u8	STM32_SPI_ReadWriteByte(SPI_Conf_TypeDef *SPI_Conf,u8 byte);			//发送一字节数据，返回接收到的数据
-
-
-void STM32_SPI_SendBuffer(SPI_Conf_TypeDef *SPI_Conf,u32 BufferSize,u8 *SendBuffer);					//发送一字节数据
-u8	STM32_SPI_ReadWriteBuffer(SPI_Conf_TypeDef *SPI_Conf,u32 BufferSize,u8 *SendBuffer,u8 *RevBuffer);		//连接读数据
+void STM32_SPI_SendBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *SendBuffer);
+void STM32_SPI_ReceiveBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *RevBuffer);
+u8	STM32_SPI_ReadWriteBuffer(SPI_TypeDef* SPIx,u32 BufferSize,u8 *SendBuffer,u8 *RevBuffer);		//连接读数据
 
 
 

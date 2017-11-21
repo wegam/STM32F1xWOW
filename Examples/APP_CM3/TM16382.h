@@ -2,22 +2,36 @@
 #define	_TM16382_H
 
 #include "STM32F10x_BitBand.H"
+#include "STM32_GPIO.H"
 //#include	<REGX51.H>
 
-#define	DATA_COMMAND	0X40
-#define	DISP_COMMAND	0x80
-#define	ADDR_COMMAND	0XC0
+//#define	DATA_COMMAND	0X40		//Êı¾İÃüÁîÉèÖÃ:Êı¾İ¶ÁĞ´Ä£Ê½£¬µØÖ·×ÔÔöÄ£Ê½
+//#define	DISP_COMMAND	0x80		//ÏÔÊ¾ÃüÁî£ºÏÔÊ¾ÁÁ¶ÈÉèÖÃ
+//#define	ADDR_COMMAND	0XC0		//µØÖ·ÃüÁîÉèÖÃ:Êı¾İĞ´ÈëÆğÊ¼µØÖ·
 
 //TM1638Ä£¿éÒı½Å¶¨Òå
 #define	DIO	PC12
 #define	CLK	PC11
 #define	STB	PD2
 
+#define	DIO_Port	GPIOC
+#define	DIO_Pin		GPIO_Pin_12
+
+#define	CLK_Port	GPIOC
+#define	CLK_Pin		GPIO_Pin_11
+
+#define	STB_Port	GPIOD
+#define	STB_Pin		GPIO_Pin_2
+
 //¹²ÒõÊıÂë¹ÜÏÔÊ¾´úÂë
-unsigned char code[]={0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,
-                           0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
+unsigned char code[]={0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
 
-
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 void TM1638_Write(unsigned char	DATA)			//Ğ´Êı¾İº¯Êı
 {
 	unsigned char i;
@@ -32,6 +46,12 @@ void TM1638_Write(unsigned char	DATA)			//Ğ´Êı¾İº¯Êı
 		CLK=1;
 	}
 }
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 unsigned char TM1638_Read(void)					//¶ÁÊı¾İº¯Êı
 {
 	unsigned char i;
@@ -47,12 +67,24 @@ unsigned char TM1638_Read(void)					//¶ÁÊı¾İº¯Êı
 	}
 	return temp;
 }
+/*******************************************************************************
+* º¯ÊıÃû			:	Write_COM
+* ¹¦ÄÜÃèÊö		:	·¢ËÍÃüÁî×Ö 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 void Write_COM(unsigned char cmd)		//·¢ËÍÃüÁî×Ö
 {
 	STB=0;
 	TM1638_Write(cmd);
 	STB=1;
 }
+/*******************************************************************************
+* º¯ÊıÃû			:	Read_key
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 unsigned char Read_key(void)
 {
 	unsigned char c[4],i,key_value=0;
@@ -68,12 +100,81 @@ unsigned char Read_key(void)
 			break;
 	return i;
 }
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 void Write_DATA(unsigned char add,unsigned char DATA)		//Ö¸¶¨µØÖ·Ğ´ÈëÊı¾İ
 {
-	Write_COM(0x44);
+	Write_COM(0x40);					//¹Ì¶¨µØÖ·
 	STB=0;
-	TM1638_Write(0xc0|add);
-	TM1638_Write(DATA);
+	TM1638_Write(0xC0|add);		//Ğ´µØÖ·
+	TM1638_Write(DATA);				//Ğ´Êı¾İ
+	STB=1;
+}
+/*******************************************************************************
+* º¯ÊıÃû			:	Write_DataFX
+* ¹¦ÄÜÃèÊö		:	¹Ì¶¨µØÖ··½Ê½
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
+void Write_DataFX(unsigned char add,unsigned char DATA)		//¹Ì¶¨µØÖ··½Ê½
+{
+	Write_COM(0x44);					//¹Ì¶¨µØÖ·ÃüÁî
+	STB=0;
+	TM1638_Write(0xC0|(add<<1));		//Ğ´µØÖ·
+	TM1638_Write(DATA);				//Ğ´Êı¾İ
+	STB=1;
+}
+/*******************************************************************************
+* º¯ÊıÃû			:	Write_DataAI
+* ¹¦ÄÜÃèÊö		:	µØÖ·×ÔÔö
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
+void Write_DataAI(unsigned char add,unsigned char DATA)		//µØÖ·×ÔÔö
+{
+	unsigned char i;
+	Write_COM(0x40);					//µØÖ·×ÔÔöÃüÁî
+	STB=0;
+	TM1638_Write(0xC0);    		//ÉèÖÃÆğÊ¼µØÖ·
+	for(i=0;i<8;i++)	   			//´«ËÍ16¸ö×Ö½ÚµÄÊı¾İ
+	{
+		TM1638_Write(DATA);			//Ğ´Êı¾İ
+		TM1638_Write(0x01);			//Ğ´Êı¾İ
+	}
+	STB=1;
+}
+/*******************************************************************************
+* º¯ÊıÃû			:	Write_DataNum
+* ¹¦ÄÜÃèÊö		:	µØÖ·×ÔÔö·½Ê½Ğ´Êı¾İ
+* ÊäÈë			: Startadd--ÆğÊ¼µØÖ·£¬Num--Êı¾İ
+* ·µ»ØÖµ			: void
+*******************************************************************************/
+void Write_DataNum(unsigned char Startadd,unsigned long Num)		//µØÖ·×ÔÔö
+{
+//	Write_COM(0x40);					//µØÖ·×ÔÔöÃüÁî
+	STB=0;
+	TM1638_Write(0xC0|Startadd);    		//ÉèÖÃÆğÊ¼µØÖ·
+	
+	TM1638_Write(code[Num/10000000]);
+	TM1638_Write(code[Num/10000000]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%10000000/1000000]);
+	TM1638_Write(code[Num%10000000/1000000]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%1000000/100000]);
+	TM1638_Write(code[Num%1000000/100000]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%100000/10000]);
+	TM1638_Write(code[Num%100000/10000]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%10000/1000]);
+	TM1638_Write(code[Num%10000/1000]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%1000/100]);
+	TM1638_Write(code[Num%1000/100]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%100/10]);
+	TM1638_Write(code[Num%100/10]);			//Ğ´Êı¾İ
+	TM1638_Write(code[Num%10]);
+	TM1638_Write(code[Num%10]);			//Ğ´Êı¾İ
 	STB=1;
 }
 /*
@@ -84,6 +185,12 @@ void Write_oneLED(unsigned char num,unsigned char flag)	//µ¥¶À¿ØÖÆÒ»¸öLEDº¯Êı£¬n
 	else
 		Write_DATA(2*num+1,0);
 }  	*/
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 void Write_allLED(unsigned char LED_flag)					//¿ØÖÆÈ«²¿LEDº¯Êı£¬LED_flag±íÊ¾¸÷¸öLED×´Ì¬
 {
 	unsigned char i;
@@ -96,15 +203,24 @@ void Write_allLED(unsigned char LED_flag)					//¿ØÖÆÈ«²¿LEDº¯Êı£¬LED_flag±íÊ¾¸÷¸
 				Write_DATA(2*i+1,0);
 		}
 }
-
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+*******************************************************************************/
 //TM1638³õÊ¼»¯º¯Êı
 void init_TM1638(void)
 {
 	unsigned char i;
-	Write_COM(0x8b);       //ÁÁ¶È (0x88-0x8f)8¼¶ÁÁ¶È¿Éµ÷
+	GPIO_Configuration_OPP50	(DIO_Port,	DIO_Pin);			//½«GPIOÏàÓ¦¹Ü½ÅÅäÖÃÎªPP(ÍÆÍì)Êä³öÄ£Ê½£¬×î´óËÙ¶È50MHz----V20170605
+	GPIO_Configuration_OPP50	(CLK_Port,	CLK_Pin);			//½«GPIOÏàÓ¦¹Ü½ÅÅäÖÃÎªPP(ÍÆÍì)Êä³öÄ£Ê½£¬×î´óËÙ¶È50MHz----V20170605
+	GPIO_Configuration_OPP50	(STB_Port,	STB_Pin);			//½«GPIOÏàÓ¦¹Ü½ÅÅäÖÃÎªPP(ÍÆÍì)Êä³öÄ£Ê½£¬×î´óËÙ¶È50MHz----V20170605
+	
+	Write_COM(0x8F);       //ÁÁ¶È (0x88-0x8f)8¼¶ÁÁ¶È¿Éµ÷
 	Write_COM(0x40);       //²ÉÓÃµØÖ·×Ô¶¯¼Ó1
 	STB=0;		           //
-	TM1638_Write(0xc0);    //ÉèÖÃÆğÊ¼µØÖ·
+	TM1638_Write(0xC0);    //ÉèÖÃÆğÊ¼µØÖ·
 
 	for(i=0;i<16;i++)	   //´«ËÍ16¸ö×Ö½ÚµÄÊı¾İ
 		TM1638_Write(0xFF);
