@@ -31,7 +31,7 @@ void TM1638_Configuration(void)
 	
 	GPIO_DeInitAll();							//将所有的GPIO关闭----V20170605
 	
-	SysTick_Configuration(100000);	//系统嘀嗒时钟配置72MHz,单位为uS
+	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	IWDG_Configuration(1000);			//独立看门狗配置---参数单位ms	
 	

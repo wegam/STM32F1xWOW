@@ -34,7 +34,7 @@ void SPItoUSART_Configuration(void)
 	
 	GPIO_DeInitAll();							//将所有的GPIO关闭----V20170605
 	
-	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
+	SysTick_Configuration(1000000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	PWM_OUT(TIM2,PWM_OUTChannel1,100,20);
 
@@ -78,6 +78,9 @@ void SPItoUSART_Server(void)
 //	{
 //		STM32_SPI_SendBuffer(SPI1,120,ch);
 //	}
+	
+//	STM32_SPI_ReadWriteData(SPI1,0x8F);
+//	STM32_SPI_ReadWriteData(SPI1,0x40);
 	
 	if(SYSTIME%3	==	0)
 	{

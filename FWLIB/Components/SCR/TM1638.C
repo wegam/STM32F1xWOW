@@ -10,34 +10,34 @@
 //#define	DISP_COMMAND	0x80		//显示命令：显示亮度设置
 //#define	ADDR_COMMAND	0XC0		//地址命令设置:数据写入起始地址
 
-//TM1638模块引脚定义
-#define	DIO	PC12
-#define	CLK	PC11
-#define	STB	PD2
-
-#define	DIO_Port	GPIOC
-#define	DIO_Pin		GPIO_Pin_12
-
-#define	CLK_Port	GPIOC
-#define	CLK_Pin		GPIO_Pin_11
-
-#define	STB_Port	GPIOD
-#define	STB_Pin		GPIO_Pin_2
-
-
 ////TM1638模块引脚定义
-//#define	DIO	PA7
-//#define	CLK	PA5
-//#define	STB	PA4
+//#define	DIO	PC12
+//#define	CLK	PC11
+//#define	STB	PD2
 
-//#define	DIO_Port	GPIOA
-//#define	DIO_Pin		GPIO_Pin_7
+//#define	DIO_Port	GPIOC
+//#define	DIO_Pin		GPIO_Pin_12
 
-//#define	CLK_Port	GPIOA
-//#define	CLK_Pin		GPIO_Pin_5
+//#define	CLK_Port	GPIOC
+//#define	CLK_Pin		GPIO_Pin_11
 
-//#define	STB_Port	GPIOA
-//#define	STB_Pin		GPIO_Pin_4
+//#define	STB_Port	GPIOD
+//#define	STB_Pin		GPIO_Pin_2
+
+
+//TM1638模块引脚定义
+#define	DIO	PA7
+#define	CLK	PA5
+#define	STB	PA4
+
+#define	DIO_Port	GPIOA
+#define	DIO_Pin		GPIO_Pin_7
+
+#define	CLK_Port	GPIOA
+#define	CLK_Pin		GPIO_Pin_5
+
+#define	STB_Port	GPIOA
+#define	STB_Pin		GPIO_Pin_4
 
 
 
