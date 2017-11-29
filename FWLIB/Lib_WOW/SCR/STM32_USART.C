@@ -1940,9 +1940,30 @@ u16	RS485_ReadBufferIDLE(
 )	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer，
 {
 	u16 length=0;
-	RS485_RX_EN(RS485_Info);
-	length=USART_ReadBufferIDLE(RS485_Info->USARTx,RevBuffer,RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+	if(USART_GetFlagStatus(RS485_Info->USARTx, USART_FLAG_TC)	!=	RESET	&&	USART_GetFlagStatus(RS485_Info->USARTx, USART_FLAG_TXE)	!=	RESET)
+	{
+		RS485_RX_EN(RS485_Info);
+		length=USART_ReadBufferIDLE(RS485_Info->USARTx,RevBuffer,RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+	}
 	return length;
+	
+//	u16 length=0;
+
+//	if((RS485_Info->USARTx==USART1)&&(DMA1_Channel4->CNDTR	!=0) && (DMA1_Channel4->CCR &&0x01== 0x01))
+//		return 0;
+//	else if((RS485_Info->USARTx==USART2)&&(DMA1_Channel7->CNDTR	!=0) && (DMA1_Channel7->CCR &&0x01== 0x01))
+//		return 0;
+//	else if((RS485_Info->USARTx==USART3)&&(DMA1_Channel2->CNDTR	!=0) && (DMA1_Channel2->CCR &&0x01== 0x01))
+//		return 0;
+//	else if((RS485_Info->USARTx==UART4)&&(DMA2_Channel5->CNDTR	!=0) && (DMA2_Channel5->CCR &&0x01== 0x01))
+//		return 0;
+
+//	if(USART_GetFlagStatus(RS485_Info->USARTx, USART_FLAG_TC)	!=	RESET	&&	USART_GetFlagStatus(RS485_Info->USARTx, USART_FLAG_TXE)	!=	RESET)
+//	{
+//		RS485_RX_EN(RS485_Info);
+//		length=USART_ReadBufferIDLE(RS485_Info->USARTx,RevBuffer,RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+//	}
+//	return length;
 }
 
 /*******************************************************************************

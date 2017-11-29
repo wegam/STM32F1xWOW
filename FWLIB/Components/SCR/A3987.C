@@ -16,7 +16,7 @@
 approaches 0 A.
 *************************************************************************************************************************************/
 
-u16	A3987_StepCnt=0;
+//u16	A3987_StepCnt=0;
 /*******************************************************************************
 *函数名			:	function
 *功能描述		:	函数功能说明
@@ -42,9 +42,29 @@ void A3987_PinConf(A3987_Pindef *Pinfo)
 	GPIO_Configuration_OPP50	(Pinfo->A3987_MS2_PORT,			Pinfo->A3987_MS2_Pin);					//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	GPIO_Configuration_OPP50	(Pinfo->A3987_RS_PORT,			Pinfo->A3987_RS_Pin);					//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	
-	GPIO_SetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);				//禁止电机工作
-	GPIO_ResetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);			//使能电机工作
+//	GPIO_SetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);				//禁止电机工作
 	
+	
+//	GPIO_ResetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);			//使能电机工作	
+//	GPIO_ResetBits(Pinfo->A3987_MS1_PORT,			Pinfo->A3987_MS1_Pin);			//使能电机工作
+//	GPIO_ResetBits(Pinfo->A3987_MS2_PORT,			Pinfo->A3987_MS2_Pin);			//使能电机工作	
+//	GPIO_SetBits(Pinfo->A3987_DIR_PORT,			Pinfo->A3987_DIR_Pin);			//运转方向
+	
+	
+	
+//	GPIO_ResetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);			//使能电机工作
+//	GPIO_SetBits(Pinfo->A3987_MS1_PORT,			Pinfo->A3987_MS1_Pin);			//使能电机工作
+//	GPIO_ResetBits(Pinfo->A3987_MS2_PORT,			Pinfo->A3987_MS2_Pin);			//使能电机工作
+//	GPIO_ResetBits(Pinfo->A3987_DIR_PORT,			Pinfo->A3987_DIR_Pin);			//运转方向
+
+
+	
+//	GPIO_ResetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);			//使能电机工作
+//	GPIO_SetBits(Pinfo->A3987_MS1_PORT,			Pinfo->A3987_MS1_Pin);			//使能电机工作
+//	GPIO_ResetBits(Pinfo->A3987_MS2_PORT,			Pinfo->A3987_MS2_Pin);			//使能电机工作
+//	GPIO_ResetBits(Pinfo->A3987_DIR_PORT,			Pinfo->A3987_DIR_Pin);			//运转方向
+
+	GPIO_ResetBits(Pinfo->A3987_EN_PORT, Pinfo->A3987_EN_Pin);			//使能电机工作
 	GPIO_ResetBits(Pinfo->A3987_MS1_PORT,			Pinfo->A3987_MS1_Pin);			//使能电机工作
 	GPIO_ResetBits(Pinfo->A3987_MS2_PORT,			Pinfo->A3987_MS2_Pin);			//使能电机工作
 	GPIO_SetBits(Pinfo->A3987_DIR_PORT,			Pinfo->A3987_DIR_Pin);			//运转方向
@@ -57,11 +77,15 @@ void A3987_PinConf(A3987_Pindef *Pinfo)
 *******************************************************************************/
 void A3987_StepDriver(A3987_Pindef *Pinfo)
 {
-	A3987_StepCnt++;
-	if(A3987_StepCnt>1)
+	
+	Pinfo->A3987_StepCnt++;
+	if(Pinfo->A3987_StepCnt>10)
 	{
-		A3987_StepCnt=0;
+		Pinfo->A3987_StepCnt=0;
 		GPIO_Toggle(Pinfo->A3987_PUL_PORT,			Pinfo->A3987_PUL_Pin);			//运转方向
 	}
+//	
+//		GPIO_Toggle(Pinfo->A3987_PUL_PORT,			Pinfo->A3987_PUL_Pin);			//运转方向
+
 }
 

@@ -32,6 +32,7 @@ typedef struct	_A3987_Pin
 	GPIO_TypeDef* 	A3987_RS_PORT;				//GPIOX
 	unsigned short 	A3987_RS_Pin;				//GPIO_Pin_x
 
+	u16 A3987_StepCnt;									//运行翻转计时
 
 }A3987_Pindef;
 

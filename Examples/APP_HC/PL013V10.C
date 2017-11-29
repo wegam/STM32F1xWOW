@@ -101,13 +101,13 @@
 ###############################################################################*/
 
 
-#define PL013V10_CANTEST
+//#define PL013V10_CANTEST
 
 #ifndef	PL013V10_CANTEST
 	#define PL013V10_485TEST
 #endif
 
-//#define PL013V10_Master
+#define PL013V10_Master
 
 #define RS485TX	0
 #define RS485RX	1
@@ -270,7 +270,7 @@ void PL013V10_PinSet(void)
 	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_14);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_15);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	
-	//Pin1
+	//SEG第一位数码管
 	CD4511_Pin1.CD4511_A0_PORT=GPIOB;
 	CD4511_Pin1.CD4511_A0_Pin=GPIO_Pin_0;
 	
@@ -288,7 +288,7 @@ void PL013V10_PinSet(void)
 	
 	CD4511_PinConf(&CD4511_Pin1);
 	
-	//Pin2
+	//SEG2第二位数码管
 	CD4511_Pin2.CD4511_A0_PORT=GPIOB;
 	CD4511_Pin2.CD4511_A0_Pin=GPIO_Pin_0;
 	
@@ -306,7 +306,7 @@ void PL013V10_PinSet(void)
 	
 	CD4511_PinConf(&CD4511_Pin2);
 	
-	//Pin1
+	//SEG3第三位数码管
 	CD4511_Pin3.CD4511_A0_PORT=GPIOB;
 	CD4511_Pin3.CD4511_A0_Pin=GPIO_Pin_0;
 	
