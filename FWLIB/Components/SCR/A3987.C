@@ -79,7 +79,7 @@ void A3987_StepDriver(A3987_Pindef *Pinfo)
 {
 	
 	Pinfo->A3987_StepCnt++;
-	if(Pinfo->A3987_StepCnt>10)
+	if(Pinfo->A3987_StepCnt>8)
 	{
 		Pinfo->A3987_StepCnt=0;
 		GPIO_Toggle(Pinfo->A3987_PUL_PORT,			Pinfo->A3987_PUL_Pin);			//运转方向

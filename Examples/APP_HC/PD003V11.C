@@ -67,11 +67,14 @@ u16	DelayTime=0;
 
 u16 Lock_Toggle_CNT=0;
 
-vu8 Stim;
+//-----------盘点传感器
+vu16 Stim;
 vu8 Sstp;
 vu8 Srun;
 vu8 Stry;
-vu8	Slen	=	0;
+vu8	Slen;
+vu8	PS1F;		//传感器连接标志
+vu8	PS2F;
 
 
 u8 PC3Count	=	0;						//原点1计时
@@ -79,7 +82,7 @@ u8 PC12Count	=	0;					//原点2计时
 
 //u8 PC3CountN	=	0;					//原点1计时
 //u8 PC12CountN	=	0;					//原点2计时
-
+vu8 start = 0;
 u8 MOTOR_RUNFLAG1	=	1;
 u8 MOTOR_RUNFLAG2	=	1;
 
@@ -91,8 +94,17 @@ void Lock_Toggle(void);			//双向电子锁控制
 void USART2_RS485_Conf(void);
 void Sens_RS485_Conf(void);
 void PDSEND(u8 CMD);		//发送盘点传感器命令
-void PDCHECK(void);			//盘点传感器数据检测
 
+u8 PSDATA(u8 CMD,u8 *Buffer);			//检测传感器收回的数据
+void PrintfSstatus(u8 CMD,u8* Buffer);		//打印传感器状态信息
+void InitPsFlag(void);		//初始化传感器变量
+
+void PDCHECK(void);			//盘点传感器数据检测
+u8 PDSTART(void);			//开始盘点
+u8 GetData(void);			//读盘点数量
+
+
+void MotorCtr(void);		//电机控制
 /*******************************************************************************
 * 函数名		:	
 * 功能描述	:	 
@@ -148,66 +160,373 @@ void PD003V11_Server(void)
 	u16 len	=	0;
 	IWDG_Feed();								//独立看门狗喂狗
 	DelayTime++;
-	if(DelayTime>=200)
+	if(DelayTime>=50000)
 	{
 		DelayTime	=	0;
-		MOTOR_RUNFLAG1	=	1;		//电机1运行标志
-		MOTOR_RUNFLAG2	=	1;		//电机1运行标志	
+		InitPsFlag();		//初始化传感器变量
+//		MOTOR_RUNFLAG1	=	1;		//电机1运行标志
+//		MOTOR_RUNFLAG2	=	1;		//电机1运行标志	
 //		PDSEND(Srun);			//发送盘点传感器命令
 //		if(++Srun	>=6)
 //			Srun	=0;
 	}
-//	if(DelayTime	==65)
 	PDCHECK();			//盘点传感器数据检测
-	
-//	if(PC3in	==1)
-//	{
-//		MOTOR_RUNFLAG1	=	0;		//电机1运行标志
-//	}		
-
-//	if(MOTOR_RUNFLAG1)
-//	{
-//		A3987_StepDriver(&A3987_Pin1);
-//	}
-//	if(MOTOR_RUNFLAG2)
-//	{
-//		A3987_StepDriver(&A3987_Pin2);
-//	}
+	PDSTART();			//开始盘点
+	GetData();			//读盘点数量
+	MotorCtr();		//电机控制
 	
 
-//	else
-//	{
-////	RS485_DMASend(&RS485_Sens,(u32*)TxdBuffer2,6);
-//	if(Srun	==	0)
-//	{
-//		PDSEND(0);			//发送盘点传感器命令
-//	}
-//	else if(Srun	==	0)
-//	{
-//		PDSEND(0);			//发送盘点传感器命令
-//	}
-//	PDCHECK();			//盘点传感器数据检测
-//		Slen	=	RS485_ReadBufferIDLE(&RS485_Sens,(u32*)RevBuffer2,(u32*)RxdBuffer2);
-//	if(Slen)
-//	{
-////		memcpy(TxdBuffer,RevBuffer2,Slen);
-//		RS485_DMASend(&RS4852,(u32*)RevBuffer2,Slen);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
-//	}
-//	}
-//		len	=	RS485_ReadBufferIDLE(&RS4852,(u32*)RevBuffer,(u32*)RxdBuffer);
-//	if(len)
-//	{
-////		RS485_DMASend(&RS4852,(u32*)RevBuffer,len);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
-////		RS485_DMAPrintf(&RS4852,"接收到数据个数:%d\n\r",len);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
-//	}
-//	if(RevBuffer[0]!=0xFA&&RevBuffer[0]!=0x00&&len)
-//	{
-////		RS485_DMAPrintf(&RS485_Sens,"上电测试\n\r");						//自定义printf串口DMA发送程序,后边的省略号就是可变参数
-//		memcpy(TxdBuffer2,RevBuffer,len);
-//		RS485_DMASend(&RS485_Sens,(u32*)TxdBuffer2,len);
-//		len=0;
-//	}
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+*******************************************************************************/
+void MotorCtr(void)		//电机控制
+{
+	if(!(start	==1||start	==4||start	==5))
+	{
+		return;
+	}
+	//-----------回归原点
+	if(start==1)
+	{
+		if((PC3in==0	||	PC12in==0))
+		{
+			if(PC3in==0)
+			{
+				A3987_StepDriver(&A3987_Pin1);
+			}
+			if(PC12in==0)
+			{
+				A3987_StepDriver(&A3987_Pin2);
+			}			
+		}
+		else
+		{
+			start=2;
+		}
+		return;
+	}
+	
+	//-----------盘点	
+	if(start==4)
+	{
+		if(PC3in	==1)			//原点1计时
+		{
+			MOTOR_RUNFLAGOW1	=0;
+			A3987_StepDriver(&A3987_Pin1);
+		}
+		else
+		{
+			MOTOR_RUNFLAGOW1	=1;
+		}
+		if(PC12in	==1)			//原点1计时
+		{
+			MOTOR_RUNFLAGOW2	=0;
+			A3987_StepDriver(&A3987_Pin2);
+		}
+		else
+		{
+			MOTOR_RUNFLAGOW2	=1;
+		}
+	}
+	//-----------盘点	
+	if(start==5)
+	{
+		if(PC3in	==1)			//原点1计时
+		{
+			MOTOR_RUNFLAGOW1	=0;			
+		}
+		else
+		{
+			A3987_StepDriver(&A3987_Pin1);
+		}
+		if(PC12in	==1)			//原点1计时
+		{
+			MOTOR_RUNFLAGOW2	=0;
+		}
+		else
+		{
+			A3987_StepDriver(&A3987_Pin2);
+		}
+	}
+	
+	if(MOTOR_RUNFLAGOW1==1	&&	MOTOR_RUNFLAGOW2	==1	&&start	==4)
+	{
+		start	=5;
+	}
+	if(MOTOR_RUNFLAGOW1==0	&&	MOTOR_RUNFLAGOW2	==0	&&start	==5)
+	{
+		start	=6;
+	}
 
+
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+*******************************************************************************/
+void PDCHECK(void)			//发送盘点传感器命令
+{
+//	Stry=	0;
+	if(start!=0)
+		return;
+	Stim++;
+	if(Stim>=500)
+	{
+//		Stry	=	0;
+		Stim=0;
+	}
+	if(Stim	==100)
+	{
+		PDSEND(Srun);			//发送盘点传感器命令		
+	}
+	else if(Stim>=160)
+	{
+		Slen	=	RS485_ReadBufferIDLE(&RS485_Sens,(u32*)RevBuffer2,(u32*)RxdBuffer2);	
+		if(Slen)
+		{
+			if(PSDATA(Srun,RevBuffer2))			//检测传感器收回的数据
+			{
+//				Stim	=	0;
+				Stry	=	0;
+
+				PrintfSstatus(Srun,RevBuffer2);		//打印传感器状态信息
+//				RS485_DMASend(&RS4852,(u32*)RevBuffer2,Slen);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+				
+				
+				if(Srun	==	0)
+				{
+					PS1F	=	1;		//传感器连接标志
+					Srun	=	3;
+				}
+				else if(Srun	==	3)
+				{
+					PS2F	=	1;		//传感器连接标志
+				}				
+				
+				if(PS1F==1	&&	PS2F==1)
+				{
+					start	=	1;		//启动电机
+				}
+				else
+				{
+					start	=	0;
+				}
+			}
+		}
+		else
+		{
+			if(Stim	>=300)
+			{
+				Stim	=	0;
+				if(Stry++==5)			//重复10次				
+				{	
+					Stry	=	0;
+					if(Srun	==0	)		//传感器1无应答
+					{
+						start	=	0;
+						RS485_DMAPrintf(&RS4852,"传感器1无响应\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					}
+					else if(Srun	==3)
+					{
+						PS2F	=	0;		//传感器连接标志
+						RS485_DMAPrintf(&RS4852,"传感器2无响应\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					}
+				}
+			}
+		}
+	}
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+*******************************************************************************/
+u8 PDSTART(void)			//发送盘点传感器命令
+{
+//	Stry=	0;
+	if(!(start==2||start==3))
+	{
+		return 0;
+	}
+	if(start	==2)
+	{
+			Srun	=	1;
+			start	=	3;
+	}
+	Stim++;
+	if(Stim>=500)
+	{
+//		Stry	=	0;
+		Stim=0;
+	}
+	if(Stim	==100)
+	{
+		PDSEND(Srun);			//发送盘点传感器命令		
+	}
+	else if(Stim>=160)
+	{
+		Slen	=	RS485_ReadBufferIDLE(&RS485_Sens,(u32*)RevBuffer2,(u32*)RxdBuffer2);	
+		if(Slen)
+		{
+			if(PSDATA(Srun,RevBuffer2))			//检测传感器收回的数据
+			{
+//				Stim	=	0;
+				Stry	=	0;
+
+				PrintfSstatus(Srun,RevBuffer2);		//打印传感器状态信息
+				if(Srun	==	1)
+				{
+					Srun	=	4;
+				}
+				else if(Srun	==	4)
+				{
+					start	=	4;
+//					RS485_DMAPrintf(&RS4852,"读数完成\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+//					return 1;
+				}
+			}
+		}
+		else
+		{
+			if(Stim	>=300)
+			{
+				Stim	=	0;
+				if(Stry++==5)			//重复10次				
+				{	
+					Stry	=	0;
+					if(Srun	==1	)		//传感器1无应答
+					{
+//						Srun	=	4;
+						start	=	0;
+						RS485_DMAPrintf(&RS4852,"传感器1盘点开始失败\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					}
+					else if(Srun	==4)
+					{
+						start	=	0;
+						RS485_DMAPrintf(&RS4852,"传感器2盘点开始失败\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+*******************************************************************************/
+u8 GetData(void)			//读盘点数量
+{
+//	Stry=	0;
+	if(!(start==6||start==7))
+	{
+		return 0;
+	}
+	if(start==6)
+	{
+			Srun	=	2;
+			start	=	7;
+	}
+	Stim++;
+	if(Stim>=500)
+	{
+//		Stry	=	0;
+		Stim=0;
+	}
+	if(Stim	==100)
+	{
+		PDSEND(Srun);			//发送盘点传感器命令		
+	}
+	else if(Stim>=160)
+	{
+		Slen	=	RS485_ReadBufferIDLE(&RS485_Sens,(u32*)RevBuffer2,(u32*)RxdBuffer2);	
+		if(Slen)
+		{
+			if(PSDATA(Srun,RevBuffer2))			//检测传感器收回的数据
+			{
+//				Stim	=	0;
+				Stry	=	0;
+
+				PrintfSstatus(Srun,RevBuffer2);		//打印传感器状态信息
+				if(Srun	==	2)
+				{
+					Srun	=	5;
+				}
+				else if(Srun	==	5)
+				{
+					start	=	8;
+//					RS485_DMAPrintf(&RS4852,"读数完成\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					return 1;
+				}
+			}
+		}
+		else
+		{
+			if(Stim	>=300)
+			{
+				Stim	=	0;
+				if(Stry++==5)			//重复10次				
+				{	
+					Stry	=	0;
+					if(Srun	==2	)		//传感器1无应答
+					{
+//						Srun	=	5;
+						start	=	0;
+						RS485_DMAPrintf(&RS4852,"传感器1读数失败\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					}
+					else if(Srun	==5)
+					{
+						start	=	0;
+						RS485_DMAPrintf(&RS4852,"传感器2读数失败\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+*******************************************************************************/
+void InitPsFlag(void)		//初始化传感器变量
+{	
+	if(start==0	||	start==8)
+	{
+		//-----------盘点传感器
+		Stim	=	0;
+		Sstp	=	0;
+		Srun	=	0;
+		Stry	=	0;
+		Slen	=	0;
+		PS1F	=	0;		//传感器连接标志
+		PS2F	=	0;
+		
+		
+		//---------------步进电机
+		MOTOR_RUNFLAG1	=	0;		//电机1运行标志
+		MOTOR_RUNFLAG2	=	0;		//电机1运行标志
+		
+		MOTOR_RUNFLAGOW1	=	0;
+		MOTOR_RUNFLAGOW2	=	0;
+		start	=	0;
+		
+		//-----系统计时
+		DelayTime	=	0;
+		
+	}	
 }
 /*******************************************************************************
 * 函数名			:	function
@@ -286,96 +605,122 @@ void PDSEND(u8 CMD)			//发送盘点传感器命令
 * 输入			: void
 * 返回值			: void
 *******************************************************************************/
-void PSDATA(u8 CMD)			//发送盘点传感器命令
+u8 PSDATA(u8 CMD,u8 *Buffer)			//检测传感器收回的数据
 {
 	//---------------------------盘点1
 	if(CMD==0)
 	{
-		TxdBuffer2[0]=0xA0;
-		TxdBuffer2[1]=0x01;
-		TxdBuffer2[2]=0x61;
-		TxdBuffer2[3]=0x00;
-		TxdBuffer2[4]=0xC0;
-		TxdBuffer2[5]=0x0D;
+		if(
+			(Buffer[0]==0xA0)	&&
+			(Buffer[1]==0x01)	&&
+			(Buffer[2]==0x61)
+			)
+		return 1;
+		else
+			return 0;
 	}
 	else if(CMD==1)
 	{
-		TxdBuffer2[0]=0xA0;
-		TxdBuffer2[1]=0x01;
-		TxdBuffer2[2]=0x62;
-		TxdBuffer2[3]=0x00;
-		TxdBuffer2[4]=0xC3;
-		TxdBuffer2[5]=0x0D;
+		if(
+			(Buffer[0]==0xA0)	&&
+			(Buffer[1]==0x01)	&&
+			(Buffer[2]==0x62)
+			)
+		return 1;
+		else
+			return 0;
 	}
 	else if(CMD==2)
 	{
-		TxdBuffer2[0]=0xA0;
-		TxdBuffer2[1]=0x01;
-		TxdBuffer2[2]=0x63;
-		TxdBuffer2[3]=0x00;
-		TxdBuffer2[4]=0xC2;
-		TxdBuffer2[5]=0x0D;
+		if(
+			(Buffer[0]==0xA0)	&&
+			(Buffer[1]==0x01)	&&
+			(Buffer[2]==0x63)
+			)
+		return 1;
+		else
+			return 0;
 	}
 	//---------------------------盘点2
 	else if(CMD==3)
 	{
-		TxdBuffer2[0]=0xA0;
-		TxdBuffer2[1]=0x02;
-		TxdBuffer2[2]=0x61;
-		TxdBuffer2[3]=0x00;
-		TxdBuffer2[4]=0xC3;
-		TxdBuffer2[5]=0x0D;
+		if(
+			(Buffer[0]==0xA0)	&&
+			(Buffer[1]==0x02)	&&
+			(Buffer[2]==0x61)
+			)
+		return 1;
+		else
+			return 0;
 	}
 	else if(CMD==4)
 	{
-		TxdBuffer2[0]=0xA0;
-		TxdBuffer2[1]=0x02;
-		TxdBuffer2[2]=0x62;
-		TxdBuffer2[3]=0x00;
-		TxdBuffer2[4]=0xC0;
-		TxdBuffer2[5]=0x0D;
+		if(
+			(Buffer[0]==0xA0)	&&
+			(Buffer[1]==0x02)	&&
+			(Buffer[2]==0x62)
+			)
+		return 1;
+		else
+			return 0;
 	}
 	else if(CMD==5)
 	{
-		TxdBuffer2[0]=0xA0;
-		TxdBuffer2[1]=0x02;
-		TxdBuffer2[2]=0x63;
-		TxdBuffer2[3]=0x00;
-		TxdBuffer2[4]=0xC1;
-		TxdBuffer2[5]=0x0D;
+		if(
+			(Buffer[0]==0xA0)	&&
+			(Buffer[1]==0x02)	&&
+			(Buffer[2]==0x63)
+			)
+		return 1;
+		else
+			return 0;
 	}
 	else
 	{
-		return;
+		return 0;
 	}
 }
+
 /*******************************************************************************
 * 函数名			:	function
 * 功能描述		:	函数功能说明 
 * 输入			: void
 * 返回值			: void
 *******************************************************************************/
-void PDCHECK(void)			//发送盘点传感器命令
+void PrintfSstatus(u8 CMD,u8* Buffer)		//打印传感器状态信息
 {
-	Stry=	0;
-	Stim++;
-	if(Stim>=500)
-		Stim=0;
-	if(Stim	==0)
+	if(CMD	==0)
 	{
-		PDSEND(Srun);			//发送盘点传感器命令
-		if(++Srun	>=6)
-			Srun	=0;
+		RS485_DMAPrintf(&RS4852,"传感器1准备完成\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
 	}
-	if(Stim>=65)
+	else if(CMD	==1)
 	{
-		Slen	=	RS485_ReadBufferIDLE(&RS485_Sens,(u32*)RevBuffer2,(u32*)RxdBuffer2);	
-		if(Slen)
-		{
-			RS485_DMASend(&RS4852,(u32*)RevBuffer2,Slen);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
-		}
+		RS485_DMAPrintf(&RS4852,"传感器1开始盘点\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
 	}
+	else if(CMD	==2)
+	{
+		RS485_DMAPrintf(&RS4852,"传感器1计数%d\n\r",Buffer[3]);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+	}
+	
+	//-----------------------------------
+	else if(CMD	==3)
+	{
+		RS485_DMAPrintf(&RS4852,"传感器2准备完成\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+	}
+	else if(CMD	==4)
+	{
+		RS485_DMAPrintf(&RS4852,"传感器2开始盘点\n\r");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+	}
+	else if(CMD	==5)
+	{
+		RS485_DMAPrintf(&RS4852,"传感器2计数%d\n\r",Buffer[3]);					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+	}
+	else
+		return;
+
 }
+
+
 /*******************************************************************************
 * 函数名			:	function
 * 功能描述		:	函数功能说明 
