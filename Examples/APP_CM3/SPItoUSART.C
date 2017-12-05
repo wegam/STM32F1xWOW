@@ -19,6 +19,7 @@ u8 ch3[17]={0xC0,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xF
 u8 ch4[17]={0xC0};
 
 u32	SYSTIME	=	0;
+u32	DATA	=	0;
 
 //u8 itf=0;
 /*******************************************************************************
@@ -34,9 +35,9 @@ void SPItoUSART_Configuration(void)
 	
 	GPIO_DeInitAll();							//将所有的GPIO关闭----V20170605
 	
-	SysTick_Configuration(1000000);	//系统嘀嗒时钟配置72MHz,单位为uS
+	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
-	PWM_OUT(TIM2,PWM_OUTChannel1,100,20);
+	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);
 
 //	GPIO_Configuration(GPIOB,GPIO_Pin_4,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);			//GPIO配置
 	
@@ -45,14 +46,14 @@ void SPItoUSART_Configuration(void)
 
 //	USART_DMA_Configuration(USART1,115200,1,1,(u32*)Usart_Test_Buffer,(u32*)Usart_Test_Buffer,DMA1_BufferSize);	//USART_DMA配置
 
-	STM32_SPI_ConfigurationNR(SPI1);
+	STM32_SPI_ConfigurationNR(SPI2);
 //	SPI_DMA_Configuration(SPI2,&SPI_InitStructure,(u32*)SPI_Buffer,(u32*)SPI_Buffer,SPI_BUFFERSIZE);		//SPI_DMA配置
 
 	
 
 //	PWM_Configuration(TIM2,7200,200,20);
-	STM32_SPI_ReadWriteData(SPI1,0x8F);
-	STM32_SPI_ReadWriteData(SPI1,0x40);
+	STM32_SPI_ReadWriteData(SPI2,0x8F);
+	STM32_SPI_ReadWriteData(SPI2,0x40);
 //	STM32_SPI_ReadWriteData(SPI1,0xC0);
 	
 	ch3[0]=0xC0;
@@ -69,9 +70,22 @@ void SPItoUSART_Configuration(void)
 void SPItoUSART_Server(void)
 {
 	SYSTIME++;
-	if(SYSTIME>=1000)
+	if(SYSTIME>=100)
 	{
 		SYSTIME	=	0;
+		DATA++;
+		if(DATA>9999)
+			DATA	=0;
+		STM32_SPI_ReadWriteData(SPI2,0x40);
+		
+		ch4[1]=ch2[DATA/1000+1];
+		ch4[3]=ch2[DATA%1000/100+1];
+		ch4[5]=ch2[DATA%100/10+1];
+		ch4[7]=ch2[DATA%10+1];
+		
+//		STM32_SPI_ReadWriteData(SPI2,0x8F);
+//		STM32_SPI_ReadWriteData(SPI2,0x40);
+		STM32_SPI_SendBuffer(SPI2,8,ch4);
 	}
 	
 //	if(SYSTIME	==	0)
@@ -79,21 +93,22 @@ void SPItoUSART_Server(void)
 //		STM32_SPI_SendBuffer(SPI1,120,ch);
 //	}
 	
-//	STM32_SPI_ReadWriteData(SPI1,0x8F);
-//	STM32_SPI_ReadWriteData(SPI1,0x40);
+//	STM32_SPI_ReadWriteData(SPI2,0x8F);
+//	STM32_SPI_ReadWriteData(SPI2,0x40);
+//	STM32_SPI_SendBuffer(SPI2,4,ch3);
 	
-	if(SYSTIME%3	==	0)
-	{
-		STM32_SPI_SendBuffer(SPI1,17,ch2);
-	}
-	else if(SYSTIME%3	==	1)
-	{
-		STM32_SPI_SendBuffer(SPI1,17,ch3);
-	}
-	else if(SYSTIME%3	==	2)
-	{
-		STM32_SPI_SendBuffer(SPI1,17,ch4);
-	}
+//	if(SYSTIME%3	==	0)
+//	{
+//		STM32_SPI_SendBuffer(SPI2,8,ch2);
+//	}
+//	else if(SYSTIME%3	==	1)
+//	{
+//		STM32_SPI_SendBuffer(SPI2,8,ch3);
+//	}
+//	else if(SYSTIME%3	==	2)
+//	{
+//		STM32_SPI_SendBuffer(SPI2,8,ch4);
+//	}
 
 }
 

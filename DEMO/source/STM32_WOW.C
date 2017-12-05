@@ -200,6 +200,11 @@ void WOW_Configuration(void)
 #ifdef PC006V21
 	PC006V21_Configuration();
 #endif
+//*********************************PC018V10*********************************//
+#ifdef PC018V10
+	PC018V10_Configuration();
+#endif
+
 //*********************************PL006V10*********************************//
 #ifdef PL006V10
 	PL006V10_Configuration();
@@ -520,6 +525,11 @@ void WOW_Server(void)
 #ifdef PC006V21
 	PC006V21_Server();
 #endif
+//*********************************PC018V10*********************************//
+#ifdef PC018V10
+	PC018V10_Server();
+#endif
+
 //*********************************PL006V10*********************************//
 #ifdef PL006V10
 	PL006V10_Server();

@@ -45,7 +45,7 @@ void GPIO_ClockConf(GPIO_TypeDef* GPIOx,						//GPIO端口
 		//********************GPIOA时钟使能********************	
 		case GPIOA_BASE:
 //			RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-			if((GPIO_Pin_x==GPIO_Pin_13)||(GPIO_Pin_x==GPIO_Pin_14)||(GPIO_Pin_x==GPIO_Pin_15)||(GPIO_Pin_x==GPIO_Pin_All))
+			if(((GPIO_Pin_x&GPIO_Pin_13)==GPIO_Pin_13)||((GPIO_Pin_x&GPIO_Pin_14)==GPIO_Pin_14)||((GPIO_Pin_x&GPIO_Pin_15)==GPIO_Pin_15)||(GPIO_Pin_x==GPIO_Pin_All))
 			{
 				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO, ENABLE);
 				//GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable,ENABLE);			//关闭SW功能
@@ -56,7 +56,7 @@ void GPIO_ClockConf(GPIO_TypeDef* GPIOx,						//GPIO端口
 			break;
 		//********************GPIOB时钟使能********************
 		case GPIOB_BASE:
-			if((GPIO_Pin_x&&GPIO_Pin_3==GPIO_Pin_3)||(GPIO_Pin_x&&GPIO_Pin_4==GPIO_Pin_4)||(GPIO_Pin_x==GPIO_Pin_All))
+			if(((GPIO_Pin_x&GPIO_Pin_3)==GPIO_Pin_3)||((GPIO_Pin_x&GPIO_Pin_4)==GPIO_Pin_4)||(GPIO_Pin_x==GPIO_Pin_All))
 			{
 				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_AFIO, ENABLE);
 				GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);				//关闭JTAG
@@ -67,7 +67,7 @@ void GPIO_ClockConf(GPIO_TypeDef* GPIOx,						//GPIO端口
 		//********************GPIOC时钟使能********************
 		case GPIOC_BASE:
 			RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-			if((GPIO_Pin_x==GPIO_Pin_14)||(GPIO_Pin_x==GPIO_Pin_15))
+			if(((GPIO_Pin_x&GPIO_Pin_14)==GPIO_Pin_14)||((GPIO_Pin_x&GPIO_Pin_15)==GPIO_Pin_15))
 				RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC |RCC_APB2Periph_AFIO, ENABLE);
 			break;
 		//********************GPIOD时钟使能********************
