@@ -129,7 +129,7 @@ void STM32_SPI_ConfigurationNR(SPI_TypeDef* SPIx)
 	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;																//时钟极性     	（低或高）
 	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;															//时钟相位     	（第一个或第二个跳变沿）
 	SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;																	//片选方式     	（硬件或软件方式）--硬件：自动控制NSS脚
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;			//波特率预分频 	（从2---256分频）
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;			//波特率预分频 	（从2---256分频）
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_LSB;												//最先发送的位 	（最低位，还是最高位在先）
 	SPI_InitStructure.SPI_CRCPolynomial = 7;																	//设置crc多项式	（数字）如7
 	SPI_Init(SPIx,&SPI_InitStructure);
