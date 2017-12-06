@@ -300,6 +300,10 @@ void WOW_Configuration(void)
 	Audio_Speaker_Configuration();
 #endif
 
+//*********************************Audio_Speaker_WOW*********************************//
+#ifdef Audio_Speaker_WOW
+	Audio_Speaker_Configuration();
+#endif
 //*********************************Custom_HID*********************************//
 #ifdef Custom_HID
 	Custom_HID_Configuration();
@@ -620,6 +624,11 @@ void WOW_Server(void)
 #endif
 
 //*********************************Audio_Speaker*********************************//
+#ifdef Audio_Speaker
+	Audio_Speaker_Server();
+#endif
+
+//*********************************Audio_Speaker_WOW*********************************//
 #ifdef Audio_Speaker
 	Audio_Speaker_Server();
 #endif

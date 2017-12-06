@@ -2,7 +2,7 @@
 
 
 #include "STM32_GPIO.H"
-
+#include "STM32_SYSTICK.H"
 
 
 
@@ -38,17 +38,17 @@ const uint8_t g_CRC8Tab[256]=
 0x74, 0x2a, 0xc8, 0x96, 0x15, 0x4b, 0xa9, 0xf7, 0xb6, 0xe8, 0x0a, 0x54, 0xd7, 0x89, 0x6b, 0x35
 };
 
-/*******************************************************************************
-* 函数名			:	function
-* 功能描述		:	函数功能说明 
-* 输入			: void
-* 返回值			: void
-*******************************************************************************/
-void Delay_us(unsigned short time)
-{
-	time	=	72*time;
-	while(time--);
-}
+///*******************************************************************************
+//* 函数名			:	function
+//* 功能描述		:	函数功能说明 
+//* 输入			: void
+//* 返回值			: void
+//*******************************************************************************/
+//void Delay_us(unsigned short time)
+//{
+//	time	=	72*time;
+//	while(time--);
+//}
 //查表计算方法
 uint8_t CRC8_Calculate(uint8_t *pBuf, uint8_t len)
 {
@@ -84,9 +84,9 @@ void Dallas_Rest(void)		//复位Dallas
 {                 
 	DS2401DIO_SetOut;	//SET PG11 OUTPUT
 	DS2401DIO_L;			//拉低DQ
-	Delay_us(750);		//拉低750us
+	SysTick_DeleyuS(750);		//拉低750us
 	DS2401DIO_H;			//DQ=1 
-	Delay_us(15);			//15US
+	SysTick_DeleyuS(15);			//15US
 }
 
 /*******************************************************************************
@@ -104,7 +104,7 @@ uint8_t Dallas_Check(void)
 	while(DS2401DIO_Read	&& (retry < 200))
 	{
 		retry++;
-		Delay_us(1);
+		SysTick_DeleyuS(1);
 	} 
 	if(retry >= 200)
 		return 1;
@@ -113,7 +113,7 @@ uint8_t Dallas_Check(void)
 	while((!DS2401DIO_Read) && (retry < 240))
 	{
 		retry++;
-		Delay_us(1);
+		SysTick_DeleyuS(1);
 	}
 	if(retry >= 240)
 		return 1;
@@ -132,15 +132,15 @@ uint8_t Dallas_ReadBit(void)
 	
 	DS2401DIO_SetOut;	//SET PG11 OUTPUT
 	DS2401DIO_L; 
-	Delay_us(2);
+	SysTick_DeleyuS(2);
 	DS2401DIO_H; 
 	DS2401DIO_SetIn;		//SET PG11 INPUT
-	Delay_us(12);
+	SysTick_DeleyuS(12);
 	if(DS2401DIO_Read)
 		data = 1;
 	else
 		data = 0;	 
-	Delay_us(50);
+	SysTick_DeleyuS(50);
 	
 	return data;
 }
@@ -182,16 +182,16 @@ void Dallas_WriteByte(uint8_t dat)
 		if (testb)
 		{
 			DS2401DIO_L;	// Write 1
-			Delay_us(2);
+			SysTick_DeleyuS(2);
 			DS2401DIO_H;
-			Delay_us(60);
+			SysTick_DeleyuS(60);
 		}
 		else
 		{
 			DS2401DIO_L;	// Write 0
-			Delay_us(60);
+			SysTick_DeleyuS(60);
 			DS2401DIO_H;
-			Delay_us(2);
+			SysTick_DeleyuS(2);
 		}
 	}
 }

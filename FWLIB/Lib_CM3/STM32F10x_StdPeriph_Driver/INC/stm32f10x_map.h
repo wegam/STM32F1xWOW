@@ -513,10 +513,10 @@ typedef struct
 /*------------------------ SystemTick ----------------------------------------*/
 typedef struct
 {
-  vu32 CTRL;
-  vu32 LOAD;
-  vu32 VAL;
-  vuc32 CALIB;
+  vu32 CTRL;			//SysTick控制和状态寄存器
+  vu32 LOAD;			//SysTick重装载值寄存器--最大计数0xFFFFFF：Systick是一个递减的定时器，当定时器递减至0时，重载寄存器中的值就会被重装载，继续开始递减。
+  vu32 VAL;				//SysTick当前值寄存器--最大计数0xFFFFFF：读取时返回当前倒计数的值，写它则使之清零，同时还会清除在SysTick?控制及状态寄存器中的COUNTFLAG?标志。
+  vuc32 CALIB;		//SysTick校准值寄存器
 } SysTick_TypeDef;
 
 /*------------------------ TIM -----------------------------------------------*/

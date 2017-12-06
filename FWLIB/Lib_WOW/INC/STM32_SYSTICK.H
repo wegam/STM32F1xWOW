@@ -23,6 +23,11 @@
 void SysTick_Configuration(unsigned long Time);	//系统嘀嗒时钟配置72MHz,单位为uS
 void SysTick_Server(void);											//嘀嗒时钟服务
 
+
+
+void SysTick_DeleyuS(unsigned int Time);				//SysTick延时nuS
+void SysTick_DeleymS(unsigned int Time);				//SysTick延时nmS
+	
 #endif
 
 

@@ -263,6 +263,10 @@
 	#include "Audio_Speaker.H"
 #endif
 
+//*********************************Audio_Speaker_WOW*********************************//
+#ifdef Audio_Speaker_WOW
+	#include "Audio_Speaker.H"
+#endif
 //*********************************Custom_HID*********************************//
 #ifdef Custom_HID
 	#include "Custom_HID.H"
