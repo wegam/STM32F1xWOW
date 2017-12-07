@@ -86,7 +86,7 @@ void PC018V10_Configuration(void)
 	
 	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
-//	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);
+	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);
 //	GPIO_Configuration_OPP50	(GPIOA,	GPIO_Pin_0);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 //	GPIO_Configuration(GPIOB,GPIO_Pin_4,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);			//GPIO配置
 	
@@ -97,14 +97,14 @@ void PC018V10_Configuration(void)
 
 //	USART_DMA_Configuration(USART1,115200,1,1,(u32*)Usart_Test_Buffer,(u32*)Usart_Test_Buffer,DMA1_BufferSize);	//USART_DMA配置
 
-	STM32_SPI_ConfigurationNR(SPI2);
+//	STM32_SPI_ConfigurationNR(SPI2);
 //	SPI_DMA_Configuration(SPI2,&SPI_InitStructure,(u32*)SPI_Buffer,(u32*)SPI_Buffer,SPI_BUFFERSIZE);		//SPI_DMA配置
 	
 	
 
 //	PWM_Configuration(TIM2,7200,200,20);
-	STM32_SPI_ReadWriteData(SPI2,0x8F);
-	STM32_SPI_ReadWriteData(SPI2,0x40);
+//	STM32_SPI_ReadWriteData(SPI2,0x8F);
+//	STM32_SPI_ReadWriteData(SPI2,0x40);
 //	STM32_SPI_ReadWriteData(SPI1,0xC0);
 	
 	ch3[0]=0xC0;

@@ -1,4 +1,4 @@
-#include "DS2401.h"	
+#include "Dallas.h"	
 
 
 #include "STM32_GPIO.H"
@@ -203,6 +203,7 @@ void Dallas_WriteBit(unsigned char bit)		//1-wire 一位（1bit）写操作-写0&写1
 			Dallas_H;					//释放总线
 			SysTick_DeleyuS(2);
 		}
+
 }
 /*******************************************************************************
 * 函数名			:	function
@@ -258,10 +259,10 @@ uint8_t Dallas_GetID(uint8_t *pBuf)
 	uint8_t i;
 	uint8_t buf[8];
 
-	Dallas_Rest();						//复位总线
-	if(Dallas_Check())				//检测设备应答
+	Dallas_Rest();	
+	if(Dallas_Check())
 		return 1;
-	Dallas_WriteByte(0x33);		//read romid
+	Dallas_WriteByte(0x33);	//read romid
 	for(i=0; i<8; i++)
 		buf[i] = Dallas_ReadByte();
 	
