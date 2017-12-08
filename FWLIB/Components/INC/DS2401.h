@@ -3,12 +3,18 @@
 #include "stdint.h"
 
 
-
+typedef enum
+{
+	Cmd_ReadROM		=	0x33,			//读ROM(33H)
+	Cmd_MatchROM	=	0x55,			//匹配ROM(55H)
+	Cmd_SkipROM		=	0xCC,			//跳过ROM(CCH)
+	Cmd_SearchROM	=	0xF0			//查找ROM(F0H)
+}DallasCmd;
 
 
 uint8_t CRC8_Calculate(uint8_t *pBuf, uint8_t len);
-void Dallas_Rst(void);
-uint8_t Dallas_Check(void);						//等待Dallas的回应
+uint8_t Dallas_Rest(void);								//复位Dallas,返回结果
+//uint8_t Dallas_Check(void);						//等待Dallas的回应---包含到复位函数中
 uint8_t Dallas_ReadBit(void);					//从Dallas读取一个位
 uint8_t Dallas_ReadByte(void);				//从Dallas读取一个字节
 

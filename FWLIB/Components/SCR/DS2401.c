@@ -6,8 +6,8 @@
 
 
 
-#define	Port_Dallas		GPIOC
-#define	Pin_Dallas		GPIO_Pin_2
+#define	Port_Dallas		GPIOB
+#define	Pin_Dallas		GPIO_Pin_14
 
 #define	Dallas_SetOut		GPIO_Configuration_OPP50(Port_Dallas,	Pin_Dallas)			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 #define	Dallas_SetIn		GPIO_Configuration_IPU(Port_Dallas,		Pin_Dallas)			//将GPIO相应管脚配置为下拉输入模式----V20170605
@@ -78,48 +78,40 @@ void DS2401_Configuration(void)
 * 函数名			:	function
 * 功能描述		:	复位Dallas--拉低总线(低速480uS,高速48uS),然后释放总线，等待从机拉高总线
 * 输入			: void
-* 返回值			: void
+* 返回值			: 返回0:复位不成功/无IC
+							返回1:复位成功
 *******************************************************************************/
-void Dallas_Rest(void)		//复位Dallas
-{                 
-	Dallas_SetOut;	//SET PG11 OUTPUT
-	Dallas_L;			//拉低DQ
-	SysTick_DeleyuS(750);		//拉低750us
-	Dallas_H;			//DQ=1 
-	SysTick_DeleyuS(15);			//15US
-}
-
-/*******************************************************************************
-* 函数名			:	function
-* 功能描述		:	等待Dallas的回应
-* 输入			: void
-* 返回值			: 返回1:未检测到Dallas1的存在
-							返回0:存在
-*******************************************************************************/
-uint8_t Dallas_Check(void)
+uint8_t Dallas_Rest(void)		//复位Dallas,返回结果
 {
 	uint8_t retry=0;
+	//----------------------复位时间：拉低信号大于480us
+	Dallas_SetOut;					//SET PG11 OUTPUT
+	Dallas_L;								//拉低DQ
+	SysTick_DeleyuS(750);		//拉低750us（大于480uS)
+//	Dallas_H;								//DQ=1 
+//	SysTick_DeleyuS(15);		//15US---检测响应需要在15uS后
 	
-	Dallas_SetIn;		//SET PG11 INPUT	 
-	while(Dallas_Read	&& (retry < 200))
-	{
-		retry++;
-		SysTick_DeleyuS(1);
-	} 
-	if(retry >= 200)
-		return 1;
-	else
-		retry=0;
-	while((!Dallas_Read) && (retry < 240))
+	//----------------------检测响应：总时间需要大于480us
+	//1释放总线
+	//2等待15us~60uS
+	//3从机拉低总线60uS~240uS
+	//4从机释放/拉高总线
+	Dallas_SetIn;				//SET PG11 INPUT		//输入模式
+	SysTick_DeleyuS(15);		//15US---检测响应需要在15uS后
+	while(Dallas_Read	&& (retry < 240))			//响应检测时间不超过240uS
 	{
 		retry++;
 		SysTick_DeleyuS(1);
 	}
-	if(retry >= 240)
+	if(retry >= 240)	//超时
 		return 1;
-	
+	else
+		retry=0;
+	//增加延时--为了满足总的检测时间480uS
+	SysTick_DeleyuS(480);		//总的检测响应时间需要大于480uS
 	return 0;
 }
+
 /*******************************************************************************
 * 函数名			:	Dallas_ReadBit
 * 功能描述		:	从Dallas读取一个位	- 读0&读1
@@ -218,7 +210,8 @@ void Dallas_WriteByte(uint8_t dat)
 	uint8_t j;
 	uint8_t testb;
 	
-	Dallas_SetOut;	//SET PG11 OUTPUT;
+	Dallas_SetOut;							//SET PG11 OUTPUT;
+	
 	for (j=1; j<=8; j++)
 	{
 		testb = dat&0x01;
@@ -238,11 +231,12 @@ void Dallas_WriteByte(uint8_t dat)
 *******************************************************************************/
 uint8_t Dallas_Init(void)
 {
+	uint8_t Result	=	0;
 	GPIO_Configuration_OPP50	(Port_Dallas,	Pin_Dallas);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 
-	Dallas_Rest();
+	Result	=	Dallas_Rest();
 
-	return Dallas_Check();
+	return Result;
 }
 /*******************************************************************************
 * 函数名			:	function
@@ -259,8 +253,7 @@ uint8_t Dallas_GetID(uint8_t *pBuf)
 	uint8_t buf[8];
 
 	Dallas_Rest();						//复位总线
-	if(Dallas_Check())				//检测设备应答
-		return 1;
+
 	Dallas_WriteByte(0x33);		//read romid
 	for(i=0; i<8; i++)
 		buf[i] = Dallas_ReadByte();

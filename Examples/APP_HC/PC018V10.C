@@ -1,6 +1,7 @@
 #ifdef PC018V10
 
 #include "PC018V10.H"
+#include "HC_PHY.H"
 
 #include "DS2401.h"	
 
@@ -22,6 +23,10 @@
 #include	"stdarg.h"		//用于获取不确定个数的参数
 #include	"stdlib.h"		//malloc动态申请内存空间
 
+Borad_InfoDef	PC018V10_Info;
+
+
+#define	Board_SerialNum	0x0000		//PCB板号
 
 u8 ch[120]="USART_BASIC_Configuration(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPreemptionPriority,u8 NVIC_SubPriority)\n";
 u8 ch2[17]={0xC0,0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
@@ -97,20 +102,21 @@ void PC018V10_Configuration(void)
 
 //	USART_DMA_Configuration(USART1,115200,1,1,(u32*)Usart_Test_Buffer,(u32*)Usart_Test_Buffer,DMA1_BufferSize);	//USART_DMA配置
 
-//	STM32_SPI_ConfigurationNR(SPI2);
-//	SPI_DMA_Configuration(SPI2,&SPI_InitStructure,(u32*)SPI_Buffer,(u32*)SPI_Buffer,SPI_BUFFERSIZE);		//SPI_DMA配置
+	STM32_SPI_ConfigurationNR(SPI2);
+
 	
-	
+	PC018V10_Info.Borad_Name	=	"PC018V10";
 
 //	PWM_Configuration(TIM2,7200,200,20);
-//	STM32_SPI_ReadWriteData(SPI2,0x8F);
-//	STM32_SPI_ReadWriteData(SPI2,0x40);
-//	STM32_SPI_ReadWriteData(SPI1,0xC0);
+	STM32_SPI_ReadWriteData(SPI2,0x8F);
+	STM32_SPI_ReadWriteData(SPI2,0x40);
+	STM32_SPI_ReadWriteData(SPI1,0xC0);
 	
-	ch3[0]=0xC0;
-	ch4[0]=0xC0;
+//	ch3[0]=0xC0;
+//	ch4[0]=0xC0;
 	
 	Dallas_Init();
+//	Dallas_GetID(SegArr);
 	
 	
 
@@ -125,12 +131,13 @@ void PC018V10_Configuration(void)
 void PC018V10_Server(void)
 {
 	SYSTIME++;
-	if(SYSTIME>=100)
+	if(SYSTIME>=1000)
 	{
 		SYSTIME	=	0;
 		DATA++;
 		if(DATA>9999)
 			DATA	=0;
+		
 //		STM32_SPI_ReadWriteData(SPI2,0x40);
 //		
 //		ch4[1]=ch2[DATA/1000+1];
@@ -141,13 +148,12 @@ void PC018V10_Server(void)
 ////		STM32_SPI_ReadWriteData(SPI2,0x8F);
 ////		STM32_SPI_ReadWriteData(SPI2,0x40);
 //		STM32_SPI_SendBuffer(SPI2,8,ch4);
-//		WriteNumSeg7(DATA);		//向数码管写入数据
+		WriteNumSeg7(DATA);		//向数码管写入数据
 //		Dallas_Init();
 //		WriteStatus(3);			//向数码管写入数据
 		
-
-		
-
+//		Dallas_Init();
+		Dallas_GetID(SegArr);
 	}
 	
 //	if(SYSTIME	==	0)
