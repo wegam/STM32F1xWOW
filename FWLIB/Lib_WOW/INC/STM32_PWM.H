@@ -60,21 +60,20 @@ extern u32 Tim2_Count;
 extern u32 Tim3_Count;
 extern u32 Tim4_Count;
 
+//----------------------------------固定输出1/1000占空比
 void PWM_OUT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1000
 
-
+//----------------------------------固定输出1/1200占空比
 void PWM_OUT2(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
 void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比---LED
 
 
-void PWM_OUT_COUNT(TIM_TypeDef* TIMx,PWM_OUTChannelTypeDef PWM_OUTChanneln,double PWM_Frequency ,u16 PWM_Ratio);	//PWM设定-20161127版本	占空比1/1200
-void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count);		//设置计数值
-u8 PWM_CountServer(void);			//计数服务程序
 
 
-void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim);			//PWM输出配置
+//----------------------------------普通GPIO固定脉冲个数输出，占空比固定50%
+void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim);									//PWM输出配置
 void PWM_OUT_TIMSet(PWM_TimDef* PWM_Tim,u32 PWM_Count);			//PWM输出配置
-u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim);			//PWM输出配置
+u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim);									//PWM输出配置
 
 
 

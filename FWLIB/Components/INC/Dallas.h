@@ -1,5 +1,5 @@
-#ifndef __DS2401_H
-#define __DS2401_H 
+#ifndef __Dallas_H
+#define __Dallas_H 
 #include "stdint.h"
 
 

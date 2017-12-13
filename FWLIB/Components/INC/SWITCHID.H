@@ -10,27 +10,26 @@
 
 typedef struct _SWITCHID_DATA
 {
-	struct
-	{
-		unsigned long D0:1;
-		unsigned long D1:1;
-		unsigned long D2:1;
-		unsigned long D3:1;
-		unsigned long D4:1;
-		unsigned long D5:1;
-		unsigned long D6:1;
-		unsigned long D7:1;
-		unsigned long D8:1;
-		unsigned long D9:1;
-		unsigned long D10:1;
-		unsigned long D11:1;
-		unsigned long D12:1;
-		unsigned long D13:1;
-		unsigned long D14:1;
-		unsigned long D15:1;
-	}Data16;
+	unsigned short SW0:1;
+	unsigned short SW1:1;
+	unsigned short SW2:1;
+	unsigned short SW3:1;
+	unsigned short SW4:1;
+	unsigned short SW5:1;
+	unsigned short SW6:1;
+	unsigned short SW7:1;
+	unsigned short SW8:1;
+	unsigned short SW9:1;
+	unsigned short SW10:1;
+	unsigned short SW11:1;
+	unsigned short SW12:1;
+	unsigned short SW13:1;
+	unsigned short SW14:1;
+	unsigned short SW15:1;
 	
-}SWITCHID_DATA;			//根据输入的时间相关参数计算出来的相关运行参数值
+}SWITCHID_DATAType;			//根据输入的时间相关参数计算出来的相关运行参数值
+
+extern SWITCHID_DATAType	SWITCHID_DATA;			//根据输入的时间相关参数计算出来的相关运行参数值
 
 typedef struct _SWITCHID_CONF
 {
@@ -99,15 +98,15 @@ typedef struct _SWITCHID_CONF
 	GPIO_TypeDef* 	SW16_PORT;					//GPIOX
 	unsigned short 	SW16_Pin;					//GPIO_Pin_x
 	
-	SWITCHID_DATA		sID_Data16;				//结构体位形式:读取的拔码开关值---不需要配置
-	unsigned short	nID_Data16;				//常规数值形式:读取的拔码开关值---不需要配置
+//	SWITCHID_DATAType		SWITCHID;					//结构体位形式:读取的拔码开关值---不需要配置
+	unsigned short	nSWITCHID;				//常规数值形式:读取的拔码开关值---不需要配置
 }SWITCHID_CONF;
 
 
 
 
-void SWITCHIDConf(SWITCHID_CONF *SWITCHIDx);		//
-unsigned long SWITCHIDRead(SWITCHID_CONF *SWITCHIDx);		//
+void SWITCHID_Conf(SWITCHID_CONF *SWITCHIDx);		//
+unsigned short SWITCHID_Read(SWITCHID_CONF *SWITCHIDx);		//
 
 
 #endif

@@ -17,23 +17,39 @@
 #ifndef __STM32_EXTI_H
 #define __STM32_EXTI_H
 
-#include "stm32f10x_exti.h"
+
 #include "stm32f10x_gpio.h"
-#include "stm32f10x_nvic.h"
-#include "stm32f10x_rcc.h"
-#include "math.h"
 
-//#include "STM32_WOW.H"
-//#include "stdio.h"
+typedef struct _Trigger_Line
+{
+	unsigned short Trigger_Line0:1;
+	unsigned short Trigger_Line1:1;
+	unsigned short Trigger_Line2:1;
+	unsigned short Trigger_Line3:1;
+	unsigned short Trigger_Line4:1;
+	unsigned short Trigger_Line5:1;
+	unsigned short Trigger_Line6:1;
+	unsigned short Trigger_Line7:1;
+	unsigned short Trigger_Line8:1;
+	unsigned short Trigger_Line9:1;
+	unsigned short Trigger_Line10:1;
+	unsigned short Trigger_Line11:1;
+	unsigned short Trigger_Line12:1;
+	unsigned short Trigger_Line13:1;
+	unsigned short Trigger_Line14:1;
+	unsigned short Trigger_Line15:1;
+}Trigger_LineType;
 
-void EXTI_Configuration(GPIO_TypeDef* GPIOx, u16 GPIO_Pin,EXTIMode_TypeDef Mode);
-void EXTI_Configuration2(GPIO_TypeDef* GPIOx, u16 GPIO_Pin,EXTIMode_TypeDef Mode);
-void EXTI_ClockConf(GPIO_TypeDef* GPIOx, u16 GPIO_Pin_x);						//开启相关GPIO时钟	
-void EXTI_PortSourceConf(GPIO_TypeDef* GPIOx,u8 *GPIO_PortSource);	//设置中断线
-void EXTI_PinConf(GPIO_TypeDef* GPIOx, u16 GPIO_Pin_x,u8 *EXTI_IRQChannel);			//选择相关中断线路
-void EXTI_InitStructure(GPIO_TypeDef* GPIOx, u16 GPIO_Pin_x,EXTIMode_TypeDef Mode,u8 EXTI_IRQChannel);		//外部中断初始化
-void EXTI_InitStructure2(GPIO_TypeDef* GPIOx, u16 GPIO_Pin_x,EXTIMode_TypeDef Mode,u8 EXTI_IRQChannel);	
-void EXTI_Interrupt_Configuration(u32 EXTI_Line);
+extern Trigger_LineType Trigger_Line;
+
+
+void EXTI_Configuration_ITR		(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);		//外部上升沿中断配置,抢占1，响应1--20171213
+void EXTI_Configuration_ITF		(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);		//外部下降沿中断配置,抢占1，响应1--20171213
+void EXTI_Configuration_ITRF	(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);		//外部边沿触发中断配置,抢占1，响应1--20171213
+
+
+
+
 void EXTI_Server(void);
 #endif
 

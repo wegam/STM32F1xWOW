@@ -11,7 +11,7 @@
 
 #include "STM32_GPIO.H"
 
-
+SWITCHID_DATAType	SWITCHID_DATA;			//根据输入的时间相关参数计算出来的相关运行参数值
 //SW(1)_PORT
 //SW(1)_Pin
 //#define	SW_PORT(n)	SW##n##_PORT		//##拼接符
@@ -21,7 +21,7 @@
 *描述:
 *
 ******************************************************************/
-void SWITCHIDConf(SWITCHID_CONF *SWITCHIDx)
+void SWITCHID_Conf(SWITCHID_CONF *SWITCHIDx)
 {
 	unsigned char NumOfSW=SWITCHIDx->NumOfSW;			//拉入的拔码开关位数
 	//根据接入的拔码开关位数从低位到高位进行上拉输入配置
@@ -111,10 +111,10 @@ void SWITCHIDConf(SWITCHID_CONF *SWITCHIDx)
 *描述:
 *
 ******************************************************************/
-unsigned long SWITCHIDRead(SWITCHID_CONF *SWITCHIDx)
+unsigned short SWITCHID_Read(SWITCHID_CONF *SWITCHIDx)
 {
-	unsigned long	reValue=0;	
-	unsigned long *P=(unsigned long*)&SWITCHIDx->sID_Data16.Data16;		//获取数据结构体地址,以便将读取的数据保存	
+	unsigned short	reValue=0;	
+	unsigned long *P=(unsigned long*)&SWITCHID_DATA;		//获取数据结构体地址,以便将读取的数据保存	
 	unsigned char NumOfSW=SWITCHIDx->NumOfSW;		//接入的拔码开关位数
 	//根据接入的拔码开关位数从低位到高位进行读取
 	if(NumOfSW)	//SW1
@@ -215,7 +215,7 @@ unsigned long SWITCHIDRead(SWITCHID_CONF *SWITCHIDx)
 	}
 	reValue^=0xFFFF;		//拔码开关低有效,需要取反
 	*P=reValue;
-	SWITCHIDx->nID_Data16=reValue;
+	SWITCHIDx->nSWITCHID=reValue;
 	return	reValue;	//将数据返回(如果需要直接获取读取值可以使用返回值)
 }
 

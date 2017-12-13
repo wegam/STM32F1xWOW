@@ -537,270 +537,7 @@ void PWM_OUT2			//PWM输出配置
 	
 	TIM_Cmd(TIMx, ENABLE); 									//使能TIM
 }
-/*******************************************************************************
-* 函数名		:	PWM_OUT	
-* 功能描述	:		 
-* 输入		:	PWM_Frequency 频率，单位Hz	
-* 输出		:
-* 返回 		:
-*******************************************************************************/
-void PWM_OUT_COUNT			//PWM输出配置
-(
-	TIM_TypeDef* TIMx,											//所使用的定时器
-	PWM_OUTChannelTypeDef PWM_OUTChanneln,	//PWM输出通道号
-	double PWM_Frequency,										//输出频率，最小频率0.02Hz		
-	u16 PWM_Ratio														//输出占空比，分辨率1/1000
-)
-{
-	//*1,结构体定义
-	//*2,变量定义
-	//*3,管脚确认
-	//*4,打开相应的时钟
-	//*5,管脚配置（初始化）
-	//*6,定时器配置（初始化）
-	//*7,PWM输出配置（初始化）
-	//*8,占空比配置	
-	
-	//*1,结构体定义***********************************************************************
-	GPIO_InitTypeDef GPIO_InitStructure;
-	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;	//定时器结构体定义
-	TIM_OCInitTypeDef TIMOCInitStructure;
-	RCC_ClocksTypeDef RCC_ClocksStatus;							//时钟状态---时钟值
-	NVIC_InitTypeDef	NVIC_InitStructure;						//中断结构体
-	u8 TIM_IRQChannel=0;
-	
-	//*2,变量定义*************************************************************************	
-	GPIO_TypeDef* GPIOx				=	0;			//x=A/B/C/D/E/F/G
-	u16 GPIO_Pin_n						=	0xFF;		//n=0~15;
-	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
-	u32	TIMx_Frequency=0;								//	定时器时钟
-	u16 TIMx_Prescaler				=	0	;			//	定时器时钟分频值		取值范围：0x0000~0xFFFF
-  u16 TIMx_Period						=	0	;			//	定时器自动重装载值	取值范围：0x0000~0xFFFF
-//	u32	Microsecond						=	0	;		//	微秒
-//	u32	Nanosecond						=	0	;		//	纳秒
-	double	Tim_num1					=	0	;			//	临时变量1
-//	u8	Tim_flg								=	0	;			//	临时变量2
-	//*3,管脚配置--根据输入参数选择相应的GPIO************************************************
-	switch (*(u32*)&TIMx)
-	{
-		case TIM1_BASE:
-			RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
-			TIM_IRQChannel=TIM1_UP_IRQChannel;
-			switch(PWM_OUTChanneln)
-			{
-				case PWM_OUTChannel1:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_8;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;	
-															break;
-				case PWM_OUTChannel2:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_9;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel3:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_10;	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel4:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_11;	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-			}
-			break;
-		
-		case TIM2_BASE:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-			TIM_IRQChannel=TIM2_IRQChannel;
-			switch(PWM_OUTChanneln)
-			{
-				case PWM_OUTChannel1:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_0;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel2:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_1;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel3:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_2;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel4:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_3;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-			}
-			break;
-		
-		case TIM3_BASE:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-			TIM_IRQChannel=TIM3_IRQChannel;
-			switch(PWM_OUTChanneln)
-			{
-				case PWM_OUTChannel1:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_6;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel2:	GPIOx	=	GPIOA;	GPIO_Pin_n	=	GPIO_Pin_7;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;
-															break;
-				case PWM_OUTChannel3:	GPIOx	=	GPIOB;	GPIO_Pin_n	=	GPIO_Pin_0;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;
-															break;
-				case PWM_OUTChannel4:	GPIOx	=	GPIOB;	GPIO_Pin_n	=	GPIO_Pin_1;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;
-															break;
-			}
-			break;
-		
-		case TIM4_BASE:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-			TIM_IRQChannel=TIM4_IRQChannel;
-			switch(PWM_OUTChanneln)
-			{
-				case PWM_OUTChannel1:	GPIOx	=	GPIOB;	GPIO_Pin_n	=	GPIO_Pin_6;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;
-															break;
-				case PWM_OUTChannel2:	GPIOx	=	GPIOB;	GPIO_Pin_n	=	GPIO_Pin_7;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;
-															break;
-				case PWM_OUTChannel3:	GPIOx	=	GPIOB;	GPIO_Pin_n	=	GPIO_Pin_8;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;
-															break;
-				case PWM_OUTChannel4:	GPIOx	=	GPIOB;	GPIO_Pin_n	=	GPIO_Pin_9;		RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;
-															break;
-			}
-			break;
-		
-		case TIM5_BASE:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-			TIM_IRQChannel=TIM5_IRQChannel;
-			break;
-		
-		case TIM6_BASE:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
-			TIM_IRQChannel=TIM6_IRQChannel;
-			break;
-		
-		case TIM7_BASE:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-			TIM_IRQChannel=TIM7_IRQChannel;
-			break;
-		
-		case TIM8_BASE:
-			RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
-			TIM_IRQChannel=TIM8_UP_IRQChannel;
-			break;
-		
-		default:
-			break;		
-	}
-	
-	
-	//*4,打开相应的时钟*********************************************************************
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);	//使能复用时钟
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOx, ENABLE);	//使能引脚时钟	
-	//*5,管脚配置（初始化）*****************************************************************
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_n;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP ;//复用推挽输出
-	GPIO_Init(GPIOx,&GPIO_InitStructure);	
-	//*6,获取TIMx时钟**********************************************************************
-	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
-	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
-	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
-	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;;
-	if (((*(u32*)&TIMx)&APB2PERIPH_BASE) == APB2PERIPH_BASE)
-  {
-    TIMx_Frequency = RCC_ClocksStatus.PCLK2_Frequency;	//APB2
-  }
-  else
-  {
-    TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
-  }
-	//*7,计算定时器参数*********************************************************************
-	//Fsys==Fpwm*Count==Fpwm*(Prescaler*Period)	
-	//	TIMx_Prescaler				=	72-1		;		// 	定时器时钟分频值
-	//	TIMx_Period						=	1000-1	;		// 	定时器自动重装载值
-	//	Tim_num1							=	0				;		//	临时变量1
-	if(1/PWM_Frequency>10)
-	{
-		Tim_num1=(double)(TIMx_Frequency)/(PWM_Frequency*100);							//根据定时器输出频率计算计数值
-		TIMx_Prescaler=60000;
-		TIMx_Period=(u16)(((double)Tim_num1/(double)TIMx_Prescaler)*200);
-	}
-	else if(1/PWM_Frequency>1.0)
-	{
-		Tim_num1=(double)(TIMx_Frequency)/(PWM_Frequency*10);							//根据定时器输出频率计算计数值
-		TIMx_Prescaler=60000;
-		TIMx_Period=(u16)(((double)Tim_num1/(double)TIMx_Prescaler)*20);
-	}
-	else if(PWM_Frequency>=1.0)
-	{
-		Tim_num1=(double)(TIMx_Frequency)/(PWM_Frequency);							//根据定时器输出频率计算计数值
-		Tim_num1=(double)(Tim_num1*2.0);
-		if(Tim_num1>=10000000)
-		{
-			TIMx_Prescaler=2000;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else if(Tim_num1>=1000000)
-		{
-			TIMx_Prescaler=200;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else if(Tim_num1>=100000)
-		{
-			TIMx_Prescaler=20;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else if(Tim_num1>=65530)
-		{
-			TIMx_Prescaler=2;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else
-		{
-			TIMx_Prescaler=1;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-	}	
-	//8)**********定时器初始化
-	TIM_TimeBaseStructure.TIM_Prescaler = TIMx_Prescaler-1; 				//设定分频值
-	TIM_TimeBaseStructure.TIM_Period 		= TIMx_Period-1;        		//设定自动重装载值
-	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;  				//不分割
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  		//向上计数
-	TIM_TimeBaseInit(TIMx, &TIM_TimeBaseStructure);		//初始化	
-	//9）定时器配置（初始化*******************************************************************
-	if((TIMx_Period*(u32)PWM_Ratio)>1000)
-		PWM_Ratio=(u16)((u32)(TIMx_Period*PWM_Ratio)/1000);
-	else if(PWM_Ratio!=0)
-		PWM_Ratio=1;
-		
-	TIMOCInitStructure.TIM_OCMode = TIM_OCMode_PWM1; 								//选择定时器模式:TIM脉冲宽度调制模式1
-	TIMOCInitStructure.TIM_Pulse =(u16)PWM_Ratio;										//占空比=(CCRx/ARR)*1000%
-	TIMOCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;				//输出极性:TIM输出比较极性高
-	TIMOCInitStructure.TIM_OutputState = TIM_OutputState_Enable;		//比较输出使能
-	//10）定时器配置（初始化*******************************************************************
-	switch(PWM_OUTChanneln)
-	{
-		case PWM_OUTChannel1:	TIM_OC1Init(TIMx, &TIMOCInitStructure);												//TIM2的CH1输出使能
-		break;
-		case PWM_OUTChannel2:	TIM_OC2Init(TIMx, &TIMOCInitStructure);												//TIM2的CH1输出使能
-		break;
-		case PWM_OUTChannel3:	TIM_OC3Init(TIMx, &TIMOCInitStructure);												//TIM2的CH1输出使能
-		break;
-		case PWM_OUTChannel4:	TIM_OC4Init(TIMx, &TIMOCInitStructure);												//TIM2的CH1输出使能
-		break;
-		default:
-		break;
-	}	
-	TIM_CtrlPWMOutputs(TIMx,ENABLE);																//设置TIM2的PWM输出使能
-	//11）定时器配置（初始化*******************************************************************
-	switch(PWM_OUTChanneln)			//使能TIM在CCR上的预装载寄存器
-	{
-		case PWM_OUTChannel1:	TIM_OC1PreloadConfig(TIMx, TIM_OCPreload_Enable);
-				break;
-		case PWM_OUTChannel2:	TIM_OC2PreloadConfig(TIMx, TIM_OCPreload_Enable);
-				break;
-		case PWM_OUTChannel3:	TIM_OC3PreloadConfig(TIMx, TIM_OCPreload_Enable);
-				break;
-		case PWM_OUTChannel4:	TIM_OC4PreloadConfig(TIMx, TIM_OCPreload_Enable);
-				break;
-	}	
-	
-	TIM_ARRPreloadConfig(TIMx, ENABLE);			//ARPE使能 
-	
-	//1)**********定义相关变量	
-	NVIC_InitStructure.NVIC_IRQChannel = TIM_IRQChannel;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-	
-	/* Clear TIMx update pending flag[清除TIMx溢出中断] */
-	TIM_ClearFlag(TIMx, TIM_FLAG_Update);
 
-	/* Enable TIM2 Update interrupt [TIMx溢出中断允许]*/
-	TIM_ITConfig(TIMx, TIM_IT_Update, ENABLE); 
-	
-	TIM_Cmd(TIMx, DISABLE); 									//使能TIM
-}
 /*******************************************************************************
 *函数名			:	function
 *功能描述		:	函数功能说明
@@ -819,28 +556,7 @@ void SetPWM_Ratio(u16 PWM_Ratio)
 	
 	TIM2->CCR1 = PWM_Ratio;
 }
-/*******************************************************************************
-*函数名			:	SetPWM_Num
-*功能描述		:	设置输出脉冲个数
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-void SetPWM_Num(TIM_TypeDef* TIMx,u32 PWM_Count)
-{
-	switch (*(u32*)&TIMx)
-	{
-		case TIM1_BASE:Tim1_Count	=	PWM_Count;	TIM1->CNT	=	0;	TIM1->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM1->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
-			break;
-		case TIM2_BASE:Tim2_Count	=	PWM_Count;	TIM2->CNT	=	0;	TIM2->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM2->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
-			break;
-		case TIM3_BASE:Tim3_Count	=	PWM_Count;	TIM3->CNT	=	0;	TIM3->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM3->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
-			break;
-		case TIM4_BASE:Tim4_Count	=	PWM_Count;	TIM4->CNT	=	0;	TIM4->BDTR |= ((u16)0x8000);	/* Enable the TIM Main Output */  TIM4->CR1 |= ((u16)0x0001);	//TIM_Cmd(TIM2, ENABLE);	//使能TIMx计数
-			break;
-		default	:
-			break;
-	}
-}
+
 /*******************************************************************************
 * 函数名		:	PWM_OUT	
 * 功能描述	:		 
@@ -876,12 +592,13 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	u8 TIM_IRQChannel=0;
 
 	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
-	u32	TIMx_Frequency=0;								//	定时器时钟
+	u32	TIMx_Frequency				=	0;			//	定时器时钟
 	u16 TIMx_Prescaler				=	0	;			//	定时器时钟分频值		取值范围：0x0000~0xFFFF
   u16 TIMx_Period						=	0	;			//	定时器自动重装载值	取值范围：0x0000~0xFFFF
 	u8	a	=	100;
-	u8	b	=	PWM_Tim->PWM_BasicData.PWM_Ratio;
+	u8	b	=	0;
 	u8	c	=	0;
+	
 //	volatile u8	temp	=	0;
 //	u32	Microsecond						=	0	;		//	微秒
 //	u32	Nanosecond						=	0	;		//	纳秒
@@ -890,7 +607,10 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 
 	
 //	u16 PWM_Ratio		=	0;						//占空比 1%精度，默认50%（未设置此参数时）
-
+	
+	if(PWM_Tim->PWM_BasicData.PWM_Ratio	==	0)		//未配置默认为50%
+		PWM_Tim->PWM_BasicData.PWM_Ratio	=	50;
+	b	=	PWM_Tim->PWM_BasicData.PWM_Ratio;
 	
 	//*3,参数设置**************************************************************************
 
@@ -1062,34 +782,6 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	TIM_ITConfig(TIMx, TIM_IT_Update, ENABLE); 
 	
 	TIM_Cmd(TIMx, DISABLE); 									//使能TIM
-
-
-//----------------TEST
-
-//volatile GPIO_TypeDef* GPIOx;			//x=A/B/C/D/E/F/G
-//volatile TIM_TypeDef * TIMx;
-
-//	GPIOx	=	GPIOB;
-//	TIMx	=	TIM2;
-//	
-//	GPIOx	=	(GPIO_TypeDef*)PWM_Tim->P1;
-//	TIMx	=	(TIM_TypeDef*)PWM_Tim->P2;
-//	
-//	PWM_Tim->P1	=	(u32)GPIOB;
-//	PWM_Tim->P2	=	(u32)TIM2;
-//	
-//	GPIOx	=	GPIOA;
-//	TIMx	=	TIM1;
-//	
-//	GPIOx	=	(GPIO_TypeDef*)PWM_Tim->P1;
-//	TIMx	=	(TIM_TypeDef*)PWM_Tim->P2;
-
-//	PWM_Tim->GPIOx	=	GPIOB;
-//	PWM_Tim->TIMx	=	TIM2;
-
-//	PWM_Tim->PWM_BasicData.GPIOx	=	GPIOB;
-//	PWM_Tim->PWM_BasicData.TIMx	=	TIM2;
-	
 }
 /*******************************************************************************
 * 函数名			:	function
@@ -1142,7 +834,7 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 			TIM_ClearFlag(PWM_Tim->PWM_BasicData.TIMx, TIM_FLAG_Update);								//清除中断标志
 
 			PWM_Tim->PWM_RunData.PWM_Count	=	0;			
-			return 1;
+			return 2;				//计数完成
 		}		
 		
 		if(PWM_Tim->PWM_RunData.PWM_Pulse	<PWM_Tim->PWM_RunData.PWM_Ratio)
@@ -1153,107 +845,14 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 		{
 			PWM_Tim->PWM_BasicData.GPIOx->BRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_ResetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);						//输出低
 		}
-		
-		
-		
+				
 		TIM_ClearFlag(PWM_Tim->PWM_BasicData.TIMx, TIM_FLAG_Update);									//清除中断标志
 		return 1;
 	}
 	return 0;
 }
-/*******************************************************************************
-*函数名			:	SetPWM_Num
-*功能描述		:	设置输出脉冲个数
-*输入				: 
-*返回值			:	无
-*******************************************************************************/
-u8 PWM_CountServer(void)
-{
-	if(TIM1->SR & TIM_IT_Update	&&	TIM1->DIER & TIM_IT_Update)
-	{
-		if(Tim1_Count>0)
-		{
-			Tim1_Count--;
-		}
-		else
-		{
-			TIM1->CNT	=	0;
-			/* Disable the TIM Counter */
-			TIM1->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
-		}
-		TIM_ClearFlag(TIM1, TIM_FLAG_Update);
-		return 1;
-	}
-//	else if(TIM_GetITStatus(TIM2,TIM_IT_Update)	!=	RESET)
-	else if(TIM2->SR & TIM_IT_Update	&&	TIM2->DIER & TIM_IT_Update)
-	{
-		if(Tim2_Count>0)
-		{
-			Tim2_Count--;
-		}
-		else
-		{	
-			TIM2->CNT	=	0;
-			/* Disable the TIM Counter */
-			TIM2->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
-		}
-		TIM_ClearFlag(TIM2, TIM_FLAG_Update);
-		return 1;
 
-	}
-	else if(TIM3->SR & TIM_IT_Update	&&	TIM3->DIER & TIM_IT_Update)
-	{
-		if(Tim3_Count>0)
-		{
-			Tim3_Count--;
-		}
-		else
-		{
-			TIM3->CNT	=	0;
-			/* Disable the TIM Counter */
-			TIM3->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
-		}
-		TIM_ClearFlag(TIM3, TIM_FLAG_Update);
-		return 1;
-	}
-	else if(TIM4->SR & TIM_IT_Update	&&	TIM4->DIER & TIM_IT_Update)
-	{
-		if(Tim4_Count>0)
-		{
-			Tim4_Count--;
-		}
-		else
-		{
-			TIM4->CNT	=	0;
-			/* Disable the TIM Counter */
-			TIM4->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset;	TIM_Cmd(TIM2, DISABLE);
-		}
-		TIM_ClearFlag(TIM4, TIM_FLAG_Update);
-		return 1;
-	}
-	return 0;
-}
-	
-//	if(PWM_Count	==	0)
-//	{
-//		/* Disable the TIM Counter */
-//    TIM2->CR1 &= CR1_CEN_Reset;
-//	}
-//	else
-//	{
-//		/* Enable the TIM Counter */
-//    TIM2->CR1 |= CR1_CEN_Set;
-//	}
-//	if (NewState != DISABLE)
-//  {
-//    /* Enable the TIM Counter */
-//    TIMx->CR1 |= CR1_CEN_Set;
-//  }
-//  else
-//  {
-//    /* Disable the TIM Counter */
-//    TIMx->CR1 &= CR1_CEN_Reset;
-//  }
+
 
 
 
