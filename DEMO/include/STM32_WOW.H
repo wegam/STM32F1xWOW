@@ -303,6 +303,10 @@
 	#include "ICCARD.H"
 #endif
 
+//*********************************IAP*********************************//
+#ifdef IAP
+	#include "IAP.H"
+#endif
 
 
 

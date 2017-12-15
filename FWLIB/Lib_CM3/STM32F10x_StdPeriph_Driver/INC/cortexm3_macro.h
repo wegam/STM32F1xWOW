@@ -34,9 +34,9 @@ void __SVC(void);
 u32 __MRS_CONTROL(void);
 void __MSR_CONTROL(u32 Control);
 u32 __MRS_PSP(void);
-void __MSR_PSP(u32 TopOfProcessStack);
+void __MSR_PSP(u32 TopOfProcessStack);	//设置进程堆栈的顶部
 u32 __MRS_MSP(void);
-void __MSR_MSP(u32 TopOfMainStack);
+void __MSR_MSP(u32 TopOfMainStack);			//设置主栈顶地址
 void __RESETPRIMASK(void);
 void __SETPRIMASK(void);
 u32 __READ_PRIMASK(void);

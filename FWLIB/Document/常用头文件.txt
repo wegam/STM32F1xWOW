@@ -1,7 +1,7 @@
 #include	"stdint.h"
 #include	"stdbool.h"
 
-#include	"stdio.h"			//用于printf
-#include	"string.h"		//用于printf
+#include	"stdio.h"		//用于printf
+#include	"string.h"		//用于printf/串和内存操作函数
 #include	"stdarg.h"		//用于获取不确定个数的参数
 #include	"stdlib.h"		//malloc动态申请内存空间

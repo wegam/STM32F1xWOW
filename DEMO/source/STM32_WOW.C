@@ -339,6 +339,10 @@ void WOW_Configuration(void)
 	ICCARD_Configuration();
 #endif
 
+//*********************************IAP*********************************//
+#ifdef IAP
+	IAP_Configuration();
+#endif
 
 
 
@@ -667,7 +671,10 @@ void WOW_Server(void)
 	ICCARD_Server();
 #endif
 
-
+//*********************************IAP*********************************//
+#ifdef IAP
+	IAP_Server();
+#endif
 
 
 

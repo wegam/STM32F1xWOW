@@ -28,10 +28,10 @@
 
 //=================PA6电机CCW做脉冲输出
 #define	MOTOR_PWM_PORT	GPIOA
-#define	MOTOR_PWM_Pin		GPIO_Pin_6
+#define	MOTOR_PWM_Pin		GPIO_Pin_7
 //=================PA7电机CW做方向输出
 #define	MOTOR_DIR_PORT	GPIOA
-#define	MOTOR_DIR_Pin		GPIO_Pin_7
+#define	MOTOR_DIR_Pin		GPIO_Pin_6
 
 #define	MOTOR_PWM_Frequency	10000	//脉冲频率--单位Hz
 #define	MOTOR_TIMx	TIM1					//所使用的定时器
@@ -40,6 +40,25 @@
 
 #define	MOTOR_RunRight			MOTOR_DIR_PORT->BSRR 	= MOTOR_DIR_Pin		//EN	=	1;	//顺时针
 #define	MOTOR_RunLeft				MOTOR_DIR_PORT->BRR		= MOTOR_DIR_Pin		//EN	=	0;	//逆时钟
+
+//=================传感器
+#define	Sensor1_Port	GPIOB		//前传感器
+#define	Sensor1_Pin		GPIO_Pin_4
+
+#define	Sensor2_Port	GPIOB		//后传感器
+#define	Sensor2_Pin		GPIO_Pin_5
+
+#define	Sensor3_Port	GPIOB		//药品传感器
+#define	Sensor3_Pin		GPIO_Pin_6
+
+#define	Sensor4_Port	GPIOB		//备用传感器
+#define	Sensor4_Pin		GPIO_Pin_7
+
+//======传感器状态：：读取状态为高表示无信号，低-有信号
+#define	Sensor1_Status	Sensor1_Port->IDR & Sensor1_Pin;
+#define	Sensor2_Status	Sensor2_Port->IDR & Sensor2_Pin;
+#define	Sensor3_Status	Sensor3_Port->IDR & Sensor3_Pin;
+#define	Sensor4_Status	Sensor4_Port->IDR & Sensor4_Pin;
 
 SWITCHID_CONF SWITCHID;					//拔码开关结构体
 PWM_TimDef		PWM_Tim;					//PWM控制脉冲结构体
@@ -51,9 +70,11 @@ u8 Flag=0;
 
 void SWITCHID_Configuration(void);			//拔码开关初始化及读数
 void Motor_Configuration(void);					//步进电机驱动配置
+void Sensor_Configuration(void);				//传感器配置
+
 
 void Motor_RunSet(int Num);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-	
+void Sensor_Read(void);					//读传感器信号	
 
 u8 Motor_Server(void);				//步进电机返回状态
 /*******************************************************************************
@@ -106,15 +127,15 @@ void PC006V21_Server(void)
 	}
 	IWDG_Feed();								//独立看门狗喂狗
 	SYSTime++;
-	if(SYSTime>=2000)
+	if(SYSTime>=4000)
 	{
 		
 		SYSTime=0;
 	}
 	if(SYSTime	==	0)
-		Motor_RunSet(-2);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-	else if(SYSTime	==	1000)
-		Motor_RunSet(2);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
+		Motor_RunSet(-50);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
+	else if(SYSTime	==	2000)
+		Motor_RunSet(50);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 //	if(Trigger_Line.Trigger_Line4)
 //	{
 //		PA6	=	0;
@@ -274,6 +295,48 @@ void Motor_RunSet(int Num)			//使药架旋转---Num为正值时表时顺时针转(从上往下视角
 		MOTOR_RunLeft;													//顺时钟
 		PWM_OUT_TIMSet(&PWM_Tim,Num*Steeps);		//设置总输出脉冲个数
 	}	
+}
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	
+*******************************************************************************/
+void Sensor_Configuration(void)		//传感器配置
+{
+//#define	Sensor1_Port	GPIOB		//前传感器
+//#define	Sensor1_Pin		GPIO_Pin_4
+
+//#define	Sensor2_Port	GPIOB		//后传感器
+//#define	Sensor2_Pin		GPIO_Pin_5
+
+//#define	Sensor3_Port	GPIOB		//药品传感器
+//#define	Sensor3_Pin		GPIO_Pin_6
+
+//#define	Sensor4_Port	GPIOB		//备用传感器
+//#define	Sensor4_Pin		GPIO_Pin_7
+	
+	//========传感器配置为上拉输入模式
+	GPIO_Configuration_IPU(Sensor1_Port,	Sensor1_Pin);			//将GPIO相应管脚配置为上拉输入模式----V20170605
+	GPIO_Configuration_IPU(Sensor2_Port,	Sensor2_Pin);			//将GPIO相应管脚配置为上拉输入模式----V20170605
+	GPIO_Configuration_IPU(Sensor3_Port,	Sensor3_Pin);			//将GPIO相应管脚配置为上拉输入模式----V20170605
+	GPIO_Configuration_IPU(Sensor4_Port,	Sensor4_Pin);			//将GPIO相应管脚配置为上拉输入模式----V20170605
+}
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	wegam@sina.com
+*******************************************************************************/
+void Sensor_Read(void)		//读传感器信号
+{
+
 }
 
 
