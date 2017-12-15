@@ -65,8 +65,6 @@ u16 					USART_DMASend							(USART_TypeDef* USARTx,u32 *tx_buffer,u16 BufferSiz
 //*****************RS485初始化---使用DMA空闲接收，标志查询方式
 void 					RS485_DMA_ConfigurationNR	(RS485_TypeDef *RS485_Info,u32 USART_BaudRate,u32 *RxdBuffer,u32 BufferSize);	//USART_DMA配置--查询方式，不开中断,配置完默认为接收状态
 
-
-
 //*****************RS485接收
 u16						RS485_ReadBufferIDLE			(RS485_TypeDef *RS485_Info,u32 *RevBuffer,u32 *RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
 

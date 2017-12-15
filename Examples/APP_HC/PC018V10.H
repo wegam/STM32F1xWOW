@@ -15,8 +15,7 @@ void PC018V10_Configuration(void);
 void PC018V10_Server(void);
 
 
-void WriteNumSeg7(unsigned short Num);		//向数码管写入数据
-void WriteStatus(char StatusCode);				//向数码管写入状态
+
 
 
 //void SPI2_Conf_TEST(u32* SPI_RX_Buffer,u32 SPI_BUFFERSIZE);

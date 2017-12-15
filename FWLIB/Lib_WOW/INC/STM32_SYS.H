@@ -23,7 +23,9 @@
 
 
 void SYS_Configuration(void);			//系统配置---打开系统时钟 STM32_SYS.H
-void RCC_Configuration(void);
+
+void RCC_Configuration_HSE(void);			//配置系统时钟--使用外部高速晶振
+void RCC_Configuration_HSI(void);			//配置系统时钟--使用内部高速晶振
 
 
 #endif

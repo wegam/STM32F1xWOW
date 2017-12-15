@@ -83,7 +83,7 @@ void DS2401_Configuration(void)
 *******************************************************************************/
 uint8_t Dallas_Rest(void)		//复位Dallas,返回结果
 {
-	uint8_t retry=0;
+	uint16_t retry=0;
 	//----------------------复位时间：拉低信号大于480us
 	Dallas_SetOut;					//SET PG11 OUTPUT
 	Dallas_L;								//拉低DQ
@@ -98,12 +98,12 @@ uint8_t Dallas_Rest(void)		//复位Dallas,返回结果
 	//4从机释放/拉高总线
 	Dallas_SetIn;				//SET PG11 INPUT		//输入模式
 	SysTick_DeleyuS(15);		//15US---检测响应需要在15uS后
-	while(Dallas_Read	&& (retry < 240))			//响应检测时间不超过240uS
+	while(Dallas_Read	&& (retry < 500))			//响应检测时间不超过240uS
 	{
 		retry++;
-		SysTick_DeleyuS(1);
+//		SysTick_DeleyuS(1);
 	}
-	if(retry >= 240)	//超时
+	if(retry >= 500)	//超时
 		return 1;
 	else
 		retry=0;
@@ -130,8 +130,8 @@ uint8_t Dallas_ReadBit(void)
 	
 	Dallas_SetOut;				//设为输出模式
 	Dallas_L; 						//拉低总线
-	SysTick_DeleyuS(2);		//至少1us时间
-	Dallas_H; 						//释放总线
+	SysTick_DeleyuS(5);		//至少1us时间
+//	Dallas_H; 						//释放总线
 	Dallas_SetIn;					//设置为输入模式
 	SysTick_DeleyuS(12);	//等待从机响应
 	if(Dallas_Read)				//读取总线状态
@@ -234,7 +234,7 @@ uint8_t Dallas_Init(void)
 	uint8_t Result	=	0;
 	GPIO_Configuration_OPP50	(Port_Dallas,	Pin_Dallas);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 
-	Result	=	Dallas_Rest();
+//	Result	=	Dallas_Rest();
 
 	return Result;
 }

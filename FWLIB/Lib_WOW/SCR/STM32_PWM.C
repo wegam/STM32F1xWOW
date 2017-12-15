@@ -192,7 +192,7 @@ void PWM_OUT			//PWM输出配置
 	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
 	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
 	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
-	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;;
+	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;
 	if (((*(u32*)&TIMx)&APB2PERIPH_BASE) == APB2PERIPH_BASE)
   {
     TIMx_Frequency = RCC_ClocksStatus.PCLK2_Frequency;	//APB2

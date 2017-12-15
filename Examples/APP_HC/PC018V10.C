@@ -9,6 +9,7 @@
 #include "stm32f10x_exti.h"
 
 
+#include "STM32_USART.H"
 #include "STM32_SPI.H"
 #include "STM32_PWM.H"
 #include "STM32_GPIO.H"
@@ -23,10 +24,18 @@
 #include	"stdarg.h"		//用于获取不确定个数的参数
 #include	"stdlib.h"		//malloc动态申请内存空间
 
-Borad_InfoDef	PC018V10_Info;
-
 
 #define	Board_SerialNum	0x0000		//PCB板号
+
+#define	RS485_BaudRate		256000
+#define	RS485_BufferSize	256
+
+Borad_InfoDef	PC018V10_Info;
+RS485_TypeDef	RS485_Info;
+
+u8 RS485Txd[RS485_BufferSize]	=	{0};
+u8 RS485Rxd[RS485_BufferSize]	=	{0};
+u8 RS485Rev[RS485_BufferSize]	=	{0};
 
 u8 ch[120]="USART_BASIC_Configuration(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPreemptionPriority,u8 NVIC_SubPriority)\n";
 u8 ch2[17]={0xC0,0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
@@ -35,8 +44,19 @@ u8 ch4[17]={0xC0};
 u8 SegArr[16]={0x00};
 
 u32	SYSTIME	=	0;
-u32	DATA	=	0;
+u16	DisplayNum	=	0;			//数码管更新数值
+u16	DisplayBac	=	0;			//数码显示数值
+u16	DisplayTime	=	0;			//数码重更新显示时间----防止数据传输失败
 
+void RS485_Configuration(void);			//RS485配置
+	
+
+void RS485_Server(void);						//RS485收发处理
+void Seg7_Server(void);							//数码管显示更新
+
+void WriteNumSeg7(unsigned short Num);		//向数码管写入数据
+void WriteStatus(char StatusCode);				//向数码管写入状态
+void Seg7_Test(void);		//数码管显示测试
 
 /*******************************************************************************
 * 函数名			:	function
@@ -86,40 +106,23 @@ u8 Seg7_Code[]=
 void PC018V10_Configuration(void)
 {
 	SYS_Configuration();					//系统配置---打开系统时钟 STM32_SYS.H
+	RCC_Configuration_HSI();			//使用内部高速晶振
 	
 	GPIO_DeInitAll();							//将所有的GPIO关闭----V20170605
 	
 	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);
-//	GPIO_Configuration_OPP50	(GPIOA,	GPIO_Pin_0);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-//	GPIO_Configuration(GPIOB,GPIO_Pin_4,GPIO_Mode_Out_PP,GPIO_Speed_50MHz);			//GPIO配置
-	
-	
-	
-	
-//	PWM_Configuration(TIM2,7200,10000,50);
+//	
 
-//	USART_DMA_Configuration(USART1,115200,1,1,(u32*)Usart_Test_Buffer,(u32*)Usart_Test_Buffer,DMA1_BufferSize);	//USART_DMA配置
 
-	STM32_SPI_ConfigurationNR(SPI2);
+	STM32_SPI_ConfigurationNR(SPI2);	//SPI配置---向数码管板发送数据
+	RS485_Configuration();						//RS485配置
 
-	
-	PC018V10_Info.Borad_Name	=	"PC018V10";
 
-//	PWM_Configuration(TIM2,7200,200,20);
-	STM32_SPI_ReadWriteData(SPI2,0x8F);
-	STM32_SPI_ReadWriteData(SPI2,0x40);
-	STM32_SPI_ReadWriteData(SPI1,0xC0);
-	
-//	ch3[0]=0xC0;
-//	ch4[0]=0xC0;
-	
 	Dallas_Init();
 //	Dallas_GetID(SegArr);
 	
-	
-
 }
 /*******************************************************************************
 * 函数名		:	
@@ -131,55 +134,101 @@ void PC018V10_Configuration(void)
 void PC018V10_Server(void)
 {
 	SYSTIME++;
-	if(SYSTIME>=1000)
+	if(SYSTIME>=1)
 	{
 		SYSTIME	=	0;
-		DATA++;
-		if(DATA>9999)
-			DATA	=0;
+		Seg7_Test();		//数码管显示测试
+//		DisplayNum++;
+//		if(DisplayNum>9999)
+//			DisplayNum	=0;
+//		WriteNumSeg7(DisplayNum);		//向数码管写入数据
+
+
 		
-//		STM32_SPI_ReadWriteData(SPI2,0x40);
-//		
-//		ch4[1]=ch2[DATA/1000+1];
-//		ch4[3]=ch2[DATA%1000/100+1];
-//		ch4[5]=ch2[DATA%100/10+1];
-//		ch4[7]=ch2[DATA%10+1];
-//		
-////		STM32_SPI_ReadWriteData(SPI2,0x8F);
-////		STM32_SPI_ReadWriteData(SPI2,0x40);
-//		STM32_SPI_SendBuffer(SPI2,8,ch4);
-		WriteNumSeg7(DATA);		//向数码管写入数据
-//		Dallas_Init();
-//		WriteStatus(3);			//向数码管写入数据
-		
-//		Dallas_Init();
-		Dallas_GetID(SegArr);
+//		RS485_DMAPrintf	(&RS485_Info,"自定义printf串口DMA发送程序,后边的省略号就是可变参数\t\n");					//自定义printf串口DMA发送程序,后边的省略号就是可变参数
+//		Dallas_GetID(SegArr);
 	}
-	
-//	if(SYSTIME	==	0)
-//	{
-//		STM32_SPI_SendBuffer(SPI1,120,ch);
-//	}
-	
-//	STM32_SPI_ReadWriteData(SPI2,0x8F);
-//	STM32_SPI_ReadWriteData(SPI2,0x40);
-//	STM32_SPI_SendBuffer(SPI2,4,ch3);
-	
-//	if(SYSTIME%3	==	0)
-//	{
-//		STM32_SPI_SendBuffer(SPI2,8,ch2);
-//	}
-//	else if(SYSTIME%3	==	1)
-//	{
-//		STM32_SPI_SendBuffer(SPI2,8,ch3);
-//	}
-//	else if(SYSTIME%3	==	2)
-//	{
-//		STM32_SPI_SendBuffer(SPI2,8,ch4);
-//	}
+//	Seg7_Server();						//数码管显示更新
+	RS485_Server();						//RS485收发处理
 
 }
-
+/*******************************************************************************
+* 函数名			:	RS485_Configuration
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+* 修改时间		: 无
+* 修改内容		: 无
+* 其它			: 
+*******************************************************************************/
+void RS485_Configuration(void)			//RS485配置
+{
+	RS485_Info.RS485_CTL_PORT	=	GPIOA;
+	RS485_Info.RS485_CTL_Pin	=	GPIO_Pin_8;
+	RS485_Info.USARTx	=	USART1;
+	RS485_DMA_ConfigurationNR	(&RS485_Info,RS485_BaudRate,(u32*)RS485Rxd,RS485_BufferSize);	//USART_DMA配置--查询方式，不开中断,配置完默认为接收状态
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+* 修改时间		: 无
+* 修改内容		: 无
+* 其它			: 
+*******************************************************************************/
+void RS485_Server(void)							//RS485收发处理
+{
+	u16 Num	=	0;
+	Num	=	RS485_ReadBufferIDLE(&RS485_Info,(u32*)RS485Rev,(u32*)RS485Rxd);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+	if(Num)
+	{
+		DisplayNum	=	RS485Rev[0];
+		DisplayNum	=	(DisplayNum<<8)+RS485Rev[1];
+		memcpy(RS485Txd,RS485Rev,Num);									//复制数据
+		RS485_DMASend	(&RS485_Info,(u32*)RS485Rev,Num);	//RS485-DMA发送程序
+	}
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+* 修改时间		: 无
+* 修改内容		: 无
+* 其它			: 
+*******************************************************************************/
+void Seg7_Server(void)		//数码管显示更新
+{
+	if(DisplayBac	!=	DisplayNum)
+	{
+		DisplayBac	=	DisplayNum;
+		WriteNumSeg7(DisplayBac);		//向数码管写入数据
+		DisplayTime	=	0;
+	}
+	if(DisplayTime++	>=	1000)
+	{
+		DisplayTime	=	0;
+		WriteNumSeg7(DisplayBac);		//向数码管写入数据
+		DisplayTime	=	0;
+	}
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+* 修改时间		: 无
+* 修改内容		: 无
+* 其它			: 
+*******************************************************************************/
+void Seg7_Test(void)		//数码管显示测试
+{
+	DisplayNum++;
+	if(DisplayNum>9999)
+		DisplayNum	=0;
+	WriteNumSeg7(DisplayNum);		//向数码管写入数据
+}
 /*******************************************************************************
 * 函数名			:	function
 * 功能描述		:	函数功能说明 
@@ -238,7 +287,7 @@ void WriteStatus(char StatusCode)		//向数码管写入状态
 	{
 		STM32_SPI_ReadWriteData(SPI2,0x8F);		//亮度
 		STM32_SPI_ReadWriteData(SPI2,0x40);		//地址自增
-		ch4[1]=Seg7_Code[22];							//
+		ch4[1]=Seg7_Code[22];									//
 		ch4[3]=Seg7_Code[23];
 		ch4[5]=Seg7_Code[17];
 		ch4[7]=Seg7_Code[18];
