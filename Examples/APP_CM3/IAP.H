@@ -16,6 +16,22 @@
 
 
 
+#define	UpdataKey1	0xFFAA
+#define	UpdataKey2	0xFFBB
+#define	UpdataKey3	0xFFCC
+#define	UpdataKey4	0xFFDD
+#define	UpdataKey5	0xFFEE
+#define	UpdataKey6	0xFFFF
+
+
+
+
+
+
+
+
+
+
 void IAP_Configuration(void);
 void IAP_Server(void);
 

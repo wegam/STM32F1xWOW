@@ -25,7 +25,7 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void CRC_ResetDR(void);
+void CRC_ResetDR(void);				//¸´Î»CRCÄ£¿é
 u32 CRC_CalcCRC(u32 Data);
 u32 CRC_CalcBlockCRC(u32 pBuffer[], u32 BufferLength);
 u32 CRC_GetCRC(void);

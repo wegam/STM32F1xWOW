@@ -254,7 +254,8 @@ void STM32_FLASH_Erase(u32 WriteAddr,u16 NumToWrite)	//擦除FLASH
 		STM32_FLASH_Read(secpos*STM_SECTOR_SIZE+STM32_FLASH_BASE,STM32_FLASH_BUF,STM_SECTOR_SIZE/2);//读出整个扇区的内容
 		for(i=0;i<secremain;i++)	//校验数据
 		{
-			if(STM32_FLASH_BUF[secoff+i]!=0XFFFF)break;//需要擦除  	  
+			if(STM32_FLASH_BUF[secoff+i]!=0XFFFF)
+				break;//需要擦除  	  
 		}
 		if(i<secremain)//需要擦除
 		{
