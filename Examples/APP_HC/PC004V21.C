@@ -167,7 +167,7 @@ void PC004V21_Configuration(void)
 	
 	CAN_Configuration_NR(100000);										//CAN配置---标志位查询方式，不开中断
 	
-	CAN_FilterInitConfiguration_StdData(0X01,0X001,0X001);			//CAN滤波器配置
+	CAN_FilterInitConfiguration_StdData(0X01,0X001,0X001);			//CAN滤波器配置---标准数据帧模式
 //	
 //	USART_DMA_Configuration(USART2,9600,1,1,(u32*)PC004V10_Buffer,(u32*)PC004V10_Buffer,PC004V10_BufferSize);	//USART_DMA配置
 

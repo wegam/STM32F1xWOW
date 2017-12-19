@@ -16,6 +16,7 @@
 
 
 #include "STM32_PWM.H"
+#include "STM32_GPIO.H"
 
 
 /*##############################################################################
@@ -564,7 +565,7 @@ void SetPWM_Ratio(u16 PWM_Ratio)
 * 输出		:
 * 返回 		:
 *******************************************************************************/
-void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
+void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置---最大100KHz
 {
 	//*1,结构体定义
 	//*2,变量定义
@@ -576,7 +577,7 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	//*8,占空比配置	
 		
 	//*1,结构体定义***********************************************************************
-	GPIO_InitTypeDef GPIO_InitStructure;
+//	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;	//定时器结构体定义	
 	RCC_ClocksTypeDef RCC_ClocksStatus;							//时钟状态---时钟值
 	NVIC_InitTypeDef	NVIC_InitStructure;						//中断结构体
@@ -584,20 +585,20 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	
 	//*2,变量定义*************************************************************************	
 	
-	GPIO_TypeDef* GPIOx		=	PWM_Tim->PWM_BasicData.GPIOx;			//x=A/B/C/D/E/F/G
+//	GPIO_TypeDef* GPIOx		=	PWM_Tim->PWM_BasicData.GPIOx;			//x=A/B/C/D/E/F/G
 	TIM_TypeDef * TIMx		=	PWM_Tim->PWM_BasicData.TIMx;
-	u16 GPIO_Pin_n				=	PWM_Tim->PWM_BasicData.GPIO_Pin_n;
-	double PWM_Frequency	=	PWM_Tim->PWM_BasicData.PWM_Frequency;
+//	u16 GPIO_Pin_n				=	PWM_Tim->PWM_BasicData.GPIO_Pin_n;
+	double PWM_Frequency	=	2*(PWM_Tim->PWM_BasicData.PWM_Frequency);
 	
 	u8 TIM_IRQChannel=0;
 
-	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
+//	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
 	u32	TIMx_Frequency				=	0;			//	定时器时钟
 	u16 TIMx_Prescaler				=	0	;			//	定时器时钟分频值		取值范围：0x0000~0xFFFF
   u16 TIMx_Period						=	0	;			//	定时器自动重装载值	取值范围：0x0000~0xFFFF
-	u8	a	=	100;
-	u8	b	=	0;
-	u8	c	=	0;
+//	u8	a	=	100;
+//	u8	b	=	0;
+//	u8	c	=	0;
 	
 //	volatile u8	temp	=	0;
 //	u32	Microsecond						=	0	;		//	微秒
@@ -608,9 +609,9 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	
 //	u16 PWM_Ratio		=	0;						//占空比 1%精度，默认50%（未设置此参数时）
 	
-	if(PWM_Tim->PWM_BasicData.PWM_Ratio	==	0)		//未配置默认为50%
-		PWM_Tim->PWM_BasicData.PWM_Ratio	=	50;
-	b	=	PWM_Tim->PWM_BasicData.PWM_Ratio;
+//	if(PWM_Tim->PWM_BasicData.PWM_Ratio	==	0)		//未配置默认为50%
+//		PWM_Tim->PWM_BasicData.PWM_Ratio	=	50;
+//	b	=	PWM_Tim->PWM_BasicData.PWM_Ratio;
 	
 	//*3,参数设置**************************************************************************
 
@@ -618,25 +619,26 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	
 	//*5,GPIO配置============================================================================	
 	//*5.1,打开相应的时钟*********************************************************************
-	switch((u32)GPIOx)
-	{
-		case GPIOA_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;	break;
-		case GPIOB_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;	break;
-		case GPIOC_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOC;	break;
-		case GPIOD_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOD;	break;
-		case GPIOE_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOE;	break;
-		case GPIOF_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOF;	break;
-		case GPIOG_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOG;	break;
-		default:
-			break;
-	}
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOx, ENABLE);	//使能引脚时钟	
-	//*5.2,初始化GPIO************************************************
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_n;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP ;	//复用推挽输出
-	GPIO_Init(GPIOx,&GPIO_InitStructure);	
-	GPIO_ResetBits(GPIOx,GPIO_Pin_n);								//配置完输出低
+	GPIO_Configuration_OPP50(PWM_Tim->PWM_BasicData.GPIOx,PWM_Tim->PWM_BasicData.GPIO_Pin_n);
+//	switch((u32)GPIOx)
+//	{
+//		case GPIOA_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;	break;
+//		case GPIOB_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;	break;
+//		case GPIOC_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOC;	break;
+//		case GPIOD_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOD;	break;
+//		case GPIOE_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOE;	break;
+//		case GPIOF_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOF;	break;
+//		case GPIOG_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOG;	break;
+//		default:
+//			break;
+//	}
+//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOx, ENABLE);	//使能引脚时钟	
+//	//*5.2,初始化GPIO************************************************
+//	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_n;
+//	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+//	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP ;	//复用推挽输出
+//	GPIO_Init(GPIOx,&GPIO_InitStructure);	
+//	GPIO_ResetBits(GPIOx,GPIO_Pin_n);								//配置完输出低
 	//*6,定时器配置============================================================================
 	//*6.1,打开相应的时钟*********************************************************************
 	switch ((u32)TIMx)
@@ -686,20 +688,21 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	}
 	//*6.2,计算定时时间**********************************************************************
 	//*6.2.1,计算最大公约数（减少中断次数）****************************************************
-	c	=	a	%	b;
-	while(c	!=	0)
-	{
-		a	=	b;
-		b	=	c;
-		c	=	a	%	b;	
-	}
-	PWM_Tim->PWM_RunData.PWM_Ratio	=	PWM_Tim->PWM_BasicData.PWM_Ratio	/	b;
-	PWM_Tim->PWM_RunData.PWM_Cycle	=	100	/	b;
-	PWM_Tim->PWM_RunData.PWM_Count	=	0;
-	PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
+//	c	=	a	%	b;
+//	while(c	!=	0)
+//	{
+//		a	=	b;
+//		b	=	c;
+//		c	=	a	%	b;	
+//	}
+//	PWM_Tim->PWM_RunData.PWM_Ratio	=	PWM_Tim->PWM_BasicData.PWM_Ratio	/	b;
+//	PWM_Tim->PWM_RunData.PWM_Cycle	=	100	/	b;
+	PWM_Tim->PWM_BasicData.PWM_Count	=	0;
+	PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
+//	PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
 
 	//*6.2.2,计算实际运行频率******************************************************************
-	PWM_Frequency	=	(double)(PWM_Frequency	*	PWM_Tim->PWM_RunData.PWM_Cycle);
+//	PWM_Frequency	=	(double)(PWM_Frequency	*	PWM_Tim->PWM_RunData.PWM_Cycle);
 	
 	//*6.2.3,获取TIMx时钟**********************************************************************
 	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
@@ -784,25 +787,110 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	TIM_Cmd(TIMx, DISABLE); 									//使能TIM
 }
 /*******************************************************************************
+* 函数名		:	PWM_OUT	
+* 功能描述	:		 
+* 输入		:	PWM_Frequency 频率，单位Hz	
+* 输出		:
+* 返回 		:
+*******************************************************************************/
+void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim)			//PWM输出频率最大10MHz计算
+{
+	//*1,结构体定义
+	//*2,变量定义
+	//*3,管脚确认
+	//*4,打开相应的时钟
+	//*5,管脚配置（初始化）
+	//*6,定时器配置（初始化）
+	//*7,PWM输出配置（初始化）
+	//*8,占空比配置	
+		
+	//*1,结构体定义***********************************************************************
+//	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;	//定时器结构体定义	
+	RCC_ClocksTypeDef RCC_ClocksStatus;							//时钟状态---时钟值
+	
+	
+	//*2,变量定义*************************************************************************	
+	
+
+	TIM_TypeDef * TIMx		=	PWM_Tim->PWM_BasicData.TIMx;
+	
+//	u8 TIM_IRQChannel=0;
+	u32	Tim_temp				=	2*(PWM_Tim->PWM_BasicData.PWM_Frequency);	//由于翻转需要双倍频率
+//	u32	TIMx_Cnt				=	10000000/Tim_temp;												//按10MHz计算需要计多少个数
+	
+	u32	TIMx_Frequency	=	0	;			//定时器频率
+	u16 TIMx_Prescaler	=	0	;			//定时器时钟分频值		取值范围：0x0000~0xFFFF
+  u16 TIMx_Period			=	0	;			//定时器自动重装载值	取值范围：0x0000~0xFFFF
+	
+	//*6.2.3,获取TIMx时钟**********************************************************************
+	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
+	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
+	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
+	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;;
+	if ((((u32)TIMx)&APB2PERIPH_BASE) == APB2PERIPH_BASE)
+  {
+    TIMx_Frequency = RCC_ClocksStatus.PCLK2_Frequency;	//APB2
+  }
+  else
+  {
+    TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
+  }
+	//*6.2.4,计算定时器参数*********************************************************************
+	Tim_temp	=	TIMx_Frequency/Tim_temp;
+	if(Tim_temp<=60000)
+	{
+		TIMx_Prescaler=0;
+		TIMx_Period=(u16)Tim_temp-1;
+	}
+	else if(Tim_temp<=600000)
+	{
+		TIMx_Prescaler=10-1;
+		TIMx_Period=(u16)(Tim_temp/10-1);
+	}
+	else if(Tim_temp<=6000000)
+	{
+		TIMx_Prescaler=100-1;
+		TIMx_Period=(u16)(Tim_temp/100-1);
+	}
+	else if(Tim_temp<=60000000)
+	{
+		TIMx_Prescaler=1000-1;
+		TIMx_Period=(u16)(Tim_temp/1000-1);
+	}
+	//6.3定时器初始化*********************************************************************
+	
+	/* Set the Autoreload value */
+  TIMx->ARR = TIMx_Period;        		//设定自动重装载值
+
+  /* Set the Prescaler value */
+  TIMx->PSC = TIMx_Prescaler; 				//设定分频值
+	
+//	TIMx->CNT	=	1;
+}
+/*******************************************************************************
 * 函数名			:	function
 * 功能描述		:	函数功能说明 
 * 输入			: void
 * 返回值			: void
 *******************************************************************************/
-void PWM_OUT_TIMSet(PWM_TimDef* PWM_Tim,u32 PWM_Count)			//设置输出个数
+void PWM_OUT_SetCount(PWM_TimDef* PWM_Tim,u32 PWM_Count)			//设置输出个数
 {
 	if(PWM_Count	!=	0)
 	{
-		PWM_Tim->PWM_RunData.PWM_Count	=	PWM_Count;
-		PWM_Tim->PWM_RunData.PWM_Pulse	=	0;	
+		PWM_Tim->PWM_BasicData.PWM_Count	=	2*PWM_Count;
+		PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
+		PWM_Tim->PWM_RunData.PWM_Cycle	=	0;	
 		
-		TIM_Cmd(PWM_Tim->PWM_BasicData.TIMx, ENABLE); 															//使能TIM
-		PWM_Tim->PWM_BasicData.GPIOx->BSRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_SetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);								//输出高
+		
+		PWM_Tim->PWM_BasicData.GPIOx->BRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_ResetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);						//输出低
+		TIM1->CNT	=	1;
+		TIM_Cmd(PWM_Tim->PWM_BasicData.TIMx, ENABLE); 															//使能TIM		//输出高
 	}
 	else
 	{
-		PWM_Tim->PWM_RunData.PWM_Count	=	0;
+		PWM_Tim->PWM_BasicData.PWM_Count	=	0;
 		PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
+		PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
 		
 		PWM_Tim->PWM_BasicData.GPIOx->BRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_ResetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);						//输出低
 		TIM_Cmd(PWM_Tim->PWM_BasicData.TIMx, DISABLE); 															//禁止TIM
@@ -819,33 +907,44 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	volatile u8	temp	=	0;
 	if((PWM_Tim->PWM_BasicData.TIMx->SR & TIM_IT_Update)	== TIM_IT_Update)
 	{
-		PWM_Tim->PWM_RunData.PWM_Pulse++;
-		
-		if(PWM_Tim->PWM_RunData.PWM_Pulse>=PWM_Tim->PWM_RunData.PWM_Cycle)
+		if(PWM_Tim->PWM_RunData.PWM_Pulse<PWM_Tim->PWM_BasicData.PWM_Count)
 		{
-			PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
-			PWM_Tim->PWM_RunData.PWM_Count--;
-		}
+			if(PWM_Tim->PWM_RunData.PWM_Pulse<PWM_Tim->PWM_BasicData.PWM_RunUp)		//加速
+			{
+				if(PWM_Tim->PWM_RunData.PWM_Cycle++<=PWM_Tim->PWM_BasicData.PWM_Updata)
+				{
+					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
+					PWM_Tim->PWM_BasicData.PWM_Frequency+=1;						//频率增加--加速
+					PWM_OUT_SetFre(PWM_Tim);														//设置时间
+				}
+			}
+			else if(PWM_Tim->PWM_RunData.PWM_Pulse+PWM_Tim->PWM_BasicData.PWM_RunUp>PWM_Tim->PWM_BasicData.PWM_Count)
+			{
+				if(PWM_Tim->PWM_RunData.PWM_Cycle++<=PWM_Tim->PWM_BasicData.PWM_Updata	&&	PWM_Tim->PWM_BasicData.PWM_Frequency>2)
+				{
+					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
+					PWM_Tim->PWM_BasicData.PWM_Frequency-=10;						//频率增加--加速
+					PWM_OUT_SetFre(PWM_Tim);														//设置时间
+				}
+			}
 		
-		if(PWM_Tim->PWM_RunData.PWM_Count	<=0)
-		{
-			PWM_Tim->PWM_BasicData.GPIOx->BRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_ResetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);						//输出低
-			TIM_Cmd(PWM_Tim->PWM_BasicData.TIMx, DISABLE); 															//禁止TIM
-			TIM_ClearFlag(PWM_Tim->PWM_BasicData.TIMx, TIM_FLAG_Update);								//清除中断标志
-
-			PWM_Tim->PWM_RunData.PWM_Count	=	0;			
-			return 2;				//计数完成
-		}		
-		
-		if(PWM_Tim->PWM_RunData.PWM_Pulse	<PWM_Tim->PWM_RunData.PWM_Ratio)
-		{
-			PWM_Tim->PWM_BasicData.GPIOx->BSRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_SetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);								//输出高
+			PWM_Tim->PWM_RunData.PWM_Pulse++;
+			
+			GPIO_Toggle	(PWM_Tim->PWM_BasicData.GPIOx,	PWM_Tim->PWM_BasicData.GPIO_Pin_n);		//将GPIO相应管脚输出翻转----V20170605
+			
+//			TIM_ClearFlag(PWM_Tim->PWM_BasicData.TIMx, TIM_FLAG_Update);									//清除中断标志
+			return 1;
+			
 		}
 		else
 		{
-			PWM_Tim->PWM_BasicData.GPIOx->BRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_ResetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);						//输出低
+			PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
+			PWM_Tim->PWM_BasicData.GPIOx->BRR = PWM_Tim->PWM_BasicData.GPIO_Pin_n;			//GPIO_ResetBits(GPIO_TypeDef* GPIOx, u16 GPIO_Pin);
+			TIM_ClearFlag(PWM_Tim->PWM_BasicData.TIMx, TIM_FLAG_Update);									//清除中断标志
+			TIM_Cmd(PWM_Tim->PWM_BasicData.TIMx, DISABLE); 															//禁止TIM
+			return 2;				//计数完成
+			
 		}
-				
 		TIM_ClearFlag(PWM_Tim->PWM_BasicData.TIMx, TIM_FLAG_Update);									//清除中断标志
 		return 1;
 	}

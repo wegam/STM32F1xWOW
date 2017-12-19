@@ -340,7 +340,7 @@ void CAN_Configuration_IT(u32 CAN_BaudRate)					//CAN配置---中断方式
 void CAN_FilterInitConfiguration_StdData(
 																	u8 CAN_GROUP,			//过滤器组---bxCAN为应用程序提供了14个位宽可变的、可配置的过滤器组(13~0)，以便只接收那些软件需要的报文
 																	u16 CAN_ID,				//
-																	u16 MaskId				//
+																	u16 MaskId				//位匹配，如果是相应位为1表示必须与CAN_ID匹配
 )		//CAN滤波器配置
 {
 	//说明：
@@ -550,12 +550,12 @@ void CAN_FilterInitConfiguration_ExtData(
 *返回值		:无
 *例程			:
 *******************************************************************************/
-void CAN_Server(void)
-{
-//	CAN_RX_DATA();
-//	WOW_Server();
-//	CAN_RX_DATA(RxMessage);
-}
+//void CAN_Server(void)
+//{
+////	CAN_RX_DATA();
+////	WOW_Server();
+////	CAN_RX_DATA(RxMessage);
+//}
 /*******************************************************************************
 *函数名		:	CAN_PinSet
 *功能描述	:	CAN引脚配置函数
@@ -712,14 +712,18 @@ void CAN_ExtTX_DATA(
 	
 	TxMessage.DLC=length;						//DLC用来设定待传输消息的帧长度。它的取值范围是0到8。
 	
-	TxMessage.Data[0]=Data[0];
-	TxMessage.Data[1]=Data[1];
-	TxMessage.Data[2]=Data[2];
-	TxMessage.Data[3]=Data[3];
-	TxMessage.Data[4]=Data[4];
-	TxMessage.Data[5]=Data[5];
-	TxMessage.Data[6]=Data[6];
-	TxMessage.Data[7]=Data[7];
+	for(	i	=	0;i<length;i++)
+	{
+		TxMessage.Data[i]=Data[i];
+	}
+//	TxMessage.Data[0]=Data[0];
+//	TxMessage.Data[1]=Data[1];
+//	TxMessage.Data[2]=Data[2];
+//	TxMessage.Data[3]=Data[3];
+//	TxMessage.Data[4]=Data[4];
+//	TxMessage.Data[5]=Data[5];
+//	TxMessage.Data[6]=Data[6];
+//	TxMessage.Data[7]=Data[7];
 	
 	TransmitMailbox = CAN_Transmit(&TxMessage);			//开始一个消息的传输
 	i = 0;

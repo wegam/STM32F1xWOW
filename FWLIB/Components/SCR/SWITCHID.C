@@ -213,7 +213,7 @@ unsigned short SWITCHID_Read(SWITCHID_CONF *SWITCHIDx)
 		if(SWITCHIDx->SW16_PORT-> IDR	&SWITCHIDx->SW16_Pin)
 			reValue|=0x0001<<15;
 	}
-	reValue^=0xFFFF;		//拔码开关低有效,需要取反
+	reValue=~reValue;		//拔码开关低有效,需要取反
 	*P=reValue;
 	SWITCHIDx->nSWITCHID=reValue;
 	return	reValue;	//将数据返回(如果需要直接获取读取值可以使用返回值)

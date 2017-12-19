@@ -41,14 +41,14 @@ typedef struct
 	u16 GPIO_Pin_n;						//n=0~15;
 	
 	double PWM_Frequency;			//频率 最小频率0.2Hz
-	u8 	PWM_Ratio;						//占空比 1%精度，默认50%（未设置此参数时）		
+	u16 	PWM_Updata;					//频率变化占计数个数，就是计数PWM_Updata个数后更新一次输出频率
+	u32 	PWM_RunUp;					//加速/减速需要的步数
+	u32 	PWM_Count;					//输出脉冲数，每计一周期脉冲数增加一个，计数达到PWM_Num停止输出，需要再次输出时则清0此计数，重新开始计数	
 }PWM_BasicDataDef;
 typedef struct
 {
-	u8 	PWM_Ratio;						//占空比 1%精度，默认50%（未设置此参数时）
-	u8 	PWM_Cycle ;						//根据占空比需要的计数值，如1%占空比，则计数100,50%计数2就可以
-	u8 	PWM_Pulse;						//计算占空比，Pulse<=PWM_Ratio为高，Pulse》=PWM_Cycle为一个计算周期，清0
-	u32 PWM_Count;						//输出脉冲数，每计一周期脉冲数增加一个，计数达到PWM_Num停止输出，需要再次输出时则清0此计数，重新开始计数
+	u16 	PWM_Cycle ;						//计数值，到达PWM_Updata后更新频率
+	u32 	PWM_Pulse;						//计数值，计数到达PWM_Count后停止输出	
 }PWM_RunDataDef;
 typedef struct
 {
@@ -71,8 +71,9 @@ void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比---LED
 
 
 //----------------------------------普通GPIO固定脉冲个数输出，占空比固定50%
-void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim);									//PWM输出配置
-void PWM_OUT_TIMSet(PWM_TimDef* PWM_Tim,u32 PWM_Count);			//PWM输出配置
+void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim);									//PWM输出配置---最大100KHz
+void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim);										//设置时间
+void PWM_OUT_SetCount(PWM_TimDef* PWM_Tim,u32 PWM_Count);			//设置输出个数
 u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim);									//PWM输出配置
 
 
