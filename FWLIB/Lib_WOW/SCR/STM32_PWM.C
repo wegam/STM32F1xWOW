@@ -909,21 +909,21 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 	{
 		if(PWM_Tim->PWM_RunData.PWM_Pulse<PWM_Tim->PWM_BasicData.PWM_Count)
 		{
-			if(PWM_Tim->PWM_RunData.PWM_Pulse<PWM_Tim->PWM_BasicData.PWM_RunUp)		//加速
+			if(PWM_Tim->PWM_RunData.PWM_Pulse	<	PWM_Tim->PWM_BasicData.PWM_RunUp)		//加速
 			{
-				if(PWM_Tim->PWM_RunData.PWM_Cycle++<=PWM_Tim->PWM_BasicData.PWM_Updata)
+				if(PWM_Tim->PWM_RunData.PWM_Cycle++	>=	PWM_Tim->PWM_BasicData.PWM_Updata)
 				{
 					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
-					PWM_Tim->PWM_BasicData.PWM_Frequency+=1;						//频率增加--加速
+					PWM_Tim->PWM_BasicData.PWM_Frequency+=20;						//频率增加--加速
 					PWM_OUT_SetFre(PWM_Tim);														//设置时间
 				}
 			}
-			else if(PWM_Tim->PWM_RunData.PWM_Pulse+PWM_Tim->PWM_BasicData.PWM_RunUp>PWM_Tim->PWM_BasicData.PWM_Count)
+			else if(PWM_Tim->PWM_RunData.PWM_Pulse+(PWM_Tim->PWM_BasicData.PWM_RunUp/5)>PWM_Tim->PWM_BasicData.PWM_Count)
 			{
-				if(PWM_Tim->PWM_RunData.PWM_Cycle++<=PWM_Tim->PWM_BasicData.PWM_Updata	&&	PWM_Tim->PWM_BasicData.PWM_Frequency>2)
+				if(PWM_Tim->PWM_RunData.PWM_Cycle++>=PWM_Tim->PWM_BasicData.PWM_Updata	&&	PWM_Tim->PWM_BasicData.PWM_Frequency>400)
 				{
 					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
-					PWM_Tim->PWM_BasicData.PWM_Frequency-=10;						//频率增加--加速
+					PWM_Tim->PWM_BasicData.PWM_Frequency-=100;						//频率增加--加速
 					PWM_OUT_SetFre(PWM_Tim);														//设置时间
 				}
 			}
