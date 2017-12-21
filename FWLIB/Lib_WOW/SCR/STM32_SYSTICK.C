@@ -39,7 +39,7 @@ void SysTick_Configuration(unsigned long Time)	//系统嘀嗒时钟配置72MHz,单位为uS
 //	SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK);					//系统时钟 72MHZ
 	SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);			//系统时钟/8==9MHz
 //	SysTick_SetReload(9);			//1uS
-	SysTick_SetReload((RCC_ClocksStatus.SYSCLK_Frequency/8000000)*Time-1);				//Time--uS
+	SysTick_SetReload((RCC_ClocksStatus.SYSCLK_Frequency/9000000)*Time-1);				//Time--uS
 	SysTick_ITConfig(DISABLE);					//关闭中断
 	SysTick_CounterCmd(SysTick_Counter_Enable);	//使能计数
 	SysTick_ITConfig(ENABLE);
@@ -88,7 +88,7 @@ void SysTick_DeleyuS(unsigned int Time)
 //	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
 	SysTick->CTRL &= SysTick_CLKSource_HCLK_Div8;	//SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);			//系统时钟/8==9MHz
 	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
-	SysTick->LOAD = (RCC_ClocksStatus.SYSCLK_Frequency/8000000)*Time-8;	//SysTick_SetReload(9*time);				//Time--uS  -8为了减小误差，不可以-9，防止Time==1的情况
+	SysTick->LOAD = (RCC_ClocksStatus.SYSCLK_Frequency/9000000)*Time-8;	//SysTick_SetReload(9*time);				//Time--uS  -8为了减小误差，不可以-9，防止Time==1的情况
 	SysTick->CTRL |= SysTick_Counter_Enable;			//SysTick_CounterCmd(SysTick_Counter_Enable);	//使能计数
 	while(SysTick->VAL	==	0);			//等待开始装载
 	while(SysTick->VAL	!=	0);			//等待倒计数完成
@@ -115,7 +115,7 @@ void SysTick_DeleymS(unsigned int Time)
 //	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
 	SysTick->CTRL &= SysTick_CLKSource_HCLK_Div8;	//SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);			//系统时钟/8==9MHz
 	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
-	SysTick->LOAD = (RCC_ClocksStatus.SYSCLK_Frequency/8000)*Time-8;	//SysTick_SetReload(9*time);				//Time--uS  -8为了减小误差，不可以-9，防止Time==1的情况
+	SysTick->LOAD = (RCC_ClocksStatus.SYSCLK_Frequency/9000)*Time-8;	//SysTick_SetReload(9*time);				//Time--uS  -8为了减小误差，不可以-9，防止Time==1的情况
 	SysTick->CTRL |= SysTick_Counter_Enable;			//SysTick_CounterCmd(SysTick_Counter_Enable);	//使能计数
 	while(SysTick->VAL	==	0);			//等待开始装载
 	while(SysTick->VAL	!=	0);			//等待倒计数完成

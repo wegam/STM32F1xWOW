@@ -14,6 +14,8 @@
 *******************************************************************************/
 
 
+
+#define	TestModel
 //SW6 ON±íÊ¾ÓëĞı×ªÏà¹ØµÄ°å
 //SW5 ON±íÊ¾Ğı×ªµç»ú¿ØÖÆ°å£¬OFF±íÊ¾´«¸ĞÆ÷°å
 
@@ -73,7 +75,7 @@
 #define	PWM_RunUpCount	1000				//¼ÓËÙ/¼õËÙĞèÒªµÄ²½Êı
 #define	MOTOR_TIMx	TIM1				//Ğı×ªµç»úËùÊ¹ÓÃµÄ¶¨Ê±Æ÷
 
-#define	Steeps		4000					//Ò»¸ö´°¿ÚÓÃµ½µÄÇı¶¯Âö³åÊı
+#define	Steeps		1000					//Ò»¸ö´°¿ÚÓÃµ½µÄÇı¶¯Âö³åÊı
 #define	MaxWindow	4							//×î´ó´°¿ÚÊı
 
 #define	MOTOR_RunRight			MOTOR_DIR_PORT->BSRR 	= MOTOR_DIR_Pin		//EN	=	1;	//Ë³Ê±Õë
@@ -117,7 +119,10 @@ u8 RunToWindow	=	0;		//Ğı×ªµ½ÏàÓ¦´°¿Ú 0-ÎŞ£¬1-1ºÅ£¬2-2ºÅ£¬3-3ºÅ£¬4-4ºÅ
 u8 StatusOfWindow	=	0;	//µ±Ê±Í£Ö¹Î»ÖÃ£º0-Î´³õÊ¼»¯£¬1-Ô­µã£¬2-2ºÅ´°¿Ú£¬3-3ºÅ´°¿Ú£¬4-4ºÅ´°¿Ú
 u8 CMDOfWindow	=	0;		//ÔËĞĞµ½Ö¸¶¨´°¿ÚÃüÁî
 
-
+#ifdef	TestModel
+u8	CCWFlag	=	0;
+u32	TestTime	=	0;
+#endif
 
 CanRxMsg RxMessage;			//CAN½ÓÊÕ 
 CanTxMsg TxMessage;			//CAN·¢ËÍ
@@ -136,7 +141,8 @@ void Motor_RunSet(int Num);			//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½
 void Sensor_Read(void);					//¶Á´«¸ĞÆ÷ĞÅºÅ	
 void Reset_Data(void);					//¸´Î»ËùÓĞµÄÈ«¾Ö±äÁ¿Öµ
 u8 SetToWindows(u8* nWindows);		//ÔËĞĞµ½Ö¸¶¨´°¿Ú	
-
+void Test_modle(void);		//²âÊÔÄ£Ê½
+	
 void SensorBD_Server(void);		//´«¸ĞÆ÷°å·şÎñ³ÌĞò
 void MotorBD_Server(void);		//µç»ú¿ØÖÆ°å·şÎñ³ÌĞò
 u8 Motor_Server(void);				//²½½øµç»ú·µ»Ø×´Ì¬
@@ -153,7 +159,7 @@ void Switch_Server(void);			//¼ì²é°ÎÂëµØÖ·ÓĞÎŞ±ä¸ü£¬Èç¹û±ä¸ü£¬ÖØĞÂÅäÖÃÔËĞĞ²ÎÊı
 void PC006V21_Configuration(void)
 {
 	SYS_Configuration();											//ÏµÍ³ÅäÖÃ STM32_SYS.H	
-	SysTick_DeleymS(100);											//SysTickÑÓÊ±nmS
+	SysTick_DeleymS(20);											//SysTickÑÓÊ±nmS
 	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);			//SYS-LED 1HZ 50%
 	SWITCHID_Configuration();									//°ÎÂë¿ª¹Ø³õÊ¼»¯¼°¶ÁÊı
 	
@@ -266,7 +272,66 @@ void MotorBD_Server(void)		//µç»ú¿ØÖÆ°å·şÎñ³ÌĞò
 	SetToWindows(&CMDOfWindow);		//ÔËĞĞµ½Ö¸¶¨´°¿Ú
 	IWDG_Feed();				//¶ÀÁ¢¿´ÃÅ¹·Î¹¹·
 	CAN_Server();				//CANÊÕ·¢Êı¾İ¹ÜÀí
+	Test_modle();				//²âÊÔÄ£Ê½
 }
+/*******************************************************************************
+*º¯ÊıÃû			:	function
+*¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷
+*ÊäÈë				: 
+*·µ»ØÖµ			:	ÎŞ
+*ĞŞ¸ÄÊ±¼ä		:	ÎŞ
+*ĞŞ¸ÄËµÃ÷		:	ÎŞ
+*×¢ÊÍ				:	wegam@sina.com
+*******************************************************************************/
+void Test_modle(void)		//²âÊÔÄ£Ê½
+{
+#ifdef	TestModel
+	if(StatusOfWindow	==	0)
+	{
+		CCWFlag	=	0;	//ÔËĞĞ·½Ïò±êÖ¾
+		return;
+	}
+	
+	if(RunToWindow!=0)
+	{
+		TestTime	=	0;
+	}
+	else
+	{
+		TestTime++;
+	}
+	
+	if(TestTime	>=	500)
+	{
+		TestTime	=	0;
+		
+		if(CCWFlag	==	0)		//Õı×ª
+		{
+			if(StatusOfWindow	<	MaxWindow)
+			{
+				CMDOfWindow	=	StatusOfWindow+1;
+			}
+			else
+			{
+				CCWFlag	=	1;
+			}
+		}
+		
+		if(CCWFlag	==	1)		//·´×ª
+		{
+			if(StatusOfWindow	>	1)
+			{
+				CMDOfWindow	=	StatusOfWindow-1;
+			}
+			else
+			{
+				CCWFlag	=	0;
+			}
+		}
+	}
+#endif
+}
+
 /*******************************************************************************
 *º¯ÊıÃû			:	function
 *¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷
@@ -367,6 +432,8 @@ void SWITCHID_Configuration(void)			//°ÎÂë¿ª¹Ø³õÊ¼»¯¼°¶ÁÊı
 	
 	SWITCHID_Conf(&SWITCHID);		//
 	SWITCHID_Read(&SWITCHID);		//
+	
+	SwitchData	=	(SWITCHID.nSWITCHID)&0x3F;
 	
 	if((SWITCHID.nSWITCHID	&	0x20)	==	0x20)
 	{
@@ -633,12 +700,14 @@ u8 SetToWindows(u8* nWindows)		//ÔËĞĞµ½Ö¸¶¨´°¿Ú
 	{
 		RunToWindow	=	newWindows;		//ĞèÒªÔËĞĞµ½µÄ´°¿ÚÊı
 //		newWindows	=	newWindows-StatusOfWindow;
-		Motor_RunSet(0-((newWindows-StatusOfWindow)*Steeps));			//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½Ç)Num¸ö¸ñÊı£¬¸ºÖµÊ±ÎªÄæÊ±Õë×ªNum¸ö¸ñÊı£¬0ÎªÍ£Ö¹
+		Motor_RunSet(((newWindows-StatusOfWindow)*Steeps));			//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½Ç)Num¸ö¸ñÊı£¬¸ºÖµÊ±ÎªÄæÊ±Õë×ªNum¸ö¸ñÊı£¬0ÎªÍ£Ö¹
+//		Motor_RunSet(0-((StatusOfWindow-newWindows)*Steeps));				//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½Ç)Num¸ö¸ñÊı£¬¸ºÖµÊ±ÎªÄæÊ±Õë×ªNum¸ö¸ñÊı£¬0ÎªÍ£Ö¹
 	}
 	else		//Äæ×ª
 	{
 		RunToWindow	=	newWindows;
-		Motor_RunSet((newWindows-StatusOfWindow)*Steeps);				//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½Ç)Num¸ö¸ñÊı£¬¸ºÖµÊ±ÎªÄæÊ±Õë×ªNum¸ö¸ñÊı£¬0ÎªÍ£Ö¹
+		Motor_RunSet(0-((StatusOfWindow-newWindows)*Steeps));				//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½Ç)Num¸ö¸ñÊı£¬¸ºÖµÊ±ÎªÄæÊ±Õë×ªNum¸ö¸ñÊı£¬0ÎªÍ£Ö¹
+//		Motor_RunSet(((newWindows-StatusOfWindow)*Steeps));			//Ê¹Ò©¼ÜĞı×ª---NumÎªÕıÖµÊ±±íÊ±Ë³Ê±Õë×ª(´ÓÉÏÍùÏÂÊÓ½Ç)Num¸ö¸ñÊı£¬¸ºÖµÊ±ÎªÄæÊ±Õë×ªNum¸ö¸ñÊı£¬0ÎªÍ£Ö¹
 	}
 	*nWindows	=	0;			//½«Ö¸ÁîÇå³ı
 	return 1;
