@@ -67,7 +67,7 @@
 #define	DATA_Group	0x08
 #define	DATA_ID			0xFA
 
-
+#define	CAN1_BaudRate	500000		//CAN波特率	500K
 
 
 //=================PA6电机控制板CCW做脉冲输出
@@ -410,7 +410,7 @@ void CAN_Configuration(void)		//CAN配置
 	
 	
 	//========================================CAN基本配置
-	CAN_Configuration_NR(500000);								//CAN1配置---标志位查询方式，不开中断--速率500K
+	CAN_Configuration_NR(CAN1_BaudRate);			//CAN1配置---标志位查询方式，不开中断--速率500K
 	//========================================滤波器配置
 	if(SensorBD)				//旋转电机传感器信号采集板
 	{

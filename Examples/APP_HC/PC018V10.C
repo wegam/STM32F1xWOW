@@ -28,7 +28,7 @@
 #define	Board_SerialNum	0x0000		//PCB板号
 
 #define	RS485_BaudRate		256000
-#define	RS485_BufferSize	256
+#define	RS485_BufferSize	32
 
 Borad_InfoDef	PC018V10_Info;
 RS485_TypeDef	RS485_Info;
@@ -39,9 +39,8 @@ u8 RS485Rev[RS485_BufferSize]	=	{0};
 
 u8 ch[120]="USART_BASIC_Configuration(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPreemptionPriority,u8 NVIC_SubPriority)\n";
 u8 ch2[17]={0xC0,0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71};
-u8 ch3[17]={0xC0,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
-u8 ch4[17]={0xC0};
-u8 SegArr[16]={0x00};
+
+u8 Seg7Buffer[16]={0x00};		//数码管驱动芯片数据缓冲区：包含命令和显示值
 
 u32	SYSTIME	=	0;
 u16	DisplayNum	=	0;			//数码管更新数值
@@ -66,7 +65,6 @@ void Seg7_Test(void);		//数码管显示测试
 *******************************************************************************/
 u8 Seg7_Code[]=
 {
-//	0xC0,			//A0:起始地址
 	0x3F,			//A0:0
 	0x06,			//A1:1
 	0x5B,			//A2:2
@@ -113,7 +111,7 @@ void PC018V10_Configuration(void)
 	SysTick_Configuration(1000);	//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);
-//	
+	
 
 
 	STM32_SPI_ConfigurationNR(SPI2);	//SPI配置---向数码管板发送数据
@@ -200,13 +198,16 @@ void RS485_Server(void)							//RS485收发处理
 *******************************************************************************/
 void Seg7_Server(void)		//数码管显示更新
 {
-	if(DisplayBac	!=	DisplayNum)
+	//===============================如果数据有更新---立即更新
+	if(DisplayBac	!=	DisplayNum)		
 	{
 		DisplayBac	=	DisplayNum;
 		WriteNumSeg7(DisplayBac);		//向数码管写入数据
 		DisplayTime	=	0;
 	}
-	if(DisplayTime++	>=	1000)
+	
+	//===============================每1S重新写入一次数据
+	if(DisplayTime++	>=	1000)			
 	{
 		DisplayTime	=	0;
 		WriteNumSeg7(DisplayBac);		//向数码管写入数据
@@ -237,37 +238,35 @@ void Seg7_Test(void)		//数码管显示测试
 *******************************************************************************/
 void WriteNumSeg7(u16 Num)		//向数码管写入数据
 {
-	STM32_SPI_ReadWriteData(SPI2,0x8F);		//亮度
-	STM32_SPI_ReadWriteData(SPI2,0x40);		//地址自增
-	ch4[0]	=	0xC0;												//起始地址
+	STM32_SPI_ReadWriteData(SPI2,0x8F);		//亮度 0x80（关）<0x88<0x89<0x8A<0x8B<0x8C<0x8D<0x8E<0x8F
+	STM32_SPI_ReadWriteData(SPI2,0x40);		//地址模式  0x40-自增;0x44-固定地址
+	Seg7Buffer[0]	=	0xC0;												//起始地址
 	if(Num/1000	!=	0)
 	{
-		ch4[1]=Seg7_Code[Num/1000];							//
-		ch4[3]=Seg7_Code[Num%1000/100];
-		ch4[5]=Seg7_Code[Num%100/10];
+		Seg7Buffer[1]=Seg7_Code[Num/1000];							//
+		Seg7Buffer[3]=Seg7_Code[Num%1000/100];
+		Seg7Buffer[5]=Seg7_Code[Num%100/10];
 	}
 	else if(Num/100	!= 0)
 	{
-		ch4[1]=0x00;							//
-		ch4[3]=Seg7_Code[Num%1000/100];
-		ch4[5]=Seg7_Code[Num%100/10];
+		Seg7Buffer[1]=0x00;							//
+		Seg7Buffer[3]=Seg7_Code[Num%1000/100];
+		Seg7Buffer[5]=Seg7_Code[Num%100/10];
 	}
 	else if(Num/10	!= 0)
 	{
-		ch4[1]=0x00;							//
-		ch4[3]=0x00;
-		ch4[5]=Seg7_Code[Num%100/10];
+		Seg7Buffer[1]=0x00;							//
+		Seg7Buffer[3]=0x00;
+		Seg7Buffer[5]=Seg7_Code[Num%100/10];
 	}
 	else
 	{
-		ch4[1]=0x00;							//
-		ch4[3]=0x00;
-		ch4[5]=0x00;
+		Seg7Buffer[1]=0x00;							//
+		Seg7Buffer[3]=0x00;
+		Seg7Buffer[5]=0x00;
 	}
-	ch4[7]=Seg7_Code[Num%10];	
-	
-	STM32_SPI_SendBuffer(SPI2,8,ch4);			//发送数据
-
+	Seg7Buffer[7]=Seg7_Code[Num%10];	
+	STM32_SPI_SendBuffer(SPI2,8,Seg7Buffer);			//发送数据
 }
 /*******************************************************************************
 * 函数名			:	function
@@ -287,33 +286,33 @@ void WriteStatus(char StatusCode)		//向数码管写入状态
 	{
 		STM32_SPI_ReadWriteData(SPI2,0x8F);		//亮度
 		STM32_SPI_ReadWriteData(SPI2,0x40);		//地址自增
-		ch4[1]=Seg7_Code[22];									//
-		ch4[3]=Seg7_Code[23];
-		ch4[5]=Seg7_Code[17];
-		ch4[7]=Seg7_Code[18];
-		STM32_SPI_SendBuffer(SPI2,8,ch4);			//发送数据
+		Seg7Buffer[1]=Seg7_Code[22];									//
+		Seg7Buffer[3]=Seg7_Code[23];
+		Seg7Buffer[5]=Seg7_Code[17];
+		Seg7Buffer[7]=Seg7_Code[18];
+		STM32_SPI_SendBuffer(SPI2,8,Seg7Buffer);			//发送数据
 	}
 	//状态2-------------"ID-n"	//显示此窗口号
 	else if(StatusCode	==	2)	
 	{
 		STM32_SPI_ReadWriteData(SPI2,0x8F);		//亮度
 		STM32_SPI_ReadWriteData(SPI2,0x40);		//地址自增
-		ch4[1]=Seg7_Code[24];							//
-		ch4[3]=Seg7_Code[13];
-		ch4[5]=Seg7_Code[23];
-		ch4[7]=Seg7_Code[6];
-		STM32_SPI_SendBuffer(SPI2,8,ch4);			//发送数据
+		Seg7Buffer[1]=Seg7_Code[24];							//
+		Seg7Buffer[3]=Seg7_Code[13];
+		Seg7Buffer[5]=Seg7_Code[23];
+		Seg7Buffer[7]=Seg7_Code[6];
+		STM32_SPI_SendBuffer(SPI2,8,Seg7Buffer);			//发送数据
 	}
 	//状态3-------------"uP--"	//升级中
 	else if(StatusCode	==	3)	
 	{
 		STM32_SPI_ReadWriteData(SPI2,0x8F);		//亮度
 		STM32_SPI_ReadWriteData(SPI2,0x40);		//地址自增
-		ch4[1]=Seg7_Code[20];							//
-		ch4[3]=Seg7_Code[22];
-		ch4[5]=Seg7_Code[23];
-		ch4[7]=Seg7_Code[23];
-		STM32_SPI_SendBuffer(SPI2,8,ch4);			//发送数据
+		Seg7Buffer[1]=Seg7_Code[20];							//
+		Seg7Buffer[3]=Seg7_Code[22];
+		Seg7Buffer[5]=Seg7_Code[23];
+		Seg7Buffer[7]=Seg7_Code[23];
+		STM32_SPI_SendBuffer(SPI2,8,Seg7Buffer);			//发送数据
 	}
 	else
 	{

@@ -99,7 +99,7 @@ void TM1618_WriteCommandN(TM1618_Pindef *Pinfo,unsigned char command)
 //	stb=1;
 	GPIO_SetBits(Pinfo->TM1618_STB_PORT, Pinfo->TM1618_STB_Pin);			//stb=0;
 	TM1618_Delay(TM1618_DelayTime);
-	TM1618_WriteByte(Pinfo,0x44);																			//固定地址模式
+	TM1618_WriteByte(Pinfo,0x44);																			//地址模式  0x40-自增;0x44-固定地址
 	TM1618_Delay(TM1618_DelayTime);
 	GPIO_ResetBits(Pinfo->TM1618_STB_PORT, Pinfo->TM1618_STB_Pin);		//stb=1;
 	TM1618_Delay(TM1618_DelayTime);
