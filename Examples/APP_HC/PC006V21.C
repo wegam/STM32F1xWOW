@@ -15,25 +15,7 @@
 
 
 
-#define	TestModel
-//SW6 ON表示与旋转相关的板
-//SW5 ON表示旋转电机控制板，OFF表示传感器板
 
-//CAN滤波器组使用 0x0A
-//传感器板CAN-ID为0x80
-//旋转电机控制板CAN-ID为0xC0
-
-//旋转电机控制板对外接口
-//CAN滤波器组0x09
-//CAN-ID为0xCC			运行到指定窗口命令0xFA 0x55 nWindows
-#define	Cmd_Group	0x09
-#define	Cmd_ID		0xCC
-
-//其它数据通讯端口
-//CAN滤波器组 0x08
-//CAN-ID为拔码地址
-#define	DATA_Group	0x08
-#define	DATA_ID			0xFA
 
 #ifdef PC006V21			//分检机控制板
 
@@ -56,6 +38,38 @@
 #include "STM32_CAN.H"
 #include "STM32F10x_BitBand.H"
 
+
+#define	TestModel		//测试模式：测试模式下，1~4,4~1旋转
+//SW6 ON表示与旋转相关的板，传感器信号采集板/旋转电机控制板
+//SW5 ON表示旋转电机控制板，OFF表示传感器板
+
+
+//===============旋转电机控制板与旋转相关传感器信号采集板专用通讯滤波器组
+//CAN滤波器组使用 0x0A
+//传感器板CAN-ID为0x80
+//旋转电机控制板CAN-ID为0xC0
+#define	MotorBD_Group		0x0A
+#define	MotorBD_ID			0xC0
+#define	SensorBD_Group	MotorBD_Group
+#define	SensorBD_ID			0x80
+
+
+
+//===============旋转电机控制板对外接口---接收电机控制命令
+//CAN滤波器组0x09
+//CAN-ID为0xCC			运行到指定窗口命令0xFA 0x55 nWindows
+#define	Cmd_Group		0x09
+#define	Cmd_ID			0xCC
+
+//===============其它数据通讯端口
+//CAN滤波器组 0x08
+//CAN-ID为拔码地址
+#define	DATA_Group	0x08
+#define	DATA_ID			0xFA
+
+
+
+
 //=================PA6电机控制板CCW做脉冲输出
 #define	MOTOR_PWM_PORT	GPIOA
 #define	MOTOR_PWM_Pin		GPIO_Pin_7
@@ -70,13 +84,13 @@
 #define	RXLED_PORT	GPIOA
 #define	RXLED_Pin		GPIO_Pin_6
 
-#define	MOTOR_PWM_Frequency	500	//脉冲频率--单位Hz
-#define	PWM_UpdataCount	10					//频率变化占计数个数，就是计数PWM_Updata个数后更新一次输出频率
-#define	PWM_RunUpCount	1000				//加速/减速需要的步数
-#define	MOTOR_TIMx	TIM1				//旋转电机所使用的定时器
+#define	MOTOR_PWM_Frequency		500			//脉冲频率--单位Hz
+#define	PWM_UpdataCount				10			//频率变化占计数个数，加减速时PWM_Updata个脉冲后更新一次输出频率
+#define	PWM_RunUpCount				1000		//加速/减速需要的步数
+#define	MOTOR_TIMx						TIM1		//旋转电机所使用的定时器
 
-#define	Steeps		1000					//一个窗口用到的驱动脉冲数
-#define	MaxWindow	4							//最大窗口数
+#define	Steeps			1000						//一个窗口用到的驱动脉冲数
+#define	MaxWindow		4								//最大窗口数
 
 #define	MOTOR_RunRight			MOTOR_DIR_PORT->BSRR 	= MOTOR_DIR_Pin		//EN	=	1;	//顺时针
 #define	MOTOR_RunLeft				MOTOR_DIR_PORT->BRR		= MOTOR_DIR_Pin		//EN	=	0;	//逆时钟
@@ -95,32 +109,32 @@
 #define	Sensor4_Pin		GPIO_Pin_7
 
 //======传感器状态：：读取状态为高表示无信号，低-有信号
-#define	Sensor1_Status	(Sensor1_Port->IDR & Sensor1_Pin)
-#define	Sensor2_Status	(Sensor2_Port->IDR & Sensor2_Pin)
-#define	Sensor3_Status	(Sensor3_Port->IDR & Sensor3_Pin)
-#define	Sensor4_Status	(Sensor4_Port->IDR & Sensor4_Pin)
+#define	Sensor1_Status	(Sensor1_Port->IDR & Sensor1_Pin)	//不启用
+#define	Sensor2_Status	(Sensor2_Port->IDR & Sensor2_Pin)	//原点
+#define	Sensor3_Status	(Sensor3_Port->IDR & Sensor3_Pin)	//中间传感器
+#define	Sensor4_Status	(Sensor4_Port->IDR & Sensor4_Pin)	//不启用
 
 SWITCHID_CONF SWITCHID;					//拔码开关结构体
 PWM_TimDef		PWM_Tim;					//PWM控制脉冲结构体
 
 u8 SwitchData	=	0;	//存储拔码开关最新地址，如果地址变化，再重新配置运行参数
-u8 SensorBD	=	0;		//传感器板标志，0-非传感器板，1-传感器板
-u8 MotorBD	=	0;		//旋转电机控制板标志，0-非电机控制板，1-电机控制板
+u8 SensorBD		=	0;	//传感器板标志，0-非传感器板，1-传感器板
+u8 MotorBD		=	0;	//旋转电机控制板标志，0-非电机控制板，1-电机控制板
 u32	MotorTime	=	0;	//旋转电机测试运行时间
 
-u8	CANID	=	0;
+//u8	CANID	=	0;
 u16 SYSTime=0;
 //u16 data=0;
 //u8 Flag=0;
 u8 Sensor[4]	=	{0};	//4个传感器感应值存储区
 u8 SensorON		=	0	;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
 
-u8 RunToWindow	=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+u8 RunToWindow		=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
 u8 StatusOfWindow	=	0;	//当时停止位置：0-未初始化，1-原点，2-2号窗口，3-3号窗口，4-4号窗口
-u8 CMDOfWindow	=	0;		//运行到指定窗口命令
+u8 CMDOfWindow		=	0;		//运行到指定窗口命令
 
 #ifdef	TestModel
-u8	CCWFlag	=	0;
+u8	CCWFlag		=	0;
 u32	TestTime	=	0;
 #endif
 
@@ -129,24 +143,26 @@ CanTxMsg TxMessage;			//CAN发送
 
 
 
-
+//========================配置程序
 void SWITCHID_Configuration(void);			//拔码开关初始化及读数
 void Motor_Configuration(void);					//步进电机驱动配置
 void Sensor_Configuration(void);				//传感器配置
 void CAN_Configuration(void);						//CAN配置
-void LED_Configuration(void);						//作为传感器板时，发送LED指示灯
+void LED_Configuration(void);						//作为传感器板时，传感器采集信号时LED闪烁指示灯
 
-
+//========================驱动程序
 void Motor_RunSet(int Num);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 void Sensor_Read(void);					//读传感器信号	
 void Reset_Data(void);					//复位所有的全局变量值
-u8 SetToWindows(u8* nWindows);		//运行到指定窗口	
-void Test_modle(void);		//测试模式
-	
+u8 SetToWindows(u8* nWindows);	//运行到指定窗口	
+
+void Test_modle(void);					//测试模式：测试模式下，1~4,4~1旋转	---宏定义TestModel
+
+//========================服务程序
 void SensorBD_Server(void);		//传感器板服务程序
 void MotorBD_Server(void);		//电机控制板服务程序
 u8 Motor_Server(void);				//步进电机返回状态
-void CAN_Server(void);			//CAN收发数据管理
+void CAN_Server(void);				//CAN收发数据管理
 void Switch_Server(void);			//检查拔码地址有无变更，如果变更，重新配置运行参数
 /*******************************************************************************
 *函数名		:	function
@@ -158,27 +174,30 @@ void Switch_Server(void);			//检查拔码地址有无变更，如果变更，重新配置运行参数
 *******************************************************************************/
 void PC006V21_Configuration(void)
 {
+	
 	SYS_Configuration();											//系统配置 STM32_SYS.H	
-	SysTick_DeleymS(20);											//SysTick延时nmS
+	SysTick_DeleymS(20);											//SysTick延时nmS----等待上电稳定
 	PWM_OUT(TIM2,PWM_OUTChannel1,1,500);			//SYS-LED 1HZ 50%
 	SWITCHID_Configuration();									//拔码开关初始化及读数
 	
 	if(SensorBD)
 	{
-		Sensor_Configuration();				//传感器配置
-		SysTick_Configuration(100);		//系统嘀嗒时钟配置72MHz,单位为uS
-		LED_Configuration();					//作为传感器板时，发送LED指示灯
+		Sensor_Configuration();					//传感器配置
+		SysTick_Configuration(100);			//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server
+		LED_Configuration();						//作为传感器板时，发送LED指示灯
+		CAN_Configuration();						//CAN1配置---标志位查询方式，不开中断--速率500K
 	}
 	else if(MotorBD)
 	{
-		SysTick_Configuration(1000);							//系统嘀嗒时钟配置72MHz,单位为uS
-		Motor_Configuration();										//步进电机驱动配置
+		SysTick_Configuration(1000);		//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server
+		Motor_Configuration();					//步进电机驱动配置
+		CAN_Configuration();						//CAN1配置---标志位查询方式，不开中断--速率500K
 	}
 	else
 	{
-		SysTick_Configuration(1000);							//系统嘀嗒时钟配置72MHz,单位为uS
+		SysTick_Configuration(1000);		//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server
 	}
-	CAN_Configuration();							//CAN1配置---标志位查询方式，不开中断--500K
+	
 
 //	IWDG_Configuration(1000);	//独立看门狗配置	Tout-超时复位时间，单位ms
 	
@@ -211,14 +230,14 @@ void PC006V21_Server(void)
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void SensorBD_Server(void)		//传感器板服务程序
 {
 	Sensor_Read();		//读传感器信号
 	if(SensorON	&&	SYSTime%5==0)			//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
 	{
-		CAN_StdTX_DATA(CANID,4,Sensor);			//CAN使用标准帧发送数据
+		CAN_StdTX_DATA(SensorBD_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
 	}
 	
 	SYSTime++;
@@ -255,7 +274,7 @@ void SensorBD_Server(void)		//传感器板服务程序
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void MotorBD_Server(void)		//电机控制板服务程序
 {
@@ -281,7 +300,7 @@ void MotorBD_Server(void)		//电机控制板服务程序
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void Test_modle(void)		//测试模式
 {
@@ -339,9 +358,9 @@ void Test_modle(void)		//测试模式
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
-void LED_Configuration(void)	//作为传感器板时，发送LED指示灯
+void LED_Configuration(void)		//作为传感器板时，传感器采集信号时LED闪烁指示灯
 {
 //	//=================PA6传感器板CCW做脉冲输出
 //#define	TXLED_PORT	GPIOA
@@ -360,35 +379,54 @@ void LED_Configuration(void)	//作为传感器板时，发送LED指示灯
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void CAN_Configuration(void)		//CAN配置
 {
 	//SW6 ON表示与旋转相关的板
 	//SW5 ON表示旋转电机控制板，OFF表示传感器板
+	//===============旋转电机控制板与旋转相关传感器信号采集板专用通讯滤波器组
 	//CAN滤波器组使用 0x0A
 	//传感器板CAN-ID为0x80
 	//旋转电机控制板CAN-ID为0xC0
+	//#define	MotorBD_Group		0x0A
+	//#define	MotorBD_ID			0xC0
+	//#define	SensorBD_Group	MotorBD_Group
+	//#define	SensorBD_ID			0x80
 	
-	CAN_Configuration_NR(500000);							//CAN1配置---标志位查询方式，不开中断--500K
-	if((SWITCHID.nSWITCHID	&	0x20)	==	0x20)
+
+
+	////===============旋转电机控制板对外接口---接收电机控制命令
+	////CAN滤波器组0x09
+	////CAN-ID为0xCC			运行到指定窗口命令0xFA 0x55 nWindows
+	//#define	Cmd_Group		0x09
+	//#define	Cmd_ID			0xCC
+
+	////===============其它数据通讯端口
+	////CAN滤波器组 0x08
+	////CAN-ID为拔码地址
+	//#define	DATA_Group	0x08
+	//#define	DATA_ID			0xFA
+	
+	
+	//========================================CAN基本配置
+	CAN_Configuration_NR(500000);								//CAN1配置---标志位查询方式，不开中断--速率500K
+	//========================================滤波器配置
+	if(SensorBD)				//旋转电机传感器信号采集板
 	{
-		if((SWITCHID.nSWITCHID	&	0x30)	==	0x30)	//电机控制板
-		{
-			CANID	=	0xC0;
-		}
-		else
-		{
-			CANID	=	0x80;			
-		}
-		//======旋转电机控制板与传感器板通讯端口滤波器-----旋转电机控制板与旋转传感器通讯滤波器组
-		CAN_FilterInitConfiguration_StdData(0X0A,CANID,0xFFBF);			//CAN滤波器配置---标准数据帧模式---BIT7不过滤
+		CAN_FilterInitConfiguration_StdData(SensorBD_Group,SensorBD_ID,(MotorBD_ID^SensorBD_ID)^0XFFFF);			//CAN滤波器配置---标准数据帧模式---BIT7不过滤
+	}
+	else if(MotorBD)		
+	{
 		//======旋转电机控制板与外部通讯通讯端口滤波器
-		if(MotorBD)	//旋转电机控制板标志，0-非电机控制板，1-电机控制板
-		{
-			CAN_FilterInitConfiguration_StdData(Cmd_Group,	Cmd_ID,	0xFFFF);			//CAN滤波器配置---标准数据帧模式---电机控制板对外控制接口
-			CAN_FilterInitConfiguration_StdData(DATA_Group,	DATA_ID,0xFFFF);			//CAN滤波器配置---标准数据帧模式---电机控制板对外数据接口			
-		}
+		CAN_FilterInitConfiguration_StdData(MotorBD_Group,MotorBD_ID,	(MotorBD_ID^SensorBD_ID)^0XFFFF);			//CAN滤波器配置---标准数据帧模式---BIT7不过滤
+		
+		CAN_FilterInitConfiguration_StdData(Cmd_Group,		Cmd_ID,			0xFFFF);			//CAN滤波器配置---标准数据帧模式---电机控制板接收外部控制命令接口
+		//		CAN_FilterInitConfiguration_StdData(DATA_Group,	DATA_ID,0xFFFF);			//CAN滤波器配置---标准数据帧模式---电机控制板对外数据接口--无数据通讯	
+	}
+	else
+	{
+		CAN_FilterInitConfiguration_StdData(DATA_Group,	DATA_ID,0xFFFF);			//CAN滤波器配置---标准数据帧模式---电机控制板对外数据接口--数据通讯	
 	}
 }
 /*******************************************************************************
@@ -398,15 +436,12 @@ void CAN_Configuration(void)		//CAN配置
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void SWITCHID_Configuration(void)			//拔码开关初始化及读数
 {
 	//SW6 ON表示与旋转相关的板
 	//SW5 ON表示旋转电机控制板，OFF表示传感器板
-	//CAN滤波器组使用 0x0A
-	//传感器板CAN-ID为0x80
-	//旋转电机控制板CAN-ID为0xC0
 	//	u8 MotorBD	=	0;		//旋转电机控制板标志，0-非电机控制板，1-电机控制板
 	//	u8 SensorBD	=	0;		//传感器板标志，0-非传感器板，1-传感器板
 	
@@ -454,7 +489,7 @@ void SWITCHID_Configuration(void)			//拔码开关初始化及读数
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void Motor_Configuration(void)			//步进电机驱动配置
 {
@@ -509,7 +544,7 @@ void Sensor_Configuration(void)		//传感器配置
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void Motor_RunSet(int Num)			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 {
@@ -543,7 +578,7 @@ void Motor_RunSet(int Num)			//使药架旋转---Num为正值时表时顺时针转(从上往下视角
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 u8 Motor_Server(void)				//步进电机返回状态
 {
@@ -659,7 +694,7 @@ u8 Motor_Server(void)				//步进电机返回状态
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 u8 SetToWindows(u8* nWindows)		//运行到指定窗口
 {
@@ -721,7 +756,7 @@ u8 SetToWindows(u8* nWindows)		//运行到指定窗口
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void Sensor_Read(void)		//读传感器信号
 {	
@@ -762,12 +797,7 @@ void Sensor_Read(void)		//读传感器信号
 	{
 		Sensor[3]	=	0;
 	}
-	
-//	if(Sensor[0]>SensorON	||	Sensor[1]>SensorON	||	Sensor[2]>SensorON	||	Sensor[3]>SensorON	)
-//	{
-//		memset(Sensor,0x00,4);
-//		CAN_StdTX_DATA(CANID,4,Sensor);			//CAN使用标准帧发送数据
-//	}
+
 }
 /*******************************************************************************
 *函数名			:	function
@@ -776,7 +806,7 @@ void Sensor_Read(void)		//读传感器信号
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void CAN_Server(void)			//CAN收发数据管理
 {
@@ -792,24 +822,14 @@ void CAN_Server(void)			//CAN收发数据管理
 	//	u8 SensorON		=	0	;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
 	u8 status	=	0;		//CAN读取返回0表示无效
 	
-	if(SensorBD)															//传感器板
+	if(SensorBD)															//传感器板---旋转电机开始运行时开始采集信号
 	{
-		
-//		Sensor[0]=0x01;
-//		Sensor[1]=0x02;
-//		Sensor[2]=0x03;
-//		Sensor[3]=0x04;
-//		CAN_StdTX_DATA(CANID,4,Sensor);				//CAN使用标准帧发送数据
-//		status	=	CAN_RX_DATA(&RxMessage);									//检查CAN接收有无数据
-//	if(status	==0)
-//		return;
-//		memset(RxMessage.Data,0x00,4);
 		status	=	CAN_RX_DATA(&RxMessage);									//检查CAN接收有无数据
 		if(status	==	0)		//未接收到数据
 		{
 			return;
 		}
-		if(RxMessage.StdId	==	0xC0)							//旋转电机控制板发来数据
+		if(RxMessage.StdId	==	MotorBD_ID)							//旋转电机控制板发来数据
 		{
 			//传感器信号采集开关
 			if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x01)
@@ -821,14 +841,6 @@ void CAN_Server(void)			//CAN收发数据管理
 				SensorON	=	0;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
 			}
 			memset(RxMessage.Data,0x00,2);
-//			memset(Sensor,0x05,4);
-//			CAN_StdTX_DATA(CANID,4,Sensor);				//CAN使用标准帧发送数据
-//			if(RxMessage.Data[0]	==	0x0A)					//旋转电机控制板查询传感器状态
-//			{	
-//				Sensor_Read();		//读传感器信号
-//				CAN_StdTX_DATA(CANID,4,Sensor);				//CAN使用标准帧发送数据
-//				memset(Sensor,0x00,4);
-//			}
 		}
 	}
 	else if(MotorBD)				//旋转电机控制板
@@ -851,7 +863,7 @@ void CAN_Server(void)			//CAN收发数据管理
 			Sensor[0]	=	0xAF;
 			Sensor[1]	=	0x01;
 			SensorON	=	1;
-			CAN_StdTX_DATA(CANID,2,Sensor);				//CAN使用标准帧发送数据
+			CAN_StdTX_DATA(MotorBD_ID,2,Sensor);				//CAN使用标准帧发送数据
 			memset(Sensor,0x00,2);
 		}
 		else if(RunToWindow==0	&&	SensorON!=0)				//电机停止运转---传感器板停止采集信号
@@ -859,7 +871,7 @@ void CAN_Server(void)			//CAN收发数据管理
 			Sensor[0]	=	0xAF;
 			Sensor[1]	=	0x00;
 			SensorON	=	0;
-			CAN_StdTX_DATA(CANID,2,Sensor);				//CAN使用标准帧发送数据
+			CAN_StdTX_DATA(MotorBD_ID,2,Sensor);				//CAN使用标准帧发送数据
 			memset(Sensor,0x00,2);
 		}
 	}
@@ -871,7 +883,7 @@ void CAN_Server(void)			//CAN收发数据管理
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void Switch_Server(void)			//检查拔码地址有无变更，如果变更，重新配置运行参数
 {
@@ -892,7 +904,7 @@ void Switch_Server(void)			//检查拔码地址有无变更，如果变更，重新配置运行参数
 *返回值			:	无
 *修改时间		:	无
 *修改说明		:	无
-*注释				:	wegam@sina.com
+*注释				:	
 *******************************************************************************/
 void Reset_Data(void)		//复位所有的全局变量值
 {
@@ -901,7 +913,6 @@ void Reset_Data(void)		//复位所有的全局变量值
 	MotorBD	=	0;		//旋转电机控制板标志，0-非电机控制板，1-电机控制板
 	MotorTime	=	0;	//旋转电机测试运行时间
 
-//	CANID	=	0;
 	SYSTime=0;
 
 	memset(Sensor,0x00,4);	//4个传感器感应值存储区

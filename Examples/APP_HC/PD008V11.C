@@ -47,7 +47,7 @@
 
 //=======================================调试测试临时数据
 u8 CANTestFlag	=	0;								//CAN测试标志,1--发数据,
-u8 CANTestID		=	0x00;							//测试CANID地址
+//u8 CANTestID		=	0x00;							//测试CANID地址
 u8 ACMOTORTESTFlag	=	0;						//传送线电机行动标志:1-运行,
 u32 ListLength	=	0	;								//测试链表长度
 u8	ListTest	=	0;									//数据存储测试:0-不操作,1-存,2-读
