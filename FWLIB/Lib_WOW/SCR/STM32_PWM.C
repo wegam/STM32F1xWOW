@@ -708,7 +708,7 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置---最大100KHz
 	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
 	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
 	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
-	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;;
+	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;
 	if ((((u32)TIMx)&APB2PERIPH_BASE) == APB2PERIPH_BASE)
   {
     TIMx_Frequency = RCC_ClocksStatus.PCLK2_Frequency;	//APB2
@@ -717,6 +717,7 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置---最大100KHz
   {
     TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
   }
+//	TIMx_Frequency = 72000000;
 	//*6.2.4,计算定时器参数*********************************************************************
 	//Fsys==Fpwm*Count==Fpwm*(Prescaler*Period)	
 	//	TIMx_Prescaler				=	72-1		;		// 	定时器时钟分频值
@@ -918,12 +919,12 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 					PWM_OUT_SetFre(PWM_Tim);														//设置时间
 				}
 			}
-			else if(PWM_Tim->PWM_RunData.PWM_Pulse+(PWM_Tim->PWM_BasicData.PWM_RunUp/5)>PWM_Tim->PWM_BasicData.PWM_Count)
+			else if(PWM_Tim->PWM_RunData.PWM_Pulse+(PWM_Tim->PWM_BasicData.PWM_RunUp)>PWM_Tim->PWM_BasicData.PWM_Count)
 			{
-				if(PWM_Tim->PWM_RunData.PWM_Cycle++>=PWM_Tim->PWM_BasicData.PWM_Updata	&&	PWM_Tim->PWM_BasicData.PWM_Frequency>400)
+				if(PWM_Tim->PWM_RunData.PWM_Cycle++>=PWM_Tim->PWM_BasicData.PWM_Updata	&&	PWM_Tim->PWM_BasicData.PWM_Frequency>200)
 				{
 					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
-					PWM_Tim->PWM_BasicData.PWM_Frequency-=100;						//频率增加--加速
+					PWM_Tim->PWM_BasicData.PWM_Frequency-=20;						//频率增加--加速
 					PWM_OUT_SetFre(PWM_Tim);														//设置时间
 				}
 			}
