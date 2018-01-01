@@ -470,7 +470,8 @@ void TIM1_BRK_IRQHandler(void)
 *******************************************************************************/
 void TIM1_UP_IRQHandler(void)
 {
-	TIM_Server();
+	TIM_ClearITPendingBit(TIM1, TIM_IT_Update);
+	TIM_Server();	
 }
 
 /*******************************************************************************
@@ -521,8 +522,9 @@ void TIM2_IRQHandler(void)
   }
 	return;
 #endif
-	
+	TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 	TIM_Server();
+	
 }
 
 /*******************************************************************************
@@ -534,7 +536,8 @@ void TIM2_IRQHandler(void)
 *******************************************************************************/
 void TIM3_IRQHandler(void)
 {
-	TIM_Server();
+	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+	TIM_Server();	
 }
 
 /*******************************************************************************

@@ -41,11 +41,11 @@ void PWM_TEST_Configuration(void)
 	
 	PWM_Tim.PWM_BasicData.TIMx	=	TIM1;
 	PWM_Tim.PWM_BasicData.PWM_Frequency	=	100000;
-	PWM_Tim.PWM_BasicData.PWM_Ratio	=	50;
+	
 	
 	PWM_OUT_TIMConf(&PWM_Tim);			//PWM输出配置
 	
-	PWM_OUT_TIMSet(&PWM_Tim,10);		//设置计数值
+	PWM_OUT_SetCount(&PWM_Tim,10);		//设置计数值
 }
 /*******************************************************************************
 * 函数名		:	
@@ -66,7 +66,7 @@ void PWM_TEST_Server(void)
 		if(systime>=2000)
 		{
 			systime	=	0;
-			PWM_OUT_TIMSet(&PWM_Tim,2500*Ncycle);		//设置计数值
+			PWM_OUT_SetCount(&PWM_Tim,2500*Ncycle);		//设置计数值
 		}
 	}
 	//========================

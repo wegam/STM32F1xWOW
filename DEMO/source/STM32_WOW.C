@@ -147,6 +147,11 @@ void WOW_Configuration(void)
 #ifdef PWM_TEST
 	PWM_TEST_Configuration();
 #endif
+
+//***********************************TIM_TEST***********************************//
+#ifdef TIM_TEST
+	TIM_TEST_Configuration();
+#endif
 //********************************OLED096_TEST*********************************//
 #ifdef OLED096_TEST
 	OLED096_TEST_Configuration();
@@ -483,6 +488,11 @@ void WOW_Server(void)
 #ifdef PWM_TEST	
 	PWM_TEST_Server();
 #endif
+//***********************************TIM_TEST***********************************//
+#ifdef TIM_TEST	
+	TIM_TEST_Server();
+#endif
+
 //********************************OLED096_TEST*********************************//
 #ifdef OLED096_TEST
 	OLED096_TEST_Server();

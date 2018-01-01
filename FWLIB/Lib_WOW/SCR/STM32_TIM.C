@@ -33,6 +33,253 @@
 //} TIM_TimeBaseInitTypeDef;
 
 
+/*******************************************************************************
+* 函数名		:	PWM_OUT	
+* 功能描述	:		 
+* 输入		:	PWM_Frequency 频率，单位Hz	
+* 输出		:
+* 返回 		:
+*******************************************************************************/
+void TIM_ConfigurationFreq(TIM_TypeDef* TIMx,u32 Frequency)		//定时器频率配置方式，最小频率0.01Hz,最大100KHz
+{
+	//*1,结构体定义
+	//*2,变量定义
+	//*3,管脚确认
+	//*4,打开相应的时钟
+	//*5,管脚配置（初始化）
+	//*6,定时器配置（初始化）
+	//*7,PWM输出配置（初始化）
+	//*8,占空比配置	
+		
+	//*1,结构体定义***********************************************************************
+	//1）============================结构体定义
+//	GPIO_InitTypeDef GPIO_InitStructure;
+	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;	//定时器结构体定义	
+	RCC_ClocksTypeDef RCC_ClocksStatus;							//时钟状态---时钟值
+	NVIC_InitTypeDef	NVIC_InitStructure;						//中断结构体
+	
+	//1）============================临时变量定义
+
+//	u16 GPIO_Pin_n				=	PWM_Tim->PWM_BasicData.GPIO_Pin_n;
+//	double PWM_Frequency	=	2*(PWM_Tim->PWM_BasicData.PWM_Frequency);
+	
+	u8 TIM_IRQChannel=0;
+	u32	Tim_temp				=	2*Frequency;	//由于翻转需要双倍频率
+//	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
+	u32	TIMx_Frequency				=	0;			//	定时器时钟
+	u16 TIMx_Prescaler				=	0	;			//	定时器时钟分频值		取值范围：0x0000~0xFFFF
+  u16 TIMx_Period						=	0	;			//	定时器自动重装载值	取值范围：0x0000~0xFFFF
+
+
+
+	//1）============================打开定时器时钟
+	switch ((u32)TIMx)
+	{
+		case TIM1_BASE:
+			RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+			TIM_IRQChannel=TIM1_UP_IRQChannel;	
+			TIM_TimeBaseStructure.TIM_RepetitionCounter	=	0;
+			break;
+		
+		case TIM2_BASE:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+			TIM_IRQChannel=TIM2_IRQChannel;
+			break;
+		
+		case TIM3_BASE:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+			TIM_IRQChannel=TIM3_IRQChannel;
+			break;
+		
+		case TIM4_BASE:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+			TIM_IRQChannel=TIM4_IRQChannel;
+			break;
+		
+		case TIM5_BASE:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+			TIM_IRQChannel=TIM5_IRQChannel;
+			break;
+		
+		case TIM6_BASE:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
+			TIM_IRQChannel=TIM6_IRQChannel;
+			break;
+		
+		case TIM7_BASE:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
+			TIM_IRQChannel=TIM7_IRQChannel;
+			break;
+		
+		case TIM8_BASE:
+			RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+			TIM_IRQChannel=TIM8_UP_IRQChannel;
+			TIM_TimeBaseStructure.TIM_RepetitionCounter	=	0;
+			break;
+		
+		default:
+			break;		
+	}
+	//1）============================获取TIMx时钟频率
+	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
+	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
+	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
+	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;
+	if ((((u32)TIMx)&APB2PERIPH_BASE) == APB2PERIPH_BASE)
+  {
+    TIMx_Frequency = RCC_ClocksStatus.PCLK2_Frequency;	//APB2
+  }
+  else
+  {
+    TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
+  }
+	//1）============================计算分频值和重装载值
+//	TIMx_Frequency = 72000000;
+	//*6.2.4,计算定时器参数*********************************************************************
+	//Fsys==Fpwm*Count==Fpwm*(Prescaler*Period)	
+	//	TIMx_Prescaler				=	72-1		;		// 	定时器时钟分频值
+	//	TIMx_Period						=	1000-1	;		// 	定时器自动重装载值
+	//	Tim_num1							=	0				;		//	临时变量1
+	if(Tim_temp>100000)		//>100KHz
+	{
+		TIMx_Prescaler=0;
+		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp-1);
+	}
+	else if(Tim_temp>1000)	//>1KHz
+	{
+		TIMx_Prescaler=10-1;
+		TIMx_Period=(u16)((TIMx_Frequency/Tim_temp)/10-1);
+	}
+	else if(Tim_temp>100)		//>100Hz
+	{
+		TIMx_Prescaler=100-1;
+		TIMx_Period=(u16)((TIMx_Frequency/Tim_temp)/100-1);
+	}
+	else if(Tim_temp>10)		//>10Hz
+	{
+		TIMx_Prescaler=1000-1;
+		TIMx_Period=(u16)((TIMx_Frequency/Tim_temp)/1000-1);
+	}
+	else if(Tim_temp<=10)		//<=10Hz
+	{
+		TIMx_Prescaler=2000-1;
+		TIMx_Period=(u16)((TIMx_Frequency/Tim_temp)/2000-1);
+	}
+	
+//	TIMx_Prescaler=0;
+//	TIMx_Period=(u16)(5-1);
+	
+	//6.3定时器初始化*********************************************************************
+	TIM_TimeBaseStructure.TIM_Prescaler = TIMx_Prescaler; 				//设定分频值
+	TIM_TimeBaseStructure.TIM_Period 		= TIMx_Period;        		//设定自动重装载值
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;  				//不分割
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  		//向上计数
+	TIM_TimeBaseInit(TIMx, &TIM_TimeBaseStructure);		//初始化	
+		
+	//*6,中断配置============================================================================
+	NVIC_InitStructure.NVIC_IRQChannel = TIM_IRQChannel;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+	
+	/* Clear TIMx update pending flag[清除TIMx溢出中断] */
+	TIM_ClearFlag(TIMx, TIM_FLAG_Update);
+
+	/* Enable TIM2 Update interrupt [TIMx溢出中断允许]*/
+	TIM_ITConfig(TIMx, TIM_IT_Update, ENABLE); 
+	
+	TIM_Cmd(TIMx, DISABLE); 									//使能TIM
+}
+
+
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	function
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	wegam@sina.com
+*******************************************************************************/
+void TIM_SetFreq(TIM_TypeDef* TIMx,u32 Frequency)		//设定频率
+{
+	
+		
+	//*1,结构体定义***********************************************************************
+	//1）============================结构体定义
+
+	RCC_ClocksTypeDef RCC_ClocksStatus;							//时钟状态---时钟值
+
+	
+	//1）============================临时变量定义
+
+
+	u32	Tim_temp				=	2*Frequency;	//由于翻转需要双倍频率
+//	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
+	u32	TIMx_Frequency				=	0;			//	定时器时钟
+	u16 TIMx_Prescaler				=	0	;			//	定时器时钟分频值		取值范围：0x0000~0xFFFF
+  u16 TIMx_Period						=	0	;			//	定时器自动重装载值	取值范围：0x0000~0xFFFF
+
+
+	//1）============================获取TIMx时钟频率
+	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
+	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
+	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
+	TIMx_Frequency = RCC_ClocksStatus.SYSCLK_Frequency;
+	if ((((u32)TIMx)&APB2PERIPH_BASE) == APB2PERIPH_BASE)
+  {
+    TIMx_Frequency = RCC_ClocksStatus.PCLK2_Frequency;	//APB2
+  }
+  else
+  {
+    TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
+  }
+	//1）============================计算分频值和重装载值
+//	TIMx_Frequency = 72000000;
+	//*6.2.4,计算定时器参数*********************************************************************
+	//Fsys==Fpwm*Count==Fpwm*(Prescaler*Period)	
+	//	TIMx_Prescaler				=	72-1		;		// 	定时器时钟分频值
+	//	TIMx_Period						=	1000-1	;		// 	定时器自动重装载值
+	//	Tim_num1							=	0				;		//	临时变量1
+	if(Tim_temp>100000)		//>100KHz
+	{
+		TIMx_Prescaler=0;
+		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp-1);
+	}
+	else if(Tim_temp>1000)	//>1KHz
+	{
+		TIMx_Prescaler=10-1;
+		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/10-1);
+	}
+	else if(Tim_temp>100)		//>100Hz
+	{
+		TIMx_Prescaler=100-1;
+		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/100-1);
+	}
+	else if(Tim_temp>10)		//>10Hz
+	{
+		TIMx_Prescaler=1000-1;
+		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/1000-1);
+	}
+	else if(Tim_temp<=10)		//<=10Hz
+	{
+		TIMx_Prescaler=2000-1;
+		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/2000-1);
+	}
+
+//		TIMx_Prescaler=0;
+//		TIMx_Period=(u16)(5-1);
+
+	//6.3定时器初始化*********************************************************************
+	/* Set the Autoreload value */
+  TIMx->ARR = TIMx_Period;
+
+  /* Set the Prescaler value */
+  TIMx->PSC = TIMx_Prescaler;
+
+}
+
 
 /*******************************************************************************
 *函数名		: TIM_Configuration
@@ -291,14 +538,23 @@ void TIM_Interrupt(TIM_TypeDef* TIMx,u16 Prescaler,u16 Period)
 void TIM_Server(void)
 {
 	WOW_Server();															//服务函数
-	TIM_ClearFlag(TIM1, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM2, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM3, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM4, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM5, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM6, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM7, TIM_FLAG_Update);
-	TIM_ClearFlag(TIM8, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM1, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM3, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM4, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM5, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM6, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM7, TIM_FLAG_Update);
+//	TIM_ClearFlag(TIM8, TIM_FLAG_Update);
+	
+//	TIM_ClearITPendingBit(TIM1, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM5, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM7, TIM_IT_Update);
+//	TIM_ClearITPendingBit(TIM8, TIM_IT_Update);
 }
 
 

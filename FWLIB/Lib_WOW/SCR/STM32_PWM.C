@@ -794,7 +794,7 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWM输出配置---最大100KHz
 * 输出		:
 * 返回 		:
 *******************************************************************************/
-void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim)			//PWM输出频率最大10MHz计算
+void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim,double PWM_Frequency)			//PWM输出频率最大10MHz计算
 {
 	//*1,结构体定义
 	//*2,变量定义
@@ -816,7 +816,7 @@ void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim)			//PWM输出频率最大10MHz计算
 	TIM_TypeDef * TIMx		=	PWM_Tim->PWM_BasicData.TIMx;
 	
 //	u8 TIM_IRQChannel=0;
-	u32	Tim_temp				=	2*(PWM_Tim->PWM_BasicData.PWM_Frequency);	//由于翻转需要双倍频率
+	u32	Tim_temp				=	2*(PWM_Frequency);	//由于翻转需要双倍频率
 //	u32	TIMx_Cnt				=	10000000/Tim_temp;												//按10MHz计算需要计多少个数
 	
 	u32	TIMx_Frequency	=	0	;			//定时器频率
@@ -837,26 +837,31 @@ void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim)			//PWM输出频率最大10MHz计算
     TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
   }
 	//*6.2.4,计算定时器参数*********************************************************************
-	Tim_temp	=	TIMx_Frequency/Tim_temp;
-	if(Tim_temp<=60000)
+//	Tim_temp	=	TIMx_Frequency/Tim_temp;
+	if(Tim_temp>100000)		//>100KHz
 	{
 		TIMx_Prescaler=0;
-		TIMx_Period=(u16)Tim_temp-1;
+		TIMx_Period=(u16)TIMx_Frequency/Tim_temp-1;
 	}
-	else if(Tim_temp<=600000)
+	else if(Tim_temp>1000)	//>1KHz
 	{
 		TIMx_Prescaler=10-1;
 		TIMx_Period=(u16)(Tim_temp/10-1);
 	}
-	else if(Tim_temp<=6000000)
+	else if(Tim_temp>100)		//>100Hz
 	{
 		TIMx_Prescaler=100-1;
 		TIMx_Period=(u16)(Tim_temp/100-1);
 	}
-	else if(Tim_temp<=60000000)
+	else if(Tim_temp>10)		//>10Hz
 	{
 		TIMx_Prescaler=1000-1;
 		TIMx_Period=(u16)(Tim_temp/1000-1);
+	}
+	else if(Tim_temp<=10)		//<=10Hz
+	{
+		TIMx_Prescaler=2000-1;
+		TIMx_Period=(u16)(Tim_temp/2000-1);
 	}
 	//6.3定时器初始化*********************************************************************
 	
@@ -916,7 +921,7 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 				{
 					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
 					PWM_Tim->PWM_BasicData.PWM_Frequency+=20;						//频率增加--加速
-					PWM_OUT_SetFre(PWM_Tim);														//设置时间
+					PWM_OUT_SetFre(PWM_Tim,PWM_Tim->PWM_BasicData.PWM_Frequency);														//设置时间
 				}
 			}
 			else if(PWM_Tim->PWM_RunData.PWM_Pulse+(PWM_Tim->PWM_BasicData.PWM_RunUp)>PWM_Tim->PWM_BasicData.PWM_Count)
@@ -925,7 +930,7 @@ u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim)			//PWM输出配置
 				{
 					PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
 					PWM_Tim->PWM_BasicData.PWM_Frequency-=20;						//频率增加--加速
-					PWM_OUT_SetFre(PWM_Tim);														//设置时间
+					PWM_OUT_SetFre(PWM_Tim,PWM_Tim->PWM_BasicData.PWM_Frequency);														//设置时间
 				}
 			}
 		

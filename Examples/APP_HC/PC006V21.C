@@ -27,7 +27,7 @@
 #include	"stdlib.h"		//malloc动态申请内存空间
 
 
-
+#include "STM32_TIM.H"
 #include "SWITCHID.H"
 #include "STM32_WDG.H"
 #include "STM32_EXTI.H"
@@ -70,12 +70,17 @@
 #define	CAN1_BaudRate	500000		//CAN波特率	500K
 
 
-//=================PA6电机控制板CCW做脉冲输出
-#define	MOTOR_PWM_PORT	GPIOA
-#define	MOTOR_PWM_Pin		GPIO_Pin_7
-//=================PA7电机控制板CW做方向输出
-#define	MOTOR_DIR_PORT	GPIOA
-#define	MOTOR_DIR_Pin		GPIO_Pin_6
+//=================PA7电机控制板CCW做脉冲输出
+#define	MOTOR_Plus_PORT		GPIOA
+#define	MOTOR_Plus_Pin		GPIO_Pin_7
+//=================PA6电机控制板CW做方向输出
+#define	MOTOR_DIR_PORT		GPIOA
+#define	MOTOR_DIR_Pin			GPIO_Pin_6
+
+#define	MOTOR_PlusHigh		MOTOR_Plus_PORT->BSRR 	= MOTOR_Plus_Pin		//Plus	=	1;	//高电平
+#define	MOTOR_PlusLow			MOTOR_Plus_PORT->BRR 		= MOTOR_Plus_Pin		//Plus	=	0;	//低电平
+#define	MOTOR_RunRight		MOTOR_DIR_PORT->BSRR 		= MOTOR_DIR_Pin			//EN	=	1;	//顺时针
+#define	MOTOR_RunLeft			MOTOR_DIR_PORT->BRR			= MOTOR_DIR_Pin			//EN	=	0;	//逆时钟
 
 //=================PA6传感器板CCW做脉冲输出
 #define	TXLED_PORT	GPIOA
@@ -84,16 +89,15 @@
 #define	RXLED_PORT	GPIOA
 #define	RXLED_Pin		GPIO_Pin_6
 
-#define	MOTOR_PWM_Frequency		200			//脉冲频率--单位Hz
+#define	MOTOR_PWM_Frequency		500			//脉冲频率--单位Hz
 #define	PWM_UpdataCount			10			//频率变化占计数个数，加减速时PWM_Updata个脉冲后更新一次输出频率
 #define	PWM_RunUpCount			1000		//加速/减速需要的步数
 #define	MOTOR_TIMx				TIM1		//旋转电机所使用的定时器
 
-#define	Steeps			2300				//一个窗口用到的驱动脉冲数
-#define	MaxWindow		8					//最大窗口数
+#define	SteepPerWindow			2000				//一个窗口用到的驱动脉冲数
+#define	MaxWindow		2					//最大窗口数
 
-#define	MOTOR_RunRight			MOTOR_DIR_PORT->BSRR 	= MOTOR_DIR_Pin		//EN	=	1;	//顺时针
-#define	MOTOR_RunLeft			MOTOR_DIR_PORT->BRR		= MOTOR_DIR_Pin		//EN	=	0;	//逆时钟
+
 
 //#define	MOTOR_RunRight			MOTOR_DIR_PORT->BRR 	= MOTOR_DIR_Pin		//EN	=	1;	//顺时针
 //#define	MOTOR_RunLeft			MOTOR_DIR_PORT->BSRR		= MOTOR_DIR_Pin		//EN	=	0;	//逆时钟
@@ -132,12 +136,15 @@ u16 SYSTime=0;
 u8 Sensor[4]	=	{0};	//4个传感器感应值存储区
 u8 SensorON		=	0	;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
 
-
+//=================================旋转电机相关变量
 u8 PowerFag	=	0;
-u8 RunToWindow		=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
-u8 StatusOfWindow	=	0;	//当时停止位置：0-未初始化，1-原点，2-2号窗口，3-3号窗口，4-4号窗口
-u8 CMDOfWindow		=	0;		//运行到指定窗口命令
-
+u8 PlusFlg						=	0;		//步进电机脉冲标志，一个上升沿计一个脉冲	
+u8 RunToWindow				=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+u8 StatusOfWindow			=	0;		//当时停止位置：0-未初始化，1-原点，2-2号窗口，3-3号窗口，4-4号窗口
+u8 CMDOfWindow				=	0;		//运行到指定窗口命令
+u16	RunFrequency			=	0;		//当前运行频率
+u32 SteepCount				=	0;		//运行步数计数
+u32 SteepNeedToRun		=	0;		//需要运行的总步数
 #ifdef	TestModel
 u8	CCWFlag		=	0;
 u8	StartTest		=	0;
@@ -181,11 +188,13 @@ void PC006V21_Configuration(void)
 {
 	
 	SYS_Configuration();				//系统配置 STM32_SYS.H	
-	SysTick_DeleymS(5000);				//SysTick延时nmS
+//	SysTick_DeleymS(5000);				//SysTick延时nmS
 	SysTick_Configuration(1000);		//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server
 	
 	SWITCHID_Configuration();			//拔码开关初始化及读数
 
+	MotorBD	=	1;
+	SensorBD	=	0;
 	if(SensorBD)
 	{
 		SensorBoard_Configuration();	//旋转控制传感器板配置
@@ -253,8 +262,15 @@ void PC006V21_Server(void)
 	{
 		MotorBoard_Server();		//电机控制板服务程序
 	}
-	Switch_Server();			//检查拔码地址有无变更，如果变更，重新配置运行参数
+//	Switch_Server();			//检查拔码地址有无变更，如果变更，重新配置运行参数
 }
+//==============================================================================
+
+
+
+
+
+
 /*******************************************************************************
 *函数名			:	function
 *功能描述		:	函数功能说明
@@ -365,122 +381,39 @@ void SensorBoard_Server(void)		//传感器板服务程序
 void MotorBoard_Server(void)		//电机控制板服务程序
 {
 	//	u8 SensorON		=	0	;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
+	//先后顺序要求：电机运行时需要接收传感器板的数据，所以需要先查询CAN数据
 	u8 status	=	0;			//CAN读取返回0表示无效
 	
 	//1）============================独立看门狗喂狗
 	IWDG_Feed();				//独立看门狗喂狗
-	//2）============================查询CAN接收数据
-	status	=	CAN_RX_DATA(&RxMessage);									//检查CAN接收有无数据
-	{
-		if(status)
-		{
-			if(RxMessage.StdId==Cmd_ID)			//控制数据
-			{
-			}
-		}
-	}
-	
-	
+
+	//2）============================查询CAN发送数据
+	CAN_Server();					//CAN收发数据管理
 	
 	//3）============================查询电机控制程序：电机控制采用定时器中断
-	status	=	PWM_OUT_TIMServer(&PWM_Tim);		//获取定时器返回状态,返回0表示无中断返回
-	if(status	!=0	)			//表示定时中断---运行计数未完
-	{
-		//=======================检查有无运行到位
-		if(status	==	1)					//一个定时器中断进入
-		{
-			if(((StatusOfWindow==0)||(StatusOfWindow==1))&&(RxMessage.StdId==SensorBD_ID)&&(RxMessage.Data[1]!=0))			//初始化时检测原点---第一个传感器	
-			{
-				StatusOfWindow	=	1;
-				RunToWindow	=	0;
-				Motor_RunSet(0);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-			}		
-		}
-		else if(status	==2)			//表示定时中断---电机运行步数完成
-		{
-			StatusOfWindow	=	RunToWindow;
-			RunToWindow	=	0;
-			Motor_RunSet(0);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-		}
-	}
-
+	Motor_Server();				//查询步进电机状态---电机的运行、停止、当前状态查询
 	
-	if(Motor_Server())					//步进电机返回状态---为定时器中断
-	{
-		return;
-	}
-	//3）============================计时器1ms
+	//4）============================测试模式
+	Test_modle();					//测试模式
+	
+	//5）============================清除数据
+	RxMessage.StdId	=	0x00;
+	memset(RxMessage.Data,0X00,8);
+	
+	//6）============================计时器1ms
 	SYSTime++;
 	if(SYSTime>=4000)
 	{		
 		SYSTime=0;
 	}
-	SetToWindows(&CMDOfWindow);		//运行到指定窗口
-	IWDG_Feed();									//独立看门狗喂狗
-	CAN_Server();									//CAN收发数据管理
-	Test_modle();									//测试模式
-	
-	//1）============================清除数据
-	RxMessage.StdId	=	0x00;
-	memset(RxMessage.Data,0X00,8);
 }
-/*******************************************************************************
-*函数名			:	function
-*功能描述		:	函数功能说明
-*输入				: 
-*返回值			:	无
-*修改时间		:	无
-*修改说明		:	无
-*注释				:	
-*******************************************************************************/
-void Test_modle(void)		//测试模式
-{
-#ifdef	TestModel
-	if(StatusOfWindow	==	0)
-	{
-		CCWFlag	=	0;	//运行方向标志
-		return;
-	}
-	
-	if(RunToWindow!=0)
-	{
-		TestTime	=	0;
-	}
-	else
-	{
-		TestTime++;
-	}
-	
-	if(TestTime	>=	500)
-	{
-		TestTime	=	0;
-		
-		if(CCWFlag	==	0)		//正转
-		{
-			if(StatusOfWindow	<	MaxWindow)
-			{
-				CMDOfWindow	=	StatusOfWindow+1;
-			}
-			else
-			{
-				CCWFlag	=	1;
-			}
-		}
-		
-		if(CCWFlag	==	1)		//反转
-		{
-			if(StatusOfWindow	>	1)
-			{
-				CMDOfWindow	=	StatusOfWindow-1;
-			}
-			else
-			{
-				CCWFlag	=	0;
-			}
-		}
-	}
-#endif
-}
+//==============================================================================
+
+
+
+
+
+
 
 /*******************************************************************************
 *函数名			:	MotorBoard_Configuration
@@ -497,19 +430,13 @@ void MotorBoard_Configuration(void)		//旋转电机控制板配置
 	//电机控制板：	PA6-脉冲输出，PA7-方向控制输出
 	//传感器板：		PA6，PA7做传感器指示灯（采集信号时闪烁）
 	//1）============================步进电机参数配置
-	//======PWM输出
-	PWM_Tim.PWM_BasicData.GPIOx	=	MOTOR_PWM_PORT;
-	PWM_Tim.PWM_BasicData.GPIO_Pin_n	=	MOTOR_PWM_Pin;
-	PWM_Tim.PWM_BasicData.PWM_Frequency	=	MOTOR_PWM_Frequency;	//频率 最小频率0.2Hz
-	PWM_Tim.PWM_BasicData.PWM_Updata	=	PWM_UpdataCount;		//频率变化占计数个数，就是计数PWM_Updata个数后更新一次输出频率
-	PWM_Tim.PWM_BasicData.PWM_RunUp	=	PWM_RunUpCount;				//加速/减速需要的步数
 	
-	PWM_Tim.PWM_BasicData.TIMx	=	MOTOR_TIMx;
-	PWM_OUT_TIMConf(&PWM_Tim);									//PWM输出配置;
-	PWM_OUT_SetFre(&PWM_Tim);										//设置时间
-	PWM_OUT_SetCount(&PWM_Tim,0);									//设置总输出脉冲个数
+	TIM_ConfigurationFreq(MOTOR_TIMx,MOTOR_PWM_Frequency);		//定时器频率配置方式，最小频率0.01Hz,最大100KHz //由于翻转需要双倍频率
 
-	//======方向控制输出
+	//======脉冲输出：PA7电机控制板CCW做脉冲输出
+	GPIO_Configuration_OPP50	(MOTOR_Plus_PORT,		MOTOR_Plus_Pin);			//CCW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
+	
+	//======方向控制输出：PA6电机控制板CW做方向输出
 	GPIO_Configuration_OPP50	(MOTOR_DIR_PORT,		MOTOR_DIR_Pin);			//CW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	
 	//3）============================CAN配置：500K
@@ -562,6 +489,67 @@ void SensorBoard_Configuration(void)		//旋转控制传感器板配置
 	//5）============================系统嘀嗒时钟配置：做定时程序扫描
 	SysTick_Configuration(100);			//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server(0.1ms扫描传感器)
 }
+//==============================================================================
+
+
+
+
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	
+*******************************************************************************/
+void Test_modle(void)		//测试模式
+{
+#ifdef	TestModel
+	if(StatusOfWindow	==	0)
+	{
+		CCWFlag	=	0;	//运行方向标志
+		return;
+	}
+	
+	if(RunToWindow!=0)
+	{
+		TestTime	=	0;
+	}
+	else
+	{
+		TestTime++;
+	}
+	
+	if(TestTime	>=	500)
+	{
+		TestTime	=	0;
+		
+		if(CCWFlag	==	0)		//正转
+		{
+			CMDOfWindow	=	StatusOfWindow+1;
+			if(CMDOfWindow	>=	MaxWindow)
+			{
+				CCWFlag	=	1;
+			}
+		}
+		else		//反转
+		{
+			CMDOfWindow	=	StatusOfWindow-1;
+			if(CMDOfWindow	<=	1)
+			{
+				CCWFlag	=	0;
+			}
+		}
+//		SetToWindows(&CMDOfWindow);		//运行到指定窗口
+	}
+#endif
+}
+//==============================================================================
+
+
+
+
 
 /*******************************************************************************
 *函数名			:	function
@@ -638,7 +626,7 @@ void Motor_RunSet(int Num)			//使药架旋转---Num为正值时表时顺时针转(从上往下视角
 	{
 //		Motor_Configuration();			//步进电机驱动配置
 		PWM_Tim.PWM_BasicData.PWM_Frequency=MOTOR_PWM_Frequency;						//频率增加--加速
-		PWM_OUT_SetFre(&PWM_Tim);
+		PWM_OUT_SetFre(&PWM_Tim,10);
 		MOTOR_RunRight;													//顺时钟
 		PWM_OUT_SetCount(&PWM_Tim,Num);		//设置总输出脉冲个数
 	}
@@ -646,9 +634,9 @@ void Motor_RunSet(int Num)			//使药架旋转---Num为正值时表时顺时针转(从上往下视角
 	{
 //		Motor_Configuration();			//步进电机驱动配置
 		PWM_Tim.PWM_BasicData.PWM_Frequency=MOTOR_PWM_Frequency;						//频率增加--加速
-		PWM_OUT_SetFre(&PWM_Tim);
+		PWM_OUT_SetFre(&PWM_Tim,10);
 		Num	=	0	-	Num;
-		MOTOR_RunLeft;													//顺时钟
+		MOTOR_RunLeft;													//逆时钟
 		PWM_OUT_SetCount(&PWM_Tim,Num);		//设置总输出脉冲个数
 	}	
 }
@@ -656,12 +644,12 @@ void Motor_RunSet(int Num)			//使药架旋转---Num为正值时表时顺时针转(从上往下视角
 *函数名			:	function
 *功能描述		:	函数功能说明
 *输入				: 
-*返回值			:	无
+*返回值			:	0-无定时器中断，1-有定时器中断
 *修改时间		:	无
 *修改说明		:	无
 *注释				:	
 *******************************************************************************/
-u8 Motor_Server(void)				//步进电机返回状态
+u8 Motor_Server(void)				//查询步进电机状态
 {
 	//SW6 ON表示与旋转相关的板
 	//SW5 ON表示旋转电机控制板，OFF表示传感器板
@@ -673,51 +661,113 @@ u8 Motor_Server(void)				//步进电机返回状态
 	//	u8 RunToWindow	=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
 	//	u8 StatusOfWindow	=	0;	//当时停止位置：0-未初始化，1-原点，2-2号窗口，3-3号窗口，4-4号窗口
 	
-	u8 Status	=	0;
+	//==============电机控制说明
+	//运行过程分：启动加速，匀速运行，减速停止
+	//窗口位置：
+	//电机原点为中间传感器：上电时，先逆时针慢速运转到极限位再回到原点（如果在回极限位过程中找到原点，则停止在原点，初始化完成）
 	
-	Status	=	PWM_OUT_TIMServer(&PWM_Tim);		//获取定时器返回状态,返回0表示无中断返回
+	u8 status	=	0;
 	
-	if(Status	==	0)		//定时器未执行请求
+	if((MOTOR_TIMx->SR & TIM_IT_Update)==TIM_IT_Update	&&	RunToWindow!=0)			//表示定时中断---运行计数未完
 	{
-		return 0;
+		if(PlusFlg	!=0)			//步进电机脉冲标志，一个上升沿计一个脉冲
+		{
+			PlusFlg	=	0;				//步进电机脉冲标志，一个上升沿计一个脉冲
+			SteepCount	+=	1;							//运行步数计数
+			if(SteepCount>=SteepNeedToRun)	//运行步数到达
+			{
+				StatusOfWindow	=	RunToWindow;	//新的电机停止窗口位
+				RunToWindow			=	0;						//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+				
+				MOTOR_PlusLow;		//MOTOR_Plus输出关闭（低电平）
+				TIM_Cmd(MOTOR_TIMx, DISABLE); 	//关闭定时器
+			}
+			else
+			{
+				if(StatusOfWindow	==	0)
+				{
+					MOTOR_PlusLow;		//MOTOR_Plus输出低电平
+				}
+				else
+				{
+					if(SteepCount<PWM_RunUpCount)
+					{
+						RunFrequency	+=	PWM_UpdataCount;		//当前运行频率
+						TIM_SetFreq(MOTOR_TIMx,RunFrequency);		//设定频率
+					}
+					else if(SteepCount+PWM_RunUpCount>=SteepNeedToRun)
+					{
+						RunFrequency	-=	PWM_UpdataCount;		//当前运行频率
+						TIM_SetFreq(MOTOR_TIMx,RunFrequency);		//设定频率
+					}
+					MOTOR_PlusLow;		//MOTOR_Plus输出低电平
+				}
+			}
+		}
+		else
+		{
+			PlusFlg	=	1;				//步进电机脉冲标志，一个上升沿计一个脉冲
+			MOTOR_PlusHigh;		//MOTOR_Plus输出高电平
+		}
+		TIM_ClearITPendingBit(MOTOR_TIMx, TIM_IT_Update);			//清除中断标志
 	}
 	
-	CAN_Server();						//CAN收发数据管理
-		if(Status	==1)			//表示定时中断---运行计数未完
-		{
-			//=======================检查有无运行到位
-			//-----------------------初始化时检测原点---第一个传感器
-			if(StatusOfWindow	==	0)
-			{
-				if(RxMessage.Data[1]!=0)
-				{
-					StatusOfWindow	=	1;
-					RunToWindow	=	0;
-					Motor_RunSet(0);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-					return 2;
-				}
-			}
-			
-			if(RunToWindow	==	1)		//到1号窗口--原点窗口，重对原点
-			{
-				if(RxMessage.Data[1]!=0)
-				{
-					StatusOfWindow	=	1;
-					RunToWindow	=	0;
-					Motor_RunSet(0);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-					return 2;
-				}
-			}
 	
-			return 1;															//表示定时器中断
+	
+	if(StatusOfWindow==0	&&	RunToWindow==0)				//电机上电初始化
+	{
+		MOTOR_RunLeft;						//逆时针
+		PlusFlg						=	0;		//步进电机脉冲标志，一个上升沿计一个脉冲	
+		CMDOfWindow				=	1;		//运行到指定窗口命令
+		RunToWindow				=	1;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+		
+		SteepCount				=	0;		//运行步数计数
+		SteepNeedToRun		=	MaxWindow*SteepPerWindow;				//需要运行的总步数
+		
+		TIM_Cmd(MOTOR_TIMx, ENABLE); 				//开启定时器
+	}
+	else if(StatusOfWindow!=0	&&	RunToWindow==0	&&	CMDOfWindow!=0)		//电机在待机待机状态下有新的窗口命令
+	{
+		if(CMDOfWindow	==	StatusOfWindow)
+		{			
+			RunToWindow				=	0;							//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+			CMDOfWindow				=	0;							//运行到指定窗口命令
+			
+			TIM_Cmd(MOTOR_TIMx, DISABLE); 			//关闭定时器
 		}
-		else if(Status	==2)	//表示定时中断---电机运行步数完成
+		else if(CMDOfWindow	>	StatusOfWindow)
 		{
-			StatusOfWindow	=	RunToWindow;
-			RunToWindow	=	0;
-			Motor_RunSet(0);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
-			return 2;
+			MOTOR_RunRight;											//顺时针
+			PlusFlg						=	0;							//步进电机脉冲标志，一个上升沿计一个脉冲				
+			RunToWindow				=	CMDOfWindow;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+			CMDOfWindow				=	0;		//运行到指定窗口命令			
+			
+			SteepCount				=	0;							//运行步数计数
+			SteepNeedToRun		=	(RunToWindow-StatusOfWindow)*SteepPerWindow;				//需要运行的总步数
+			
+			RunFrequency			=	MOTOR_PWM_Frequency;		//起始频率
+			
+			TIM_SetFreq(MOTOR_TIMx,RunFrequency);		//设定频率
+			
+			TIM_Cmd(MOTOR_TIMx, ENABLE); 				//开启定时器
 		}
+		else if(CMDOfWindow	<	StatusOfWindow)
+		{
+			MOTOR_RunLeft;											//逆时针
+			PlusFlg						=	0;							//步进电机脉冲标志，一个上升沿计一个脉冲				
+			RunToWindow				=	CMDOfWindow;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+			CMDOfWindow				=	0;							//运行到指定窗口命令			
+			
+			SteepCount				=	0;							//运行步数计数
+			SteepNeedToRun		=	(StatusOfWindow-RunToWindow)*SteepPerWindow;				//需要运行的总步数	
+			
+			RunFrequency			=	MOTOR_PWM_Frequency;		//起始频率
+			
+			TIM_SetFreq(MOTOR_TIMx,RunFrequency);		//设定频率
+			
+			TIM_Cmd(MOTOR_TIMx, ENABLE); 				//开启定时器			
+		}
+	}
 			
 	MotorTime++;
 	if(MotorTime>=1000)
@@ -753,7 +803,11 @@ u8 SetToWindows(u8* nWindows)		//运行到指定窗口
 	{
 		RunToWindow	=	1;											//需要运行到的窗口数
 		
-		Motor_RunSet(0-(MaxWindow*Steeps));			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
+		Motor_RunSet(0-(MaxWindow*SteepPerWindow));			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
+		
+		PWM_OUT_SetFre(&PWM_Tim,MOTOR_PWM_Frequency);
+		MOTOR_RunRight;													//顺时钟
+		PWM_OUT_SetCount(&PWM_Tim,MaxWindow*SteepPerWindow);		//设置总输出脉冲个数
 
 		return 0;
 	}
@@ -777,13 +831,13 @@ u8 SetToWindows(u8* nWindows)		//运行到指定窗口
 	{
 		RunToWindow	=	newWindows;		//需要运行到的窗口数
 //		newWindows	=	newWindows-StatusOfWindow;
-		Motor_RunSet(((newWindows-StatusOfWindow)*Steeps));			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
+		Motor_RunSet(((newWindows-StatusOfWindow)*SteepPerWindow));			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 //		Motor_RunSet(0-((StatusOfWindow-newWindows)*Steeps));				//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 	}
 	else		//逆转
 	{
 		RunToWindow	=	newWindows;
-		Motor_RunSet(0-((StatusOfWindow-newWindows)*Steeps));				//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
+		Motor_RunSet(0-((StatusOfWindow-newWindows)*SteepPerWindow));				//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 //		Motor_RunSet(((newWindows-StatusOfWindow)*Steeps));			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 	}
 	*nWindows	=	0;			//将指令清除
@@ -887,6 +941,10 @@ void Switch_Server(void)			//检查拔码地址有无变更，如果变更，重新配置运行参数
 	{
 		Reset_Data();		//复位所有的全局变量值
 		SwitchData	=	SWITCHID.nSWITCHID&0x3F;
+		PC006V21_Configuration();
+	}
+	else if((SWITCHID.nSWITCHID&0x3F)	==	0x00)
+	{
 		PC006V21_Configuration();
 	}
 }

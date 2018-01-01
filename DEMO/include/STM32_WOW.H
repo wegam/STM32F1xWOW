@@ -127,6 +127,10 @@
 	#include "PWM_TEST.H"
 #endif
 
+//***********************************TIM_TEST***********************************//
+#ifdef TIM_TEST
+	#include "TIM_TEST.H"
+#endif
 //*********************************OLED096_TEST*********************************//
 #ifdef OLED096_TEST
 	#include "OLED096_TEST.H"

@@ -72,7 +72,7 @@ void SetPWM_Ratio(u16 PWM_Ratio);		//设置占空比---LED
 
 //----------------------------------普通GPIO固定脉冲个数输出，占空比固定50%
 void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim);									//PWM输出配置---最大100KHz
-void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim);										//设置时间
+void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim,double PWM_Frequency);	//设置频率
 void PWM_OUT_SetCount(PWM_TimDef* PWM_Tim,u32 PWM_Count);			//设置输出个数
 u8 PWM_OUT_TIMServer(PWM_TimDef* PWM_Tim);									//PWM输出配置
 
