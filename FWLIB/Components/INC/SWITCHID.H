@@ -10,7 +10,6 @@
 
 typedef struct _SWITCHID_DATA
 {
-	unsigned short SW0:1;
 	unsigned short SW1:1;
 	unsigned short SW2:1;
 	unsigned short SW3:1;
@@ -26,6 +25,7 @@ typedef struct _SWITCHID_DATA
 	unsigned short SW13:1;
 	unsigned short SW14:1;
 	unsigned short SW15:1;
+	unsigned short SW16:1;
 	
 }SWITCHID_DATAType;			//根据输入的时间相关参数计算出来的相关运行参数值
 
@@ -98,7 +98,7 @@ typedef struct _SWITCHID_CONF
 	GPIO_TypeDef* 	SW16_PORT;					//GPIOX
 	unsigned short 	SW16_Pin;					//GPIO_Pin_x
 	
-//	SWITCHID_DATAType		SWITCHID;					//结构体位形式:读取的拔码开关值---不需要配置
+	SWITCHID_DATAType		SWITCHID;					//结构体位形式:读取的拔码开关值---不需要配置
 	unsigned short	nSWITCHID;				//常规数值形式:读取的拔码开关值---不需要配置
 }SWITCHID_CONF;
 

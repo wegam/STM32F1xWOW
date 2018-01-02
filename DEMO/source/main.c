@@ -14,11 +14,7 @@
 *******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
-//#include "stm32f10x_lib.h"
-//#include "usb_lib.h"
-//#include "usb_desc.h"
-//#include "hw_config.h"
-//#include "usb_pwr.h"
+
 
 #include "STM32_WOW.H"
 
@@ -36,7 +32,7 @@
 
 
 
-//u8	DMAF=0;
+unsigned long	DMAF=0;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -62,7 +58,11 @@ int main(void)
 
   while (1)
   {
-
+		DMAF++;
+		if(DMAF>0xFFFFFF)
+		{
+			DMAF=0;
+		}
   }
 }
 

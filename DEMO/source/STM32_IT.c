@@ -403,7 +403,7 @@ void USB_LP_CAN_RX0_IRQHandler(void)
 #elif MS0800_PC004V10
 	PC004V10_CAN_RX();
 #elif	CAN_TEST
-	CAN_Server();
+	CAN_TEST_Server();
 #elif	PL013V10
 	u8 i=0;
 #elif	VirtualCom	
@@ -470,8 +470,9 @@ void TIM1_BRK_IRQHandler(void)
 *******************************************************************************/
 void TIM1_UP_IRQHandler(void)
 {
+	
+	TIM_Server();
 	TIM_ClearITPendingBit(TIM1, TIM_IT_Update);
-	TIM_Server();	
 }
 
 /*******************************************************************************
@@ -522,8 +523,9 @@ void TIM2_IRQHandler(void)
   }
 	return;
 #endif
-	TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+	
 	TIM_Server();
+	TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 	
 }
 
@@ -536,8 +538,9 @@ void TIM2_IRQHandler(void)
 *******************************************************************************/
 void TIM3_IRQHandler(void)
 {
-	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+	
 	TIM_Server();	
+	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
 /*******************************************************************************

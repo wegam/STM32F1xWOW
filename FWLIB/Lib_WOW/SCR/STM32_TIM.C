@@ -40,7 +40,7 @@
 * Êä³ö		:
 * ·µ»Ø 		:
 *******************************************************************************/
-void TIM_ConfigurationFreq(TIM_TypeDef* TIMx,u32 Frequency)		//¶¨Ê±Æ÷ÆµÂÊÅäÖÃ·½Ê½£¬×îÐ¡ÆµÂÊ0.01Hz,×î´ó100KHz
+void TIM_ConfigurationFreq(TIM_TypeDef* TIMx,u32 Frequency)		//¶¨Ê±Æ÷ÆµÂÊÅäÖÃ·½Ê½£¬×îÐ¡ÆµÂÊ1Hz,×î´ó100KHz
 {
 	//*1,½á¹¹Ìå¶¨Òå
 	//*2,±äÁ¿¶¨Òå
@@ -65,7 +65,6 @@ void TIM_ConfigurationFreq(TIM_TypeDef* TIMx,u32 Frequency)		//¶¨Ê±Æ÷ÆµÂÊÅäÖÃ·½Ê
 	
 	u8 TIM_IRQChannel=0;
 	u32	Tim_temp				=	2*Frequency;	//ÓÉÓÚ·­×ªÐèÒªË«±¶ÆµÂÊ
-//	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
 	u32	TIMx_Frequency				=	0;			//	¶¨Ê±Æ÷Ê±ÖÓ
 	u16 TIMx_Prescaler				=	0	;			//	¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµÖµ		È¡Öµ·¶Î§£º0x0000~0xFFFF
   u16 TIMx_Period						=	0	;			//	¶¨Ê±Æ÷×Ô¶¯ÖØ×°ÔØÖµ	È¡Öµ·¶Î§£º0x0000~0xFFFF
@@ -215,7 +214,7 @@ void TIM_SetFreq(TIM_TypeDef* TIMx,u32 Frequency)		//Éè¶¨ÆµÂÊ
 	//1£©============================ÁÙÊ±±äÁ¿¶¨Òå
 
 
-	u32	Tim_temp				=	2*Frequency;	//ÓÉÓÚ·­×ªÐèÒªË«±¶ÆµÂÊ
+	u32	PWM_Frequency				=	2*Frequency;	//ÓÉÓÚ·­×ªÐèÒªË«±¶ÆµÂÊ
 //	u32 RCC_APB2Periph_GPIOx	=	0x00;		//x=A/B/C/D/E/F/G	
 	u32	TIMx_Frequency				=	0;			//	¶¨Ê±Æ÷Ê±ÖÓ
 	u16 TIMx_Prescaler				=	0	;			//	¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµÖµ		È¡Öµ·¶Î§£º0x0000~0xFFFF
@@ -242,30 +241,30 @@ void TIM_SetFreq(TIM_TypeDef* TIMx,u32 Frequency)		//Éè¶¨ÆµÂÊ
 	//	TIMx_Prescaler				=	72-1		;		// 	¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµÖµ
 	//	TIMx_Period						=	1000-1	;		// 	¶¨Ê±Æ÷×Ô¶¯ÖØ×°ÔØÖµ
 	//	Tim_num1							=	0				;		//	ÁÙÊ±±äÁ¿1
-	if(Tim_temp>100000)		//>100KHz
+	if(PWM_Frequency>100000)		//>100KHz
 	{
 		TIMx_Prescaler=0;
-		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp-1);
+		TIMx_Period=(u16)(TIMx_Frequency/PWM_Frequency-1);
 	}
-	else if(Tim_temp>1000)	//>1KHz
+	else if(PWM_Frequency>1000)	//>1KHz
 	{
 		TIMx_Prescaler=10-1;
-		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/10-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/10-1);
 	}
-	else if(Tim_temp>100)		//>100Hz
+	else if(PWM_Frequency>100)		//>100Hz
 	{
 		TIMx_Prescaler=100-1;
-		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/100-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/100-1);
 	}
-	else if(Tim_temp>10)		//>10Hz
+	else if(PWM_Frequency>10)		//>10Hz
 	{
 		TIMx_Prescaler=1000-1;
-		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/1000-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/1000-1);
 	}
-	else if(Tim_temp<=10)		//<=10Hz
+	else if(PWM_Frequency<=10)		//<=10Hz
 	{
 		TIMx_Prescaler=2000-1;
-		TIMx_Period=(u16)(TIMx_Frequency/Tim_temp/2000-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/2000-1);
 	}
 
 //		TIMx_Prescaler=0;
@@ -277,6 +276,7 @@ void TIM_SetFreq(TIM_TypeDef* TIMx,u32 Frequency)		//Éè¶¨ÆµÂÊ
 
   /* Set the Prescaler value */
   TIMx->PSC = TIMx_Prescaler;
+	
 
 }
 

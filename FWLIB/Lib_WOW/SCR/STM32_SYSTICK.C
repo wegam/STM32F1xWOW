@@ -78,10 +78,11 @@ void SysTick_DeleyuS(unsigned int Time)
 {
 	
 	
-	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
+	
 	if(Time	==	0)
 		return;
 	
+	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
 	
 	SysTick->CTRL &= 0xFFFFFFFD;									//SysTick_ITConfig(DISABLE);					//关闭中断
 	SysTick->CTRL &= SysTick_Counter_Disable;			//SysTick_CounterCmd(SysTick_Counter_Disable);	//关闭计数
@@ -109,13 +110,15 @@ void SysTick_DeleymS(unsigned int Time)
 
 	if(Time	==	0)
 		return;
-
+	
+	RCC_GetClocksFreq(&RCC_ClocksStatus);	//获取时钟参数
+	
 	SysTick->CTRL &= 0xFFFFFFFD;									//SysTick_ITConfig(DISABLE);					//关闭中断
 	SysTick->CTRL &= SysTick_Counter_Disable;			//SysTick_CounterCmd(SysTick_Counter_Disable);	//关闭计数
 //	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
 	SysTick->CTRL &= SysTick_CLKSource_HCLK_Div8;	//SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);			//系统时钟/8==9MHz
 	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
-	SysTick->LOAD = (RCC_ClocksStatus.SYSCLK_Frequency/9000)*Time-8;	//SysTick_SetReload(9*time);				//Time--uS  -8为了减小误差，不可以-9，防止Time==1的情况
+	SysTick->LOAD = (((RCC_ClocksStatus.SYSCLK_Frequency)/9000)*Time)-8;	//SysTick_SetReload(9*time);				//Time--uS  -8为了减小误差，不可以-9，防止Time==1的情况
 	SysTick->CTRL |= SysTick_Counter_Enable;			//SysTick_CounterCmd(SysTick_Counter_Enable);	//使能计数
 	while(SysTick->VAL	==	0);			//等待开始装载
 	while(SysTick->VAL	!=	0);			//等待倒计数完成

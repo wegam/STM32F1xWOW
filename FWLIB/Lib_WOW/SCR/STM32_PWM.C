@@ -567,17 +567,7 @@ void SetPWM_Ratio(u16 PWM_Ratio)
 *******************************************************************************/
 void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWMÊä³öÅäÖÃ---×î´ó100KHz
 {
-	//*1,½á¹¹Ìå¶¨Òå
-	//*2,±äÁ¿¶¨Òå
-	//*3,¹Ü½ÅÈ·ÈÏ
-	//*4,´ò¿ªÏàÓ¦µÄÊ±ÖÓ
-	//*5,¹Ü½ÅÅäÖÃ£¨³õÊ¼»¯£©
-	//*6,¶¨Ê±Æ÷ÅäÖÃ£¨³õÊ¼»¯£©
-	//*7,PWMÊä³öÅäÖÃ£¨³õÊ¼»¯£©
-	//*8,Õ¼¿Õ±ÈÅäÖÃ	
-		
 	//*1,½á¹¹Ìå¶¨Òå***********************************************************************
-//	GPIO_InitTypeDef GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;	//¶¨Ê±Æ÷½á¹¹Ìå¶¨Òå	
 	RCC_ClocksTypeDef RCC_ClocksStatus;							//Ê±ÖÓ×´Ì¬---Ê±ÖÓÖµ
 	NVIC_InitTypeDef	NVIC_InitStructure;						//ÖÐ¶Ï½á¹¹Ìå
@@ -596,56 +586,21 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWMÊä³öÅäÖÃ---×î´ó100KHz
 	u32	TIMx_Frequency				=	0;			//	¶¨Ê±Æ÷Ê±ÖÓ
 	u16 TIMx_Prescaler				=	0	;			//	¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµÖµ		È¡Öµ·¶Î§£º0x0000~0xFFFF
   u16 TIMx_Period						=	0	;			//	¶¨Ê±Æ÷×Ô¶¯ÖØ×°ÔØÖµ	È¡Öµ·¶Î§£º0x0000~0xFFFF
-//	u8	a	=	100;
-//	u8	b	=	0;
-//	u8	c	=	0;
 	
-//	volatile u8	temp	=	0;
-//	u32	Microsecond						=	0	;		//	Î¢Ãë
-//	u32	Nanosecond						=	0	;		//	ÄÉÃë
-	double	Tim_num1					=	0	;			//	ÁÙÊ±±äÁ¿1
-//	u8	Tim_flg								=	0	;			//	ÁÙÊ±±äÁ¿2
-
-	
-//	u16 PWM_Ratio		=	0;						//Õ¼¿Õ±È 1%¾«¶È£¬Ä¬ÈÏ50%£¨Î´ÉèÖÃ´Ë²ÎÊýÊ±£©
-	
-//	if(PWM_Tim->PWM_BasicData.PWM_Ratio	==	0)		//Î´ÅäÖÃÄ¬ÈÏÎª50%
-//		PWM_Tim->PWM_BasicData.PWM_Ratio	=	50;
-//	b	=	PWM_Tim->PWM_BasicData.PWM_Ratio;
-	
-	//*3,²ÎÊýÉèÖÃ**************************************************************************
-
-	
+	//*3,²ÎÊýÉèÖÃ**************************************************************************	
 	
 	//*5,GPIOÅäÖÃ============================================================================	
 	//*5.1,´ò¿ªÏàÓ¦µÄÊ±ÖÓ*********************************************************************
 	GPIO_Configuration_OPP50(PWM_Tim->PWM_BasicData.GPIOx,PWM_Tim->PWM_BasicData.GPIO_Pin_n);
-//	switch((u32)GPIOx)
-//	{
-//		case GPIOA_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOA;	break;
-//		case GPIOB_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOB;	break;
-//		case GPIOC_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOC;	break;
-//		case GPIOD_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOD;	break;
-//		case GPIOE_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOE;	break;
-//		case GPIOF_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOF;	break;
-//		case GPIOG_BASE:	RCC_APB2Periph_GPIOx	=	RCC_APB2Periph_GPIOG;	break;
-//		default:
-//			break;
-//	}
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOx, ENABLE);	//Ê¹ÄÜÒý½ÅÊ±ÖÓ	
-//	//*5.2,³õÊ¼»¯GPIO************************************************
-//	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_n;
-//	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-//	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP ;	//¸´ÓÃÍÆÍìÊä³ö
-//	GPIO_Init(GPIOx,&GPIO_InitStructure);	
-//	GPIO_ResetBits(GPIOx,GPIO_Pin_n);								//ÅäÖÃÍêÊä³öµÍ
+
 	//*6,¶¨Ê±Æ÷ÅäÖÃ============================================================================
 	//*6.1,´ò¿ªÏàÓ¦µÄÊ±ÖÓ*********************************************************************
 	switch ((u32)TIMx)
 	{
 		case TIM1_BASE:
 			RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
-			TIM_IRQChannel=TIM1_UP_IRQChannel;			
+			TIM_IRQChannel=TIM1_UP_IRQChannel;	
+			TIM_TimeBaseStructure.TIM_RepetitionCounter	=	0;
 			break;
 		
 		case TIM2_BASE:
@@ -681,6 +636,7 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWMÊä³öÅäÖÃ---×î´ó100KHz
 		case TIM8_BASE:
 			RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
 			TIM_IRQChannel=TIM8_UP_IRQChannel;
+			TIM_TimeBaseStructure.TIM_RepetitionCounter	=	0;
 			break;
 		
 		default:
@@ -695,8 +651,7 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWMÊä³öÅäÖÃ---×î´ó100KHz
 //		b	=	c;
 //		c	=	a	%	b;	
 //	}
-//	PWM_Tim->PWM_RunData.PWM_Ratio	=	PWM_Tim->PWM_BasicData.PWM_Ratio	/	b;
-//	PWM_Tim->PWM_RunData.PWM_Cycle	=	100	/	b;
+
 	PWM_Tim->PWM_BasicData.PWM_Count	=	0;
 	PWM_Tim->PWM_RunData.PWM_Cycle	=	0;
 //	PWM_Tim->PWM_RunData.PWM_Pulse	=	0;
@@ -723,51 +678,34 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWMÊä³öÅäÖÃ---×î´ó100KHz
 	//	TIMx_Prescaler				=	72-1		;		// 	¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµÖµ
 	//	TIMx_Period						=	1000-1	;		// 	¶¨Ê±Æ÷×Ô¶¯ÖØ×°ÔØÖµ
 	//	Tim_num1							=	0				;		//	ÁÙÊ±±äÁ¿1
-	if(1/PWM_Frequency>10)
+	if(PWM_Frequency>100000)		//>100KHz
 	{
-		Tim_num1=(double)(TIMx_Frequency)/(PWM_Frequency*100);							//¸ù¾Ý¶¨Ê±Æ÷Êä³öÆµÂÊ¼ÆËã¼ÆÊýÖµ
-		TIMx_Prescaler=60000;
-		TIMx_Period=(u16)(((double)Tim_num1/(double)TIMx_Prescaler)*200);
+		TIMx_Prescaler=0;
+		TIMx_Period=(u16)(TIMx_Frequency/PWM_Frequency-1);
 	}
-	else if(1/PWM_Frequency>1.0)
+	else if(PWM_Frequency>1000)	//>1KHz
 	{
-		Tim_num1=(double)(TIMx_Frequency)/(PWM_Frequency*10);							//¸ù¾Ý¶¨Ê±Æ÷Êä³öÆµÂÊ¼ÆËã¼ÆÊýÖµ
-		TIMx_Prescaler=60000;
-		TIMx_Period=(u16)(((double)Tim_num1/(double)TIMx_Prescaler)*20);
+		TIMx_Prescaler=10-1;
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/10-1);
 	}
-	else if(PWM_Frequency>=1.0)
+	else if(PWM_Frequency>100)		//>100Hz
 	{
-		Tim_num1=(double)(TIMx_Frequency)/(PWM_Frequency);							//¸ù¾Ý¶¨Ê±Æ÷Êä³öÆµÂÊ¼ÆËã¼ÆÊýÖµ
-//		Tim_num1=(double)(Tim_num1*2.0);
-		if(Tim_num1>=10000000)
-		{
-			TIMx_Prescaler=2000;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else if(Tim_num1>=1000000)
-		{
-			TIMx_Prescaler=200;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else if(Tim_num1>=100000)
-		{
-			TIMx_Prescaler=20;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else if(Tim_num1>=65530)
-		{
-			TIMx_Prescaler=2;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
-		else
-		{
-			TIMx_Prescaler=1;
-			TIMx_Period=Tim_num1/TIMx_Prescaler;
-		}
+		TIMx_Prescaler=100-1;
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/100-1);
+	}
+	else if(PWM_Frequency>10)		//>10Hz
+	{
+		TIMx_Prescaler=1000-1;
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/1000-1);
+	}
+	else if(PWM_Frequency<=10)		//<=10Hz
+	{
+		TIMx_Prescaler=2000-1;
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/2000-1);
 	}	
 	//6.3¶¨Ê±Æ÷³õÊ¼»¯*********************************************************************
-	TIM_TimeBaseStructure.TIM_Prescaler = TIMx_Prescaler-1; 				//Éè¶¨·ÖÆµÖµ
-	TIM_TimeBaseStructure.TIM_Period 		= TIMx_Period-1;        		//Éè¶¨×Ô¶¯ÖØ×°ÔØÖµ
+	TIM_TimeBaseStructure.TIM_Prescaler = TIMx_Prescaler; 				//Éè¶¨·ÖÆµÖµ
+	TIM_TimeBaseStructure.TIM_Period 		= TIMx_Period;        		//Éè¶¨×Ô¶¯ÖØ×°ÔØÖµ
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;  				//²»·Ö¸î
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  		//ÏòÉÏ¼ÆÊý
 	TIM_TimeBaseInit(TIMx, &TIM_TimeBaseStructure);		//³õÊ¼»¯	
@@ -796,33 +734,19 @@ void PWM_OUT_TIMConf(PWM_TimDef* PWM_Tim)			//PWMÊä³öÅäÖÃ---×î´ó100KHz
 *******************************************************************************/
 void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim,double PWM_Frequency)			//PWMÊä³öÆµÂÊ×î´ó10MHz¼ÆËã
 {
-	//*1,½á¹¹Ìå¶¨Òå
-	//*2,±äÁ¿¶¨Òå
-	//*3,¹Ü½ÅÈ·ÈÏ
-	//*4,´ò¿ªÏàÓ¦µÄÊ±ÖÓ
-	//*5,¹Ü½ÅÅäÖÃ£¨³õÊ¼»¯£©
-	//*6,¶¨Ê±Æ÷ÅäÖÃ£¨³õÊ¼»¯£©
-	//*7,PWMÊä³öÅäÖÃ£¨³õÊ¼»¯£©
-	//*8,Õ¼¿Õ±ÈÅäÖÃ	
-		
+
 	//*1,½á¹¹Ìå¶¨Òå***********************************************************************
-//	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;	//¶¨Ê±Æ÷½á¹¹Ìå¶¨Òå	
-	RCC_ClocksTypeDef RCC_ClocksStatus;							//Ê±ÖÓ×´Ì¬---Ê±ÖÓÖµ
+	RCC_ClocksTypeDef RCC_ClocksStatus;							//Ê±ÖÓ×´Ì¬---Ê±ÖÓÖµ	
 	
-	
-	//*2,±äÁ¿¶¨Òå*************************************************************************	
-	
+	//*2,±äÁ¿¶¨Òå*************************************************************************		
 
 	TIM_TypeDef * TIMx		=	PWM_Tim->PWM_BasicData.TIMx;
-	
-//	u8 TIM_IRQChannel=0;
-	u32	Tim_temp				=	2*(PWM_Frequency);	//ÓÉÓÚ·­×ªÐèÒªË«±¶ÆµÂÊ
-//	u32	TIMx_Cnt				=	10000000/Tim_temp;												//°´10MHz¼ÆËãÐèÒª¼Æ¶àÉÙ¸öÊý
 	
 	u32	TIMx_Frequency	=	0	;			//¶¨Ê±Æ÷ÆµÂÊ
 	u16 TIMx_Prescaler	=	0	;			//¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµÖµ		È¡Öµ·¶Î§£º0x0000~0xFFFF
   u16 TIMx_Period			=	0	;			//¶¨Ê±Æ÷×Ô¶¯ÖØ×°ÔØÖµ	È¡Öµ·¶Î§£º0x0000~0xFFFF
 	
+	PWM_Frequency				=	2*(PWM_Frequency);	//ÓÉÓÚ·­×ªÐèÒªË«±¶ÆµÂÊ
 	//*6.2.3,»ñÈ¡TIMxÊ±ÖÓ**********************************************************************
 	//1£©-----·ÖÆµÖµ¼°×Ô¶¯ÖØ×°ÔØÖµ¼ÆËã£¨PWM_Frequency ÆµÂÊ£¬µ¥Î»Hz£©
 	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
@@ -837,31 +761,30 @@ void PWM_OUT_SetFre(PWM_TimDef* PWM_Tim,double PWM_Frequency)			//PWMÊä³öÆµÂÊ×î´
     TIMx_Frequency = RCC_ClocksStatus.PCLK1_Frequency;	//APB1
   }
 	//*6.2.4,¼ÆËã¶¨Ê±Æ÷²ÎÊý*********************************************************************
-//	Tim_temp	=	TIMx_Frequency/Tim_temp;
-	if(Tim_temp>100000)		//>100KHz
+	if(PWM_Frequency>100000)		//>100KHz
 	{
 		TIMx_Prescaler=0;
-		TIMx_Period=(u16)TIMx_Frequency/Tim_temp-1;
+		TIMx_Period=(u16)(TIMx_Frequency/PWM_Frequency-1);
 	}
-	else if(Tim_temp>1000)	//>1KHz
+	else if(PWM_Frequency>1000)	//>1KHz
 	{
 		TIMx_Prescaler=10-1;
-		TIMx_Period=(u16)(Tim_temp/10-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/10-1);
 	}
-	else if(Tim_temp>100)		//>100Hz
+	else if(PWM_Frequency>100)		//>100Hz
 	{
 		TIMx_Prescaler=100-1;
-		TIMx_Period=(u16)(Tim_temp/100-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/100-1);
 	}
-	else if(Tim_temp>10)		//>10Hz
+	else if(PWM_Frequency>10)		//>10Hz
 	{
 		TIMx_Prescaler=1000-1;
-		TIMx_Period=(u16)(Tim_temp/1000-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/1000-1);
 	}
-	else if(Tim_temp<=10)		//<=10Hz
+	else if(PWM_Frequency<=10)		//<=10Hz
 	{
 		TIMx_Prescaler=2000-1;
-		TIMx_Period=(u16)(Tim_temp/2000-1);
+		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/2000-1);
 	}
 	//6.3¶¨Ê±Æ÷³õÊ¼»¯*********************************************************************
 	
