@@ -70,12 +70,13 @@
 #define	MOTOR_TIMxUD						TIM1		//旋转电机所使用的定时器
 
 #define	MOTOR_PWM_FrequencyRL		500			//脉冲频率--单位Hz
-#define	PWM_UpdataCountRL			2			//频率变化占计数个数，加减速时PWM_Updata个脉冲后更新一次输出频率
-#define	PWM_RunUpCountRL			500		//加速/减速需要的步数
-#define	SteepPerWindowRL			2*2030				//一个窗口用到的驱动脉冲数---旋转
+#define	PWM_UpdataCountRL				2				//频率变化占计数个数，加减速时PWM_Updata个脉冲后更新一次输出频率
+#define	PWM_RunUpCountRL				1000		//加速/减速需要的步数
+#define	SteepPerWindowRL				2*2030				//一个窗口用到的驱动脉冲数---旋转
 #define	MaxWindowRL		1					//最大窗口数
-#define	MOTOR_TIMxRL				TIM1		//旋转电机所使用的定时器
+#define	MOTOR_TIMxRL						TIM1		//旋转电机所使用的定时器
 
+#define	MOTOR_TIMx							TIM1		//旋转电机所使用的定时器
 
 //=================传感器
 #define	Sensor1_Port	GPIOB		//前传感器
@@ -120,6 +121,9 @@ void SensorRLBoard_Server(void);		//传感器板服务程序
 
 
 //========================驱动程序
+
+void Motor_Configuration(void);
+	
 //void Motor_RunSet(int Num);			//使药架旋转---Num为正值时表时顺时针转(从上往下视角)Num个格数，负值时为逆时针转Num个格数，0为停止
 	
 

@@ -220,7 +220,8 @@ void TIM_SetFreq(TIM_TypeDef* TIMx,u32 Frequency)		//设定频率
 	u16 TIMx_Prescaler				=	0	;			//	定时器时钟分频值		取值范围：0x0000~0xFFFF
   u16 TIMx_Period						=	0	;			//	定时器自动重装载值	取值范围：0x0000~0xFFFF
 
-
+//	TIMx->CR1 &= ((u16)0x03FE);		//CR1_CEN_Reset关闭定时器
+	
 	//1）============================获取TIMx时钟频率
 	//1）-----分频值及自动重装载值计算（PWM_Frequency 频率，单位Hz）
 	//--------1MHz 1us=1000ns,1KHz 10us=10000ns
@@ -241,43 +242,90 @@ void TIM_SetFreq(TIM_TypeDef* TIMx,u32 Frequency)		//设定频率
 	//	TIMx_Prescaler				=	72-1		;		// 	定时器时钟分频值
 	//	TIMx_Period						=	1000-1	;		// 	定时器自动重装载值
 	//	Tim_num1							=	0				;		//	临时变量1
-	if(PWM_Frequency>100000)		//>100KHz
+	if(PWM_Frequency<=500)		//<=500Hz
 	{
-		TIMx_Prescaler=0;
-		TIMx_Period=(u16)(TIMx_Frequency/PWM_Frequency-1);
+		TIMx_Prescaler=2000;
+		TIMx_Period=(u16)(TIMx_Frequency/TIMx_Prescaler/PWM_Frequency);
 	}
-	else if(PWM_Frequency>1000)	//>1KHz
+	else if(PWM_Frequency<=1000)		//<=1KHz
 	{
-		TIMx_Prescaler=10-1;
-		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/10-1);
+		TIMx_Prescaler=10;
+		TIMx_Period=(u16)(TIMx_Frequency/TIMx_Prescaler/PWM_Frequency);
 	}
-	else if(PWM_Frequency>100)		//>100Hz
+	else if(PWM_Frequency<=5000)	//<=5KHz
 	{
-		TIMx_Prescaler=100-1;
-		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/100-1);
+		TIMx_Prescaler=2;
+		TIMx_Period=(u16)(TIMx_Frequency/TIMx_Prescaler/PWM_Frequency);
 	}
-	else if(PWM_Frequency>10)		//>10Hz
+	else	//>5KHz
 	{
-		TIMx_Prescaler=1000-1;
-		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/1000-1);
+		TIMx_Prescaler=1;
+		TIMx_Period=(u16)(TIMx_Frequency/TIMx_Prescaler/PWM_Frequency);
 	}
-	else if(PWM_Frequency<=10)		//<=10Hz
-	{
-		TIMx_Prescaler=2000-1;
-		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/2000-1);
-	}
+//	else if(PWM_Frequency<100)		//>100kHz
+//	{
+//		TIMx_Prescaler=100-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/100-1);
+//	}
+//	else if(PWM_Frequency<10)		//>10Hz
+//	{
+//		TIMx_Prescaler=1000-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/1000-1);
+//	}
+//	else if(PWM_Frequency<=10)		//<=10Hz
+//	{
+//		TIMx_Prescaler=2000-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/2000-1);
+//	}
+	
+//	if(PWM_Frequency>100000)		//>100KHz
+//	{
+//		TIMx_Prescaler=0;
+//		TIMx_Period=(u16)(TIMx_Frequency/PWM_Frequency-1);
+//	}
+//	else if(PWM_Frequency>1000)	//>1KHz
+//	{
+//		TIMx_Prescaler=10-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/10-1);
+//	}
+//	else if(PWM_Frequency>100)		//>100Hz
+//	{
+//		TIMx_Prescaler=100-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/100-1);
+//	}
+//	else if(PWM_Frequency>10)		//>10Hz
+//	{
+//		TIMx_Prescaler=1000-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/1000-1);
+//	}
+//	else if(PWM_Frequency<=10)		//<=10Hz
+//	{
+//		TIMx_Prescaler=2000-1;
+//		TIMx_Period=(u16)((TIMx_Frequency/PWM_Frequency)/2000-1);
+//	}
 
 //		TIMx_Prescaler=0;
 //		TIMx_Period=(u16)(5-1);
 
 	//6.3定时器初始化*********************************************************************
-	/* Set the Autoreload value */
-  TIMx->ARR = TIMx_Period;
-
-  /* Set the Prescaler value */
-  TIMx->PSC = TIMx_Prescaler;
 	
+	
+	
+  /* Set the Prescaler value */
+  TIMx->PSC = TIMx_Prescaler-1;
+	
+	
+	
+	/* Set the Autoreload value */
+  TIMx->ARR = TIMx_Period-1;
+	
+	/*   */
+//  TIMx->CNT = 0;										//清除计数
 
+	/* Set or reset the UG Bit */
+  TIMx->EGR = ((u16)0x0001);								//立即生效分频Prescaler
+	
+//	TIMx->CR1 |= ((u16)0x0001);							//CR1_CEN_Set开启定时器
 }
 
 

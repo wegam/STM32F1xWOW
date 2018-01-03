@@ -14,7 +14,7 @@ typedef struct
 	TIM_TypeDef*	SetTIMx;				//使用到的定时器
 	//--------------------脉冲输出
 	GPIO_TypeDef*	SetPulsPort;		//GPIOx:x=A/B/C/D/E/F/G
-	u16 PulsPin;									//GPIO_Pin_n:n=0~15;
+	u16 SetPulsPin;									//GPIO_Pin_n:n=0~15;
 	//--------------------方向输出
 	GPIO_TypeDef*	SetDIRPort;			//GPIOx:x=A/B/C/D/E/F/G
 	u16 SetDIRPin;								//GPIO_Pin_n:n=0~15;
@@ -35,12 +35,16 @@ typedef struct
 	u32	GetPulsTotal;				//已经输出脉冲计数
 }SteepMotor_Def;
 
+
+
 void StepMotorConfiguration(SteepMotor_Def *STEP_MOTOx);		//
-void StepMotorServer(SteepMotor_Def *STEP_MOTOx);	//
+unsigned char StepMotorServer(SteepMotor_Def *STEP_MOTOx);	//
 
 
-void StepMotoRun(SteepMotor_Def *STEP_MOTOx);			//
-void StepMotoStop(SteepMotor_Def *STEP_MOTOx);		//
+void StepMotorCW(SteepMotor_Def *STEP_MOTOx,u16	SetFrequency,u16 SetPlusUp,u16 SetPlusUpNum,u16	SetPlusDown,u16	SetPlusDownNum,u32 SetPulsTotal);		//顺时针旋转
+void StepMotorCCW(SteepMotor_Def *STEP_MOTOx,u16	SetFrequency,u16 SetPlusUp,u16 SetPlusUpNum,u16	SetPlusDown,u16	SetPlusDownNum,u32 SetPulsTotal);		//逆时针旋转
+void StepMotorStop(SteepMotor_Def *STEP_MOTOx);
+
 
 
 #endif

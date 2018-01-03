@@ -46,7 +46,7 @@
 
 
 
-
+SteepMotor_Def	SteepMotor1;
 SWITCHID_CONF SWITCHID;					//拔码开关结构体
 PWM_TimDef		PWM_Tim;					//PWM控制脉冲结构体
 SteepMotor_Def	SteepMotor;			//步进电机
@@ -98,8 +98,7 @@ void PC006V21_Configuration(void)
 	
 	SYS_Configuration();						//系统配置 STM32_SYS.H	
 	PWM_OUT(TIM2,PWM_OUTChannel1,10,900);			//SYS-LED 5HZ 10%		SYSLED_FRQ
-	SysTick_DeleymS(5000);					//SysTick延时nmS
-	SysTick_DeleymS(5000);					//SysTick延时nmS
+	SysTick_DeleyS(100);						//SysTick延时nS
 	SysTick_Configuration(1000);		//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server
 	
 	SWITCHID_Configuration();				//拔码开关初始化及读数
@@ -502,7 +501,29 @@ void SensorRLBoard_Server(void)		//传感器板服务程序
 
 
 
-
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	function
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:		
+*******************************************************************************/
+void Motor_Configuration(void)
+{
+	SteepMotor1.SetTIMx			=	MOTOR_TIMx;
+	
+	SteepMotor1.SetPulsPort	=	MOTOR_Plus_PORT;
+	SteepMotor1.SetPulsPin	=	MOTOR_Plus_Pin;
+	
+	SteepMotor1.SetDIRPort	=	MOTOR_DIR_PORT;
+	SteepMotor1.SetDIRPin		=	MOTOR_DIR_Pin;
+	
+	SteepMotor1.SetFrequency	=	1000;
+	
+	StepMotorConfiguration(&SteepMotor1);		//
+}
 
 
 

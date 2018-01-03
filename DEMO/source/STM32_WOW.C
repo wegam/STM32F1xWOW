@@ -143,6 +143,16 @@ void WOW_Configuration(void)
 #ifdef SPItoUSART	
 	SPItoUSART_Configuration();
 #endif
+
+//***********************************SysTick_TEST***********************************//
+#ifdef SysTick_TEST	
+	SysTick_TEST_Configuration();
+#endif
+
+//***********************************SteepMotorTest***********************************//
+#ifdef SteepMotorTest	
+	SteepMotorTest_Configuration();
+#endif
 //***********************************PWM_TEST***********************************//
 #ifdef PWM_TEST
 	PWM_TEST_Configuration();
@@ -483,6 +493,15 @@ void WOW_Server(void)
 //***********************************SPItoUSART***********************************//
 #ifdef SPItoUSART	
 	SPItoUSART_Server();
+#endif
+//***********************************SysTick_TEST***********************************//
+#ifdef SysTick_TEST	
+	SysTick_TEST_Server();
+#endif
+
+//***********************************SteepMotorTest***********************************//
+#ifdef SteepMotorTest	
+	SteepMotorTest_Server();
 #endif
 //***********************************PWM_TEST***********************************//
 #ifdef PWM_TEST	

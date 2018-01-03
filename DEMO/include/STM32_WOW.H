@@ -122,6 +122,15 @@
 	#include "SPItoUSART.H"
 #endif
 
+//***********************************SysTick_TEST***********************************//
+#ifdef SysTick_TEST
+	#include "SysTick_TEST.H"
+#endif
+
+//***********************************SteepMotorTest***********************************//
+#ifdef SteepMotorTest
+	#include "SteepMotorTest.H"
+#endif
 //***********************************PWM_TEST***********************************//
 #ifdef PWM_TEST
 	#include "PWM_TEST.H"

@@ -27,6 +27,11 @@ void SysTick_Server(void);											//嘀嗒时钟服务
 
 void SysTick_DeleyuS(unsigned int Time);				//SysTick延时nuS
 void SysTick_DeleymS(unsigned int Time);				//SysTick延时nmS
+void SysTick_DeleyS(unsigned int Time);					//SysTick延时nS
+
+
+
+void DeleyuS(unsigned int Time);								//
 	
 #endif
 
