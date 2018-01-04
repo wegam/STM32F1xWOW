@@ -386,8 +386,8 @@ void EXTI_NVICConf(GPIO_TypeDef* GPIOx,						//GPIO端口
 	}
 	//7)**********配置中断
 	NVIC_InitStructure.NVIC_IRQChannel = EXTI_IRQChannel;					//选择中断通道-中断源
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;			//抢占优先级---暂时默认1
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;						//响应优先级---暂时默认1
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;			//抢占优先级---暂时默认1
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;						//响应优先级---暂时默认1
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;								//使能
 	NVIC_Init(&NVIC_InitStructure);
 
@@ -474,82 +474,82 @@ void EXTI_Event_Configuration(void)
 	if(EXTI_GetITStatus(EXTI_Line0))
 	{
 		Trigger_Line.Trigger_Line0	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line0);
+//		EXTI_ClearITPendingBit(EXTI_Line0);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line1))
 	{
 		Trigger_Line.Trigger_Line1	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line1);
+//		EXTI_ClearITPendingBit(EXTI_Line1);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line2))
 	{
 		Trigger_Line.Trigger_Line2	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line2);
+//		EXTI_ClearITPendingBit(EXTI_Line2);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line3))
 	{
 		Trigger_Line.Trigger_Line3	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line3);
+//		EXTI_ClearITPendingBit(EXTI_Line3);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line4))
 	{
 		Trigger_Line.Trigger_Line4	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line4);
+//		EXTI_ClearITPendingBit(EXTI_Line4);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line5))
 	{
 		Trigger_Line.Trigger_Line5	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line5);
+//		EXTI_ClearITPendingBit(EXTI_Line5);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line6))
 	{
 		Trigger_Line.Trigger_Line6	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line6);
+//		EXTI_ClearITPendingBit(EXTI_Line6);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line7))
 	{
 		Trigger_Line.Trigger_Line7	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line7);
+//		EXTI_ClearITPendingBit(EXTI_Line7);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line8))
 	{
 		Trigger_Line.Trigger_Line8	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line8);
+//		EXTI_ClearITPendingBit(EXTI_Line8);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line9))
 	{
 		Trigger_Line.Trigger_Line9	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line9);
+//		EXTI_ClearITPendingBit(EXTI_Line9);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line10))
 	{
 		Trigger_Line.Trigger_Line10	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line10);
+//		EXTI_ClearITPendingBit(EXTI_Line10);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line11))
 	{
 		Trigger_Line.Trigger_Line11	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line11);
+//		EXTI_ClearITPendingBit(EXTI_Line11);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line12))
 	{
 		Trigger_Line.Trigger_Line12	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line12);
+//		EXTI_ClearITPendingBit(EXTI_Line12);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line13))
 	{
 		Trigger_Line.Trigger_Line13	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line13);
+//		EXTI_ClearITPendingBit(EXTI_Line13);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line14))
 	{
 		Trigger_Line.Trigger_Line14	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line14);
+//		EXTI_ClearITPendingBit(EXTI_Line14);
 	}
 	else if(EXTI_GetITStatus(EXTI_Line15))
 	{
 		Trigger_Line.Trigger_Line15	=	1;
-		EXTI_ClearITPendingBit(EXTI_Line15);
+//		EXTI_ClearITPendingBit(EXTI_Line15);
 	}
 }
 
@@ -565,24 +565,25 @@ void EXTI_Server(void)
 	unsigned short temp	=	0;
 	EXTI_Event_Configuration();
 	WOW_Server();				//服务函数
+
 //	Trigger_Line	=	0;
 	Trigger_Line	=	*(Trigger_LineType*)&temp;			//清除标志
-//	EXTI_ClearITPendingBit(EXTI_Line0);
-//	EXTI_ClearITPendingBit(EXTI_Line1);
-//	EXTI_ClearITPendingBit(EXTI_Line2);
-//	EXTI_ClearITPendingBit(EXTI_Line3);
-//	EXTI_ClearITPendingBit(EXTI_Line4);
-//	EXTI_ClearITPendingBit(EXTI_Line5);
-//	EXTI_ClearITPendingBit(EXTI_Line6);
-//	EXTI_ClearITPendingBit(EXTI_Line7);
-//	EXTI_ClearITPendingBit(EXTI_Line8);
-//	EXTI_ClearITPendingBit(EXTI_Line9);
-//	EXTI_ClearITPendingBit(EXTI_Line10);
-//	EXTI_ClearITPendingBit(EXTI_Line11);
-//	EXTI_ClearITPendingBit(EXTI_Line12);
-//	EXTI_ClearITPendingBit(EXTI_Line13);
-//	EXTI_ClearITPendingBit(EXTI_Line14);
-//	EXTI_ClearITPendingBit(EXTI_Line15);
+	EXTI_ClearITPendingBit(EXTI_Line0);
+	EXTI_ClearITPendingBit(EXTI_Line1);
+	EXTI_ClearITPendingBit(EXTI_Line2);
+	EXTI_ClearITPendingBit(EXTI_Line3);
+	EXTI_ClearITPendingBit(EXTI_Line4);
+	EXTI_ClearITPendingBit(EXTI_Line5);
+	EXTI_ClearITPendingBit(EXTI_Line6);
+	EXTI_ClearITPendingBit(EXTI_Line7);
+	EXTI_ClearITPendingBit(EXTI_Line8);
+	EXTI_ClearITPendingBit(EXTI_Line9);
+	EXTI_ClearITPendingBit(EXTI_Line10);
+	EXTI_ClearITPendingBit(EXTI_Line11);
+	EXTI_ClearITPendingBit(EXTI_Line12);
+	EXTI_ClearITPendingBit(EXTI_Line13);
+	EXTI_ClearITPendingBit(EXTI_Line14);
+	EXTI_ClearITPendingBit(EXTI_Line15);
 }
 
 

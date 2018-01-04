@@ -158,6 +158,10 @@ void WOW_Configuration(void)
 	PWM_TEST_Configuration();
 #endif
 
+//***********************************PwrTest***********************************//
+#ifdef PwrTest
+	PwrTest_Configuration();
+#endif
 //***********************************TIM_TEST***********************************//
 #ifdef TIM_TEST
 	TIM_TEST_Configuration();
@@ -506,6 +510,11 @@ void WOW_Server(void)
 //***********************************PWM_TEST***********************************//
 #ifdef PWM_TEST	
 	PWM_TEST_Server();
+#endif
+
+//***********************************PwrTest***********************************//
+#ifdef PwrTest	
+	PwrTest_Server();
 #endif
 //***********************************TIM_TEST***********************************//
 #ifdef TIM_TEST	

@@ -144,5 +144,41 @@ void RCC_Configuration_HSI(void)
 	GPIO_DeInitAll();				//将所有的GPIO关闭----V20170605
 }
 
+/*******************************************************************************
+* Function Name  : SYSCLKConfig_STOP
+* Description    : Configures system clock after wake-up from STOP: enable HSE, PLL
+*                  and select PLL as system clock source.
+* Input          : None
+* Output         : None
+* Return         : None
+*******************************************************************************/
+void SYSCLKConfig_STOP(void)
+{
+	ErrorStatus HSEStartUpStatus;
+	
+  /* Enable HSE */
+  RCC_HSEConfig(RCC_HSE_ON);
 
+  /* Wait till HSE is ready */
+  HSEStartUpStatus = RCC_WaitForHSEStartUp();
+
+  if(HSEStartUpStatus == SUCCESS)
+  {
+    /* Enable PLL */ 
+    RCC_PLLCmd(ENABLE);
+
+    /* Wait till PLL is ready */
+    while(RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET)
+    {
+    }
+
+    /* Select PLL as system clock source */
+    RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+
+    /* Wait till PLL is used as system clock source */
+    while(RCC_GetSYSCLKSource() != 0x08)
+    {
+    }
+  }
+}
 

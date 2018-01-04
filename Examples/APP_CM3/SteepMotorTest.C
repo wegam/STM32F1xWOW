@@ -55,18 +55,18 @@ void SteepMotorTest_Server(void)
 	if(SYSTIME>=1000)
 	{
 		SYSTIME	=0;
-		StepMotorCW(&SteepMotor1,40000,1,10000,1,10000,22000);		//顺时针旋转
+//		StepMotorCW(&SteepMotor1,40000,1,10000,1,10000,22000);		//顺时针旋转
 		
-//		if(Flg	==	0)
-//		{
-//			Flg	=	1;
-//			StepMotorCW(&SteepMotor1,2210,0,100,0,100,200);		//顺时针旋转
-//		}
-//		else
-//		{
-//			Flg	=	0;
-//			StepMotorCCW(&SteepMotor1,2210,0,100,0,100,200);		//顺时针旋转
-//		}
+		if(Flg	==	0)
+		{
+			Flg	=	1;
+			StepMotorCW(&SteepMotor1,40000,1,10000,1,10000,22000);		//顺时针旋转
+		}
+		else
+		{
+			Flg	=	0;
+			StepMotorCCW(&SteepMotor1,4000,1,10000,1,10000,22000);		//顺时针旋转
+		}
 //		SteepMotor1.SetDIRPort->BRR	=	SteepMotor1.SetDIRPin;		//低电平：顺时针转
 //		SteepMotor1.SetPulsPort->BSRR	=	SteepMotor1.SetPulsPin;		//低电平：顺时针转
 //		StepMotorCW(&SteepMotor1,500,100,1000,1,50,1000);		//顺时针旋转

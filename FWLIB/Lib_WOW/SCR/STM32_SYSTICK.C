@@ -48,6 +48,8 @@ void SysTick_Configuration(unsigned long Time)	//系统嘀嗒时钟配置72MHz,单位为uS
 	SysTick->CTRL |= SysTick_Counter_Enable;			//SysTick_CounterCmd(SysTick_Counter_Enable);	//使能计数
 	SysTick->VAL = SysTick_Counter_Clear;					//SysTick_CounterCmd(SysTick_Counter_Clear);	//清除倒计数值
 	
+	SysTick->CTRL |= ((u32)0x00000002);	//开中断
+	
 	Load	=	SysTick->LOAD;							//获取原重装载值
 	Ctrl	=	SysTick->CTRL&0x0000FFFF;		//获取原控制参数
 	

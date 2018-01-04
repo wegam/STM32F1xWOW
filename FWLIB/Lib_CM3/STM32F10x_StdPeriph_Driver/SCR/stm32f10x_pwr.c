@@ -156,7 +156,7 @@ void PWR_WakeUpPinCmd(FunctionalState NewState)
 
 /*******************************************************************************
 * Function Name  : PWR_EnterSTOPMode
-* Description    : Enters STOP mode.
+* Description    : Enters STOP mode.Í£»úÄ£Ê½
 * Input          : - PWR_Regulator: specifies the regulator state in STOP mode.
 *                    This parameter can be one of the following values:
 *                       - PWR_Regulator_ON: STOP mode with regulator ON

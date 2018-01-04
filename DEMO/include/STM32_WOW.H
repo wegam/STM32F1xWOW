@@ -136,6 +136,10 @@
 	#include "PWM_TEST.H"
 #endif
 
+//***********************************PwrTest***********************************//
+#ifdef PwrTest
+	#include "PwrTest.H"
+#endif
 //***********************************TIM_TEST***********************************//
 #ifdef TIM_TEST
 	#include "TIM_TEST.H"

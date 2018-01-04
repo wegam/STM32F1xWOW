@@ -39,15 +39,15 @@
                                  ((LEVEL) == PWR_PVDLevel_2V8) || ((LEVEL) == PWR_PVDLevel_2V9))
 
 /* Regulator state is STOP mode */
-#define PWR_Regulator_ON          ((u32)0x00000000)
-#define PWR_Regulator_LowPower    ((u32)0x00000001)
+#define PWR_Regulator_ON          ((u32)0x00000000)		//电源不进低功耗 唤醒基本没延迟
+#define PWR_Regulator_LowPower    ((u32)0x00000001)		//电源进去低功耗 不过唤醒启动有一点延迟
 
 #define IS_PWR_REGULATOR(REGULATOR) (((REGULATOR) == PWR_Regulator_ON) || \
                                      ((REGULATOR) == PWR_Regulator_LowPower))
 
 /* STOP mode entry */
-#define PWR_STOPEntry_WFI         ((u8)0x01)
-#define PWR_STOPEntry_WFE         ((u8)0x02)
+#define PWR_STOPEntry_WFI         ((u8)0x01)		//中断唤醒
+#define PWR_STOPEntry_WFE         ((u8)0x02)		//事件唤醒
 
 #define IS_PWR_STOP_ENTRY(ENTRY) (((ENTRY) == PWR_STOPEntry_WFI) || ((ENTRY) == PWR_STOPEntry_WFE))
  
@@ -67,8 +67,8 @@ void PWR_BackupAccessCmd(FunctionalState NewState);
 void PWR_PVDCmd(FunctionalState NewState);
 void PWR_PVDLevelConfig(u32 PWR_PVDLevel);
 void PWR_WakeUpPinCmd(FunctionalState NewState);
-void PWR_EnterSTOPMode(u32 PWR_Regulator, u8 PWR_STOPEntry);
-void PWR_EnterSTANDBYMode(void);
+void PWR_EnterSTOPMode(u32 PWR_Regulator, u8 PWR_STOPEntry);		//停机模式
+void PWR_EnterSTANDBYMode(void);																//待机模式
 FlagStatus PWR_GetFlagStatus(u32 PWR_FLAG);
 void PWR_ClearFlag(u32 PWR_FLAG);
 

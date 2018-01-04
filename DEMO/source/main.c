@@ -63,6 +63,7 @@ int main(void)
 		{
 			DMAF=0;
 		}
+//		TEST_STOPMODE();
   }
 }
 
