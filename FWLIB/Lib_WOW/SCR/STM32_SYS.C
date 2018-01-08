@@ -95,6 +95,13 @@ void RCC_Configuration_HSE(void)
 		{
 		}
 	}
+#ifdef  VECT_TAB_RAM  
+  /* Set the Vector Table base location at 0x20000000 */ 
+  NVIC_SetVectorTable(NVIC_VectTab_RAM, 0x0); 
+#else  /* VECT_TAB_FLASH  */
+  /* Set the Vector Table base location at 0x08000000 */ 
+  NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x0);   
+#endif 
 	GPIO_DeInitAll();				//将所有的GPIO关闭----V20170605
 }
 /*******************************************************************************
@@ -141,6 +148,14 @@ void RCC_Configuration_HSI(void)
 	RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);			/*设置系统时钟（SYSCLK）*/	 
 	while(RCC_GetSYSCLKSource()!=0x08);					/*0x08：PLL作为系统时钟*/ 	
 
+#ifdef  VECT_TAB_RAM  
+  /* Set the Vector Table base location at 0x20000000 */ 
+  NVIC_SetVectorTable(NVIC_VectTab_RAM, 0x0); 
+#else  /* VECT_TAB_FLASH  */
+  /* Set the Vector Table base location at 0x08000000 */ 
+  NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x0);   
+#endif
+	
 	GPIO_DeInitAll();				//将所有的GPIO关闭----V20170605
 }
 

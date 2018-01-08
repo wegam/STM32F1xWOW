@@ -63,7 +63,16 @@ typedef enum	_ICCARD_Cmd
 0x1E   	/* F-End	:为帧尾，上位机下发时固定为0X1E，下位机应答时固定为0X2D*/
 
 
-	
+//typedef	struct	_ICData
+//{
+//	u8 Head;
+//	u8 CmdType;
+//	u8 Sector;
+//	u8 Block;
+//	u8 data[16];
+//	u16 CRC16;
+//	u8 End;
+//}ICDatadef;	
 	
 
 void ICCARD_Configuration(void);

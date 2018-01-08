@@ -35,13 +35,6 @@ typedef struct _LINK_NODE
 
 
 
-
-
-
-
-
-
-
 u8 BCC8(u8 *Pointer,u16 num);		//异或校验
 u8 CRC8(u8 *Pointer);						//循环冗余校验
 u8 LRC8(u8 *Pointer);						//纵向冗余校验

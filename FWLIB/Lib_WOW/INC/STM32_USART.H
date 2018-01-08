@@ -48,6 +48,8 @@ void 					USART_DMA_ConfigurationOD	(USART_TypeDef* USARTx,u32 USART_BaudRate,u3
 void 					USART_DMA_ConfigurationIT	(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPreemptionPriority,u8 NVIC_SubPriority,u32 *RxdBuffer,u32 BufferSize);	//USART_DMA配置--中断方式
 void 					USART_DMA_Configuration		(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPreemptionPriority,u8 NVIC_SubPriority,u32 *RxdBuffer,u32 *TxdBuffer,u32 BufferSize);	//USART_DMA配置---旧
 
+
+
 //*****************串口接收
 u16						USART_ReadBufferIDLE			(USART_TypeDef* USARTx,u32 *RevBuffer,u32 *RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
 
@@ -73,6 +75,8 @@ u16 					RS485_DMAPrintf						(RS485_TypeDef *RS485_Info,const char *format,...)
 u16 					RS485_DMASend							(RS485_TypeDef *RS485_Info,u32 *tx_buffer,u16 BufferSize);	//RS485-DMA发送程序
 
 
+void 	USART_ConfigurationIT(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 PreemptionPriority,u8 SubPriority);	//USART_配置---常规中断方式
+void	USART_Send(USART_TypeDef* USARTx,u8* RevBuffer,u16 Lengh);
 
 
 void USART_RX_Server(void);		//串口接收服务程序	

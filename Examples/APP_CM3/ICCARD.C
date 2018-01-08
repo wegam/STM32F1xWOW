@@ -66,7 +66,7 @@ u8 ICCARD_CMD_GetDataBlock1[] =
     0x01,		/* Sector 	*/			//1字节扇区号
     0x01,   /* Block 		*/			//1字节块号
     0x60,   /* KeyType	*/			//1字节密钥模式 KEYA（0x60）/KEYB(0x61)
-    0xFF,   /* PassWord0 */					//6字节密码
+    0xFF,   /* PassWord0 */			//6字节密码
     0xFF,   /* PassWord1 */
     0xFF,   /* PassWord2 */
     0xFF,		/* PassWord3 */
@@ -199,16 +199,16 @@ void ICCARD_Configuration(void)
 //	PWM_OUT(TIM4,PWM_OUTChannel1,20000,40);		//PWM设定
 	
 	PWM_OUT(TIM2,PWM_OUTChannel1,2,500);		//PWM设定
-	USART_DMA_ConfigurationNR	(USART2,19200,(u32*)RxdBuffer,BufferSize);	//USART_DMA配置--查询方式，不开中断
-	GPIO_Configuration_OPP50(GPIOC,	GPIO_Pin_12);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOD,	GPIO_Pin_2);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_3);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_4);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_5);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_6);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_7);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_8);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_9);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+	USART_DMA_ConfigurationNR	(UART4,19200,(u32*)RxdBuffer,BufferSize);	//USART_DMA配置--查询方式，不开中断
+//	GPIO_Configuration_OPP50(GPIOC,	GPIO_Pin_12);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOD,	GPIO_Pin_2);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_3);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_4);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_5);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_6);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_7);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_8);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50(GPIOB,	GPIO_Pin_9);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 }
 /*******************************************************************************
 * 函数名		:	
@@ -221,26 +221,30 @@ void ICCARD_Server(void)
 {
 	u16 Num	=	0;
 	systimecount++;
-	if(systimecount>=2000)
+	if(systimecount>=1000)
 	{
 		systimecount=0;
-		runFlag	=	0;
-		ICCARD_WriteData(12345678);
-		memcpy(TxdBuffer,CmdBuffer,ICCARD_SendLenth);
-		USART_DMASend	(USART2,(u32*)TxdBuffer,ICCARD_SendLenth);														//串口DMA发送程序
-		GPIO_Toggle	(GPIOB,	GPIO_Pin_3|GPIO_Pin_4|GPIO_Pin_5|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_8|GPIO_Pin_9);		//将GPIO相应管脚输出翻转----V20170605
-		GPIO_Toggle	(GPIOC,	GPIO_Pin_12);		//将GPIO相应管脚输出翻转----V20170605
-		GPIO_Toggle	(GPIOD,	GPIO_Pin_2);		//将GPIO相应管脚输出翻转----V20170605
+//		runFlag	=	0;
+//		ICCARD_WriteData(12345678);
+//		memcpy(TxdBuffer,CmdBuffer,ICCARD_SendLenth);
+		TxdBuffer[0]=0x01;
+		TxdBuffer[1]=0x01;
+		TxdBuffer[2]=0x02;
+//		USART_DMASend	(USART1,(u32*)TxdBuffer,10);														//串口DMA发送程序
+//		GPIO_Toggle	(GPIOB,	GPIO_Pin_3|GPIO_Pin_4|GPIO_Pin_5|GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_8|GPIO_Pin_9);		//将GPIO相应管脚输出翻转----V20170605
+//		GPIO_Toggle	(GPIOC,	GPIO_Pin_12);		//将GPIO相应管脚输出翻转----V20170605
+//		GPIO_Toggle	(GPIOD,	GPIO_Pin_2);		//将GPIO相应管脚输出翻转----V20170605
 	}
-	if(systimecount	==	1000)
-	{
-		memset(RevBuffer, 0x00, 22);
-		memset(TxdBuffer, 0x00, 30);
-	}
-	Num	=	USART_ReadBufferIDLE(USART2,(u32*)RevBuffer,(u32*)RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+//	if(systimecount	==	1000)
+//	{
+//		memset(RevBuffer, 0x00, 22);
+//		memset(TxdBuffer, 0x00, 30);
+//	}
+	Num	=	USART_ReadBufferIDLE(UART4,(u32*)RevBuffer,(u32*)RxdBuffer);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
 	if(Num)
 	{
-//	USART_DMASend	(USART2,(u32*)TxdBuffer,22);	//串口DMA发送程序
+		memset(RevBuffer,0x02,Num);
+//	USART_DMASend	(USART3,(u32*)TxdBuffer,1);	//串口DMA发送程序
 //	USART_DMASend	(USART2,(u32*)ICCARD_CMD_SetDataBlock,Num);	//串口DMA发送程序
 //	USART_DMASend	(USART2,(u32*)ICCARD_CMD_SetReaderID,sizeof(ICCARD_CMD_SetReaderID));	//串口DMA发送程序
 //	USART_DMASend	(USART2,(u32*)ICCARD_CMD_GetReaderID,sizeof(ICCARD_CMD_GetReaderID));	//串口DMA发送程序

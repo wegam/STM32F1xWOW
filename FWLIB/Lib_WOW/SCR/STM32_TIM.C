@@ -189,6 +189,9 @@ void TIM_ConfigurationFreq(TIM_TypeDef* TIMx,u32 Frequency)		//¶¨Ê±Æ÷ÆµÂÊÅäÖÃ·½Ê
 	TIM_ITConfig(TIMx, TIM_IT_Update, ENABLE); 
 	
 	TIM_Cmd(TIMx, DISABLE); 									//Ê¹ÄÜTIM
+	
+	/* Clear TIMx update pending flag[Çå³ıTIMxÒç³öÖĞ¶Ï] */
+	TIM_ClearFlag(TIMx, TIM_FLAG_Update);
 }
 
 

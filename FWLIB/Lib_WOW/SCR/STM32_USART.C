@@ -319,7 +319,7 @@ void	USART_DMA_ConfigurationNR(
 	//10.1)**********启动串口DMA方式接收	
 	
 	USART_ITConfig(USARTx,USART_IT_IDLE, DISABLE);					//使用空闲中断，DMA自动接收，检测到总线空闲表示发送端已经发送完成，数据保存在DMA缓冲器中
-	USART_ClearITPendingBit(USARTx,USART_IT_IDLE); 				//清除空闲串口标志位
+	USART_ClearITPendingBit(USARTx,USART_IT_IDLE); 					//清除空闲串口标志位
 	
 	USART_Cmd(USARTx, ENABLE);
 
@@ -826,6 +826,7 @@ void	USART_DMA_ConfigurationOD(
 	USART_Cmd(USARTx, ENABLE);
 
 }
+
 /*******************************************************************************
 *函数名			:	USART_DMA_ConfigurationNr
 *功能描述		:	USART_DMA配置--中断方式
@@ -2246,10 +2247,192 @@ u16 RS485_DMASend(
 
 
 
+/*******************************************************************************
+*函数名			:	USART_ConfigurationIT
+*功能描述		:	USART_配置---常规中断方式
+*输入				: 
+*返回值			:	无
+*修改时间		:	2018/01/06
+*修改说明		:	无
+*注释				:	wegam@sina.com
+*******************************************************************************/
+void	USART_ConfigurationIT(
+																USART_TypeDef* USARTx,			//串口号--USART1,USART2,USART3,UART4;//UART5不支持DMA
+																u32 USART_BaudRate,					//波特率
+																u8 PreemptionPriority,			//中断优先级
+																u8 SubPriority							//抢占优先级
+)	//USART_DMA配置--查询方式，不开中断--奇校验
+{
+	//1)**********定义变量	
 
+	NVIC_InitTypeDef NVIC_InitStructure;
+	USART_InitTypeDef USART_InitStructure;				//USART结构体	
+	GPIO_InitTypeDef GPIO_InitStructure;					//GPIO结构体
 
+	
+	u16 TXD_Pin=0;																//串口发送脚
+	u16 RXD_Pin=0;																//串口接收脚
+	GPIO_TypeDef* GPIO_TX=0;
+	GPIO_TypeDef* GPIO_RX=0;
+	
+	u8 USARTx_IRQChannel=0;
+	//2)******************************配置相关GPIO/串口时钟打开
+	//2.1)**********USART1
+	if(USARTx==USART1)
+	{
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);				//关闭AFIO时钟,为关闭JTAG功能
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);	//USART1时钟开启
+		
+		TXD_Pin=GPIO_Pin_9;											//USART1-TX>PA9
+		RXD_Pin=GPIO_Pin_10;										//USART1-RX>PA10
+		
+		GPIO_TX=GPIOA;
+		GPIO_RX=GPIOA;
+		
+		USARTx_IRQChannel=USART1_IRQChannel;		//中断
+		
 
+	}
+	//2.2)**********USART2
+	else if(USARTx==USART2)
+	{
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);				//关闭AFIO时钟,为关闭JTAG功能
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);	//USART1时钟开启
+		
+		TXD_Pin=GPIO_Pin_2;		//USART2-TX>PA2
+		RXD_Pin=GPIO_Pin_3;		//USART2-RX>PA3
+		
+		GPIO_TX=GPIOA;
+		GPIO_RX=GPIOA;
+		
+		USARTx_IRQChannel=USART2_IRQChannel;		//中断
+		
 
+	}
+	//2.3)**********USART3
+	else if(USARTx==USART3)
+	{
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);				//关闭AFIO时钟,为关闭JTAG功能
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);	//USART1时钟开启
+		GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);  //关闭JTAG功能
+		
+		TXD_Pin=GPIO_Pin_10;	//USART3-TX>PB10
+		RXD_Pin=GPIO_Pin_11;	//USART3-RX>PB11
+		
+		GPIO_TX=GPIOB;
+		GPIO_RX=GPIOB;
+		
+		USARTx_IRQChannel=USART3_IRQChannel;		//中断
+	}
+	//2.4)**********USART4
+	else if(USARTx==UART4)
+	{
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);	//USART1时钟开启
+		
+		TXD_Pin=GPIO_Pin_10;	//USART1-TX>PC10
+		RXD_Pin=GPIO_Pin_11;	//USART1-RX>PC11
+		
+		GPIO_TX=GPIOC;
+		GPIO_RX=GPIOC;
+		
+		USARTx_IRQChannel=UART4_IRQChannel;		//中断
+		
+	}
+	//2.5)**********USART5
+	else if(USARTx==UART5)
+	{
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART5, ENABLE);	//USART1时钟开启
+		
+		TXD_Pin=GPIO_Pin_12;	//USART1-TX>PC12
+		RXD_Pin=GPIO_Pin_2;		//USART1-RX>PD2
+		
+		GPIO_TX=GPIOC;
+		GPIO_RX=GPIOD;
+		
+		USARTx_IRQChannel=UART5_IRQChannel;		//中断
+		
+	}
+	
+//	/* Configure the NVIC Preemption Priority Bits */  
+//  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+	/* Enable the USART2 Interrupt */
+  NVIC_InitStructure.NVIC_IRQChannel = USARTx_IRQChannel;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority	=	PreemptionPriority;			//中断优先级
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = SubPriority;										//抢占优先级
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+	
+	//3)**********初始化串口
+	//3.1)**********初始化TXD引脚
+	GPIO_InitStructure.GPIO_Pin = TXD_Pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIO_TX,&GPIO_InitStructure);
+
+	//3.2)**********初始化RXD引脚
+	GPIO_InitStructure.GPIO_Pin = RXD_Pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;							//上拉输入
+	GPIO_Init(GPIO_RX,&GPIO_InitStructure);
+	
+	//3.3)**********初始化串口参数
+	USART_DeInit(USARTx);
+	USART_InitStructure.USART_BaudRate = USART_BaudRate; 					//波特率
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;		//数据位
+	USART_InitStructure.USART_StopBits = USART_StopBits_1;				//停止位
+	USART_InitStructure.USART_Parity = USART_Parity_No ; 					//奇偶校验
+	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;//流控
+	USART_Init(USARTx, &USART_InitStructure);											//初始化串口
+	
+	
+	
+	
+	
+
+	/* Enable USART1 Receive and Transmit interrupts */
+  USART_ITConfig(USARTx, USART_IT_RXNE, ENABLE);
+//  USART_ITConfig(USARTx, USART_IT_TXE, ENABLE);
+//	USART_ITConfig(USARTx, USART_IT_TC, ENABLE);
+	
+//	USART_ClearITPendingBit(USARTx, USART_IT_RXNE);
+//	USART_ClearITPendingBit(USARTx, USART_IT_TC);
+	
+	USART_Cmd(USARTx, ENABLE);
+
+}
+/*******************************************************************************
+*函数名			:	USART_ConfigurationIT
+*功能描述		:	USART_配置---常规中断方式
+*输入				: 
+*返回值			:	无
+*修改时间		:	2018/01/06
+*修改说明		:	无
+*注释				:	wegam@sina.com
+*******************************************************************************/
+void	USART_Send(USART_TypeDef* USARTx,u8* TxdBuffer,u16 Lengh)
+{
+	u8 Temp	=	0;
+	u16	Len	=	0;
+	while(Len<Lengh)
+	{
+		while(USART_GetFlagStatus(USARTx, USART_FLAG_TXE)!=SET)
+		{			
+		}
+		Temp=*TxdBuffer;
+		USART_SendData(USARTx, Temp);
+		TxdBuffer++;
+		Len++;
+	}
+}
 
 
 

@@ -6,7 +6,7 @@
 
 
 
-//#define	TestModel		//测试模式：测试模式下，1~4,4~1旋转
+#define	TestModel		//测试模式：测试模式下，1~4,4~1旋转
 //SW6 ON表示与旋转相关的板，传感器信号采集板/旋转电机控制板
 //SW5 ON表示旋转电机控制板，OFF表示传感器板
 
@@ -36,7 +36,7 @@
 #define	DATA_Group	0x08
 #define	DATA_ID			0xFA
 
-#define	CAN1_BaudRate	100000		//CAN波特率	500K
+#define	CAN1_BaudRate	500000		//CAN波特率	500K
 
 
 //=================PA7电机控制板CCW做脉冲输出
@@ -65,15 +65,15 @@
 #define	MOTOR_PWM_FrequencyUD		200			//脉冲频率--单位Hz
 #define	PWM_UpdataCountUD				2				//频率变化占计数个数，加减速时PWM_Updata个脉冲后更新一次输出频率
 #define	PWM_RunUpCountUD				10			//加速/减速需要的步数
-#define	SteepPerWindowUD				1000		//一个窗口用到的驱动脉冲数---升降
+#define	SteepPerWindowUD				500		//一个窗口用到的驱动脉冲数---升降
 #define	MaxWindowUD							1				//最大窗口数
 #define	MOTOR_TIMxUD						TIM1		//旋转电机所使用的定时器
 
-#define	MOTOR_PWM_FrequencyRL		500			//脉冲频率--单位Hz
+#define	MOTOR_PWM_FrequencyRL		400			//脉冲频率--单位Hz
 #define	PWM_UpdataCountRL				2				//频率变化占计数个数，加减速时PWM_Updata个脉冲后更新一次输出频率
 #define	PWM_RunUpCountRL				1000		//加速/减速需要的步数
-#define	SteepPerWindowRL				2*2030				//一个窗口用到的驱动脉冲数---旋转
-#define	MaxWindowRL		1					//最大窗口数
+#define	SteepPerWindowRL				3*2030				//一个窗口用到的驱动脉冲数---旋转
+#define	MaxWindowRL		3					//最大窗口数
 #define	MOTOR_TIMxRL						TIM1		//旋转电机所使用的定时器
 
 #define	MOTOR_TIMx							TIM1		//旋转电机所使用的定时器
@@ -136,7 +136,7 @@ void Test_modle(void);					//测试模式：测试模式下，1~4,4~1旋转	---宏定义TestMode
 u8 MotorUD_Server(void);				//步进电机返回状态
 u8 MotorRL_Server(void);				//步进电机返回状态
 void CAN_Server(void);				//CAN收发数据管理
-void CAN_test(void);				//CAN收发数据管理
+//void CAN_test(void);				//CAN收发数据管理
 void Switch_Server(void);			//检查拔码地址有无变更，如果变更，重新配置运行参数
 
 void Reset_Data(void);					//复位所有的全局变量值

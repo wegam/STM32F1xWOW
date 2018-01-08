@@ -98,7 +98,7 @@ void PC006V21_Configuration(void)
 	
 	SYS_Configuration();						//系统配置 STM32_SYS.H	
 	PWM_OUT(TIM2,PWM_OUTChannel1,10,900);			//SYS-LED 5HZ 10%		SYSLED_FRQ
-	SysTick_DeleyS(100);						//SysTick延时nS
+	SysTick_DeleyS(2);						//SysTick延时nS
 	SysTick_Configuration(1000);		//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server
 	
 	SWITCHID_Configuration();				//拔码开关初始化及读数
@@ -139,7 +139,7 @@ void PC006V21_Configuration(void)
 *******************************************************************************/
 void PC006V21_Server(void)
 {
-	CAN_test();				//CAN收发数据管理
+//	CAN_test();				//CAN收发数据管理
 	
 	if(MotorUD)
 	{
@@ -275,10 +275,9 @@ void MotorRLBoard_Configuration(void)		//旋转电机控制板配置
 	//============================GPIO配置
 	//电机控制板：	PA6-脉冲输出，PA7-方向控制输出
 	//传感器板：		PA6，PA7做传感器指示灯（采集信号时闪烁）
-	//1）============================步进电机参数配置
-	
-	TIM_ConfigurationFreq(MOTOR_TIMxRL,MOTOR_PWM_FrequencyRL);		//定时器频率配置方式，最小频率0.01Hz,最大100KHz //由于翻转需要双倍频率
-
+	//1）============================步进电机参数配置	
+//	TIM_ConfigurationFreq(MOTOR_TIMxRL,MOTOR_PWM_FrequencyRL);		//定时器频率配置方式，最小频率0.01Hz,最大100KHz //由于翻转需要双倍频率
+	Motor_Configuration();
 	//======脉冲输出：PA7电机控制板CCW做脉冲输出
 	GPIO_Configuration_OPP50	(MOTOR_Plus_PORT,		MOTOR_Plus_Pin);			//CCW	//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	
@@ -332,7 +331,7 @@ void SensorRLBoard_Configuration(void)		//旋转控制传感器板配置
 	//-----传感器信号读取滤波器（与旋转电机控制板通讯）：SensorBD_Group，SensorBD_ID
 	CAN_FilterInitConfiguration_StdData(SensorRL_Group,SensorRL_ID,(MotorRL_ID^SensorRL_ID)^0XFFFF);			//CAN滤波器配置---标准数据帧模式---BIT7不过滤
 	//5）============================系统嘀嗒时钟配置：做定时程序扫描
-	SysTick_Configuration(100);			//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server(0.1ms扫描传感器)
+	SysTick_Configuration(500);			//系统嘀嗒时钟配置72MHz,单位为uS----定时扫描PC006V21_Server(0.1ms扫描传感器)
 }
 //==============================================================================
 
@@ -359,10 +358,7 @@ void MotorUDBoard_Server(void)		//电机控制板服务程序
 	CAN_Server();					//CAN收发数据管理
 	
 	//3）============================查询电机控制程序：电机控制采用定时器中断
-	MotorUD_Server();				//查询步进电机状态---电机的运行、停止、当前状态查询
-	
-	//4）============================测试模式
-	Test_modle();					//测试模式
+	MotorUD_Server();				//查询步进电机状态---电机的运行、停止、当前状态查询	
 	
 	//5）============================清除数据
 	RxMessage.StdId	=	0x00;
@@ -374,6 +370,9 @@ void MotorUDBoard_Server(void)		//电机控制板服务程序
 	{		
 		SYSTime=0;
 	}
+	
+	//4）============================测试模式
+	Test_modle();					//测试模式
 }
 /*******************************************************************************
 *函数名			:	function
@@ -389,6 +388,7 @@ void MotorRLBoard_Server(void)		//电机控制板服务程序
 	//	u8 SensorON		=	0	;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
 	//先后顺序要求：电机运行时需要接收传感器板的数据，所以需要先查询CAN数据
 //	u8 status	=	0;			//CAN读取返回0表示无效
+	//1）============================电机
 	
 	//1）============================独立看门狗喂狗
 	IWDG_Feed();				//独立看门狗喂狗
@@ -399,8 +399,7 @@ void MotorRLBoard_Server(void)		//电机控制板服务程序
 	//3）============================查询电机控制程序：电机控制采用定时器中断
 	MotorRL_Server();				//查询步进电机状态---电机的运行、停止、当前状态查询
 	
-	//4）============================测试模式
-	Test_modle();					//测试模式
+	
 	
 	//5）============================清除数据
 	RxMessage.StdId	=	0x00;
@@ -412,6 +411,14 @@ void MotorRLBoard_Server(void)		//电机控制板服务程序
 	{		
 		SYSTime=0;
 	}
+	
+	
+//	if(StatusOfWindow	==0)	//未初始化，不执行测试模式
+//	{
+//		return;
+//	}
+	//4）============================测试模式	
+	Test_modle();					//测试模式
 }
 /*******************************************************************************
 *函数名			:	function
@@ -436,6 +443,8 @@ void SensorRLBoard_Server(void)		//传感器板服务程序
 	if(SensorON	==0)			//传感器板未收到工作命令
 	{
 		SYSTime	=	0;
+		TXLED_PORT->BRR=TXLED_Pin;		//PA6传感器板CCW做脉冲输出---LED_OFF
+		RXLED_PORT->BRR=RXLED_Pin;		//PA7传感器板CW做方向输出---LED_OFF
 		return;
 	}
 	//3）============================计时器0.1ms
@@ -478,17 +487,17 @@ void SensorRLBoard_Server(void)		//传感器板服务程序
 		Sensor[3]	=	0;
 	}
 	//5）============================上报传感器数据：0.5ms上服一次数据
-	if(SYSTime%5==0)									//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
-	{
-		CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
-	}
+//	if(SYSTime%5==0)									//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
+//	{
+//		CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
+//	}
 	//6）============================传感器板在工作时LED闪烁
-	if(SYSTime%1000==0)
+	if(SYSTime%100==0)
 	{
 		TXLED_PORT->BSRR=TXLED_Pin;		//PA6传感器板CCW做脉冲输出---LED_ON
 		RXLED_PORT->BSRR=RXLED_Pin;		//PA7传感器板CW做方向输出---LED_ON
 	}
-	else	if(SYSTime%1000==200)
+	else	if(SYSTime%100==20)
 	{
 		TXLED_PORT->BRR=TXLED_Pin;		//PA6传感器板CCW做脉冲输出---LED_OFF
 		RXLED_PORT->BRR=RXLED_Pin;		//PA7传感器板CW做方向输出---LED_OFF
@@ -545,24 +554,38 @@ void Motor_Configuration(void)
 void Test_modle(void)		//测试模式
 {
 #ifdef	TestModel
-	if(StatusOfWindow	==	0)
+	
+	
+	
+	if(StatusOfWindow	==	0)		//未初始化，不执行测试模式
 	{
 		CCWFlag	=	0;	//运行方向标志
 		return;
 	}
-	TestTime++;
-	if(TestTime>=1000)
-	{
-		TestTime	=	0;
-	}
+	
 
 	if(RunToWindow!=0)
 	{
+//		TestTime	=	0;
 		return;
 	}
 	else
 	{
-		CMDOfWindow	=	(TestTime%MaxWindow)+1;
+		TestTime++;
+		if(TestTime>=2000)
+		{
+			TestTime	=	0;
+		}
+	
+		if(MotorRL)
+		{
+			CMDOfWindow	=	(TestTime%MaxWindowRL)+1;
+		}
+		else if(MotorUD)
+		{
+			CMDOfWindow	=	(TestTime%MaxWindowUD)+1;
+		}
+
 	}
 	
 	
@@ -833,6 +856,125 @@ u8 MotorRL_Server(void)				//查询步进电机状态
 	
 //	u8 status	=	0;
 	
+	if(StepMotorServer(&SteepMotor1))
+	{
+		if((RxMessage.StdId==SensorRL_ID)&&(RxMessage.Data[1]!=0)&&(RunToWindow==1))
+		{
+			StatusOfWindow	=	RunToWindow;	//新的电机停止窗口位
+			RunToWindow			=	0;						//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+			
+			StepMotorStop(&SteepMotor1);
+		}
+		else if(SteepMotor1.GetPulsTotal>=SteepNeedToRun)
+		{
+			StatusOfWindow	=	RunToWindow;	//新的电机停止窗口位
+			RunToWindow			=	0;						//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+			
+			StepMotorStop(&SteepMotor1);
+		}
+		return 1;
+	}
+	else
+	{
+		if(StatusOfWindow==0	&&	RunToWindow==0)				//电机上电初始化
+		{
+			MOTOR_RunLeft;						//逆时针
+			PlusFlg						=	0;		//步进电机脉冲标志，一个上升沿计一个脉冲	
+			CMDOfWindow				=	1;		//运行到指定窗口命令
+			RunToWindow				=	1;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+			
+			SteepCount				=	0;		//运行步数计数
+			SteepNeedToRun		=	MaxWindowRL*SteepPerWindowRL+PWM_RunUpCountRL;				//需要运行的总步数
+	//		RunFrequency			=	2*MOTOR_PWM_FrequencyRL;
+	//		TIM_SetFreq(MOTOR_TIMxRL,RunFrequency);		//设定频率MOTOR_PWM_Frequency
+//			TIM_Cmd(MOTOR_TIMxRL, ENABLE); 						//开启定时器
+			
+			StepMotorCW(&SteepMotor1,MOTOR_PWM_FrequencyRL,0,0,0,0,SteepNeedToRun);		//顺时针旋转
+		}
+		else if(StatusOfWindow!=0	&&	RunToWindow==0	&&	CMDOfWindow!=0)		//电机在待机待机状态下有新的窗口命令
+		{
+			if(CMDOfWindow	==	StatusOfWindow)
+			{			
+				RunToWindow				=	0;							//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+				CMDOfWindow				=	0;							//运行到指定窗口命令
+				
+				StepMotorStop(&SteepMotor1);
+			}
+			else if(CMDOfWindow	>	StatusOfWindow)
+			{
+
+				PlusFlg						=	0;							//步进电机脉冲标志，一个上升沿计一个脉冲				
+				RunToWindow				=	CMDOfWindow;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+				CMDOfWindow				=	0;		//运行到指定窗口命令			
+				
+				SteepCount				=	0;							//运行步数计数
+				if(RunToWindow	==	1)
+				{
+					SteepNeedToRun		=	(RunToWindow-StatusOfWindow)*SteepPerWindowRL+PWM_RunUpCountRL/5;				//需要运行的总步数
+				}
+				else
+				{
+					SteepNeedToRun		=	(RunToWindow-StatusOfWindow)*SteepPerWindowRL;				//需要运行的总步数
+				}
+				
+				RunFrequency			=	MOTOR_PWM_FrequencyRL;		//起始频率
+				
+				StepMotorCCW(&SteepMotor1,MOTOR_PWM_FrequencyRL,PWM_UpdataCountRL,PWM_RunUpCountRL,PWM_UpdataCountRL,PWM_RunUpCountRL,SteepNeedToRun);		//顺时针旋转
+			}
+			else if(CMDOfWindow	<	StatusOfWindow)
+			{
+
+				PlusFlg						=	0;							//步进电机脉冲标志，一个上升沿计一个脉冲				
+				RunToWindow				=	CMDOfWindow;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+				CMDOfWindow				=	0;							//运行到指定窗口命令			
+				
+				SteepCount				=	0;							//运行步数计数
+				SteepNeedToRun		=	(StatusOfWindow-RunToWindow)*SteepPerWindowRL;				//需要运行的总步数	
+				
+				RunFrequency			=	MOTOR_PWM_FrequencyRL;		//起始频率
+				
+				StepMotorCW(&SteepMotor1,MOTOR_PWM_FrequencyRL,PWM_UpdataCountRL,PWM_RunUpCountRL,PWM_UpdataCountRL,PWM_RunUpCountRL,SteepNeedToRun);		//顺时针旋转		
+			}
+		}
+				
+		MotorTime++;
+		if(MotorTime>=1000)
+		{
+			
+			MotorTime=0;
+		}
+		return 0;
+	}
+}
+
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	函数功能说明
+*输入				: 
+*返回值			:	0-无定时器中断，1-有定时器中断
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	
+*******************************************************************************/
+u8 MotorRL_Serverbac(void)				//查询步进电机状态
+{
+	//SW6 ON表示与旋转相关的板
+	//SW5 ON表示旋转电机控制板，OFF表示传感器板
+	//CAN滤波器组使用 0x0A
+	//传感器板CAN-ID为0x80
+	//旋转电机控制板CAN-ID为0xC0
+	//	u8 MotorBD	=	0;		//旋转电机控制板标志，0-非电机控制板，1-电机控制板
+	//	u8 SensorBD	=	0;		//传感器板标志，0-非传感器板，1-传感器板	
+	//	u8 RunToWindow	=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
+	//	u8 StatusOfWindow	=	0;	//当时停止位置：0-未初始化，1-原点，2-2号窗口，3-3号窗口，4-4号窗口
+	
+	//==============电机控制说明
+	//运行过程分：启动加速，匀速运行，减速停止
+	//窗口位置：
+	//电机原点为中间传感器：上电时，先逆时针慢速运转到极限位再回到原点（如果在回极限位过程中找到原点，则停止在原点，初始化完成）
+	
+//	u8 status	=	0;
+	
 	
 	if((MOTOR_TIMxRL->SR & TIM_IT_Update)==TIM_IT_Update	&&	RunToWindow!=0)			//表示定时中断---运行计数未完
 	{
@@ -1054,23 +1196,31 @@ void CAN_Server(void)			//CAN收发数据管理
 	if(SensorRL)															//传感器板---旋转电机开始运行时开始采集信号
 	{
 		status	=	CAN_RX_DATA(&RxMessage);									//检查CAN接收有无数据
-		if(status	==	0)		//未接收到数据
+		if(status)		//未接收到数据
 		{
-			return;
+			SYSTime	=	0;
+			if(RxMessage.StdId	==	MotorRL_ID)							//旋转电机控制板发来数据
+			{
+				//传感器信号采集开关
+				if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x01)
+				{				
+					SensorON	=	1;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
+				}
+				else if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x00)
+				{				
+					SensorON	=	0;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
+				}
+				memset(RxMessage.Data,0x00,2);
+			}
 		}
-		if(RxMessage.StdId	==	MotorRL_ID)							//旋转电机控制板发来数据
+		else if(SensorON)
 		{
-			//传感器信号采集开关
-			if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x01)
-			{				
-				SensorON	=	1;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
-			}
-			else if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x00)
-			{				
-				SensorON	=	0;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
-			}
-			memset(RxMessage.Data,0x00,2);
+//			if(SYSTime%5==0)									//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
+//			{
+				CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
+//			}
 		}
+		
 	}
 	else if(MotorRL)				//旋转电机控制板
 	{
@@ -1105,103 +1255,7 @@ void CAN_Server(void)			//CAN收发数据管理
 		}
 	}
 }
-/*******************************************************************************
-*函数名			:	function
-*功能描述		:	函数功能说明
-*输入				: 
-*返回值			:	无
-*修改时间		:	无
-*修改说明		:	无
-*注释				:	
-*******************************************************************************/
-void CAN_test(void)			//CAN收发数据管理
-{
-	//SW6 ON表示与旋转相关的板
-	//SW5 ON表示旋转电机控制板，OFF表示传感器板
-	//CAN滤波器组使用 0x0A
-	//传感器板CAN-ID为0x80
-	//旋转电机控制板CAN-ID为0xC0
-	//	u8 MotorBD	=	0;		//旋转电机控制板标志，0-非电机控制板，1-电机控制板
-	//	u8 SensorBD	=	0;		//传感器板标志，0-非传感器板，1-传感器板
-	
-	//	u8 RunToWindow	=	0;		//旋转到相应窗口 0-无，1-1号，2-2号，3-3号，4-4号
-	//	u8 SensorON		=	0	;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
-	u8 status	=	0;		//CAN读取返回0表示无效
-	SensorTime	++;
-	
-	if(SensorTime>=1000)
-	{
-		if(SensorRL)															//传感器板---旋转电机开始运行时开始采集信号
-		{
-			Sensor[0]=0x0F;
-			Sensor[1]=0x0E;
-			Sensor[2]=0x0A;
-			Sensor[3]=0x0B;
-			
-			CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
-		}
-		else if(MotorRL)															//传感器板---旋转电机开始运行时开始采集信号
-		{
-			Sensor[0]=0x0F;
-			Sensor[1]=0x0E;
-			Sensor[2]=0x0A;
-			Sensor[3]=0x0B;
-			
-			CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
-		}
-	}
-	if(SensorRL)															//传感器板---旋转电机开始运行时开始采集信号
-	{
-		status	=	CAN_RX_DATA(&RxMessage);									//检查CAN接收有无数据
-		if(status	==	0)		//未接收到数据
-		{
-			return;
-		}
-		if(RxMessage.StdId	==	MotorRL_ID)							//旋转电机控制板发来数据
-		{
-//			//传感器信号采集开关
-//			if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x01)
-//			{				
-//				SensorON	=	1;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
-//			}
-//			else if(RxMessage.Data[0]==0xAF	&&	RxMessage.Data[1]==0x00)
-//			{				
-//				SensorON	=	0;		//旋转电机控制板发来开启传感器采集命令BUFFER[0]=0XAF BUFFER[1]=0关，=1开，0--不采集信号，1-采集信号0.5ms主动上报
-//			}
-//			memset(RxMessage.Data,0x00,2);
-			Sensor[0]=0x0F;
-			Sensor[1]=0x0E;
-			Sensor[2]=0x0A;
-			Sensor[3]=0x0B;
-			
-			CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔
-		}
-	}
-	else if(MotorRL)				//旋转电机控制板
-	{
 
-		status	=	CAN_RX_DATA(&RxMessage);									//检查CAN接收有无数据
-		if(status	!=	0)		//接收到数据
-		{
-			if(RxMessage.StdId	==	Cmd_ID)							//旋转电机控制板接收到控制命令
-			{
-				if(RxMessage.Data[0]==0xFA	&&	RxMessage.Data[1]==0x55)	//运行到指定窗口命令
-				{
-					CMDOfWindow	=	RxMessage.Data[2];
-				}	
-			}
-			else if(RxMessage.StdId	==	SensorRL_ID)							//旋转电机控制板接收到控制命令
-			{
-				Sensor[0]=0x0F;
-				Sensor[1]=0x0E;
-				Sensor[2]=0x0A;
-				Sensor[3]=0x0B;
-			
-				CAN_StdTX_DATA(SensorRL_ID,4,Sensor);			//CAN使用标准帧发送数据---发送传感器数据 0.5ms发送间隔	
-			}
-		}
-	}
-}
 /*******************************************************************************
 *函数名			:	function
 *功能描述		:	函数功能说明
