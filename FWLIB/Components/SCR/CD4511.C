@@ -55,12 +55,12 @@ void CD4511_WriteData(CD4511_Pindef *Pinfo,u8 num)			//写入数据并显示
 {
 	//关闭输出---消影
 	GPIO_ResetBits(Pinfo->CD4511_EN_PORT, Pinfo->CD4511_EN_Pin);
-//	CD4511_Delay(50);
+
 	GPIO_ResetBits(Pinfo->CD4511_A0_PORT, Pinfo->CD4511_A0_Pin);
 	GPIO_ResetBits(Pinfo->CD4511_A1_PORT, Pinfo->CD4511_A1_Pin);
 	GPIO_ResetBits(Pinfo->CD4511_A2_PORT, Pinfo->CD4511_A2_Pin);
 	GPIO_ResetBits(Pinfo->CD4511_A3_PORT, Pinfo->CD4511_A3_Pin);
-	CD4511_Delay(50);
+
 	//A0
 	if((num&0x01)!=0)
 	{
@@ -97,7 +97,7 @@ void CD4511_WriteData(CD4511_Pindef *Pinfo,u8 num)			//写入数据并显示
 	{
 		GPIO_ResetBits(Pinfo->CD4511_A3_PORT, Pinfo->CD4511_A3_Pin);
 	}
-//	CD4511_Delay(10000);
+
 	GPIO_SetBits(Pinfo->CD4511_EN_PORT, Pinfo->CD4511_EN_Pin);
 }
 /*******************************************************************************
@@ -111,4 +111,14 @@ void CD4511_DisplayOFF(CD4511_Pindef *Pinfo)			//关闭显示---关NPN三极管
 	GPIO_ResetBits(Pinfo->CD4511_EN_PORT, Pinfo->CD4511_EN_Pin);
 //	CD4511_Delay(1000);
 }
-
+/*******************************************************************************
+* 函数名			:	CD4511_DisplayOFF
+* 功能描述		:	关闭显示---关NPN三极管
+* 输入			: void
+* 返回值			: void
+*******************************************************************************/
+void CD4511_DisplayON(CD4511_Pindef *Pinfo)			//开显示---关NPN三极管
+{
+	GPIO_SetBits(Pinfo->CD4511_EN_PORT, Pinfo->CD4511_EN_Pin);
+//	CD4511_Delay(1000);
+}

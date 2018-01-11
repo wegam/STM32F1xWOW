@@ -37,7 +37,7 @@ void CD4511_PinConf(CD4511_Pindef *Pinfo);
 void CD4511_WriteData(CD4511_Pindef *Pinfo,u8 num);	//写入数据并显示
 
 void CD4511_DisplayOFF(CD4511_Pindef *Pinfo);			//关闭显示---关NPN三极管
-
+void CD4511_DisplayON(CD4511_Pindef *Pinfo);			//开显示---关NPN三极管
 
 
 

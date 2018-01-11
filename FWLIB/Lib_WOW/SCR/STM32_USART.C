@@ -1343,6 +1343,259 @@ void USART_DMA_Configuration(USART_TypeDef* USARTx,u32 USART_BaudRate,u8 NVICPre
 	USART_Cmd(USARTx, ENABLE);
 }
 /*******************************************************************************
+*函数名			:	USART_DMA_ConfigurationNr
+*功能描述		:	USART_DMA配置--查询方式，不开中断
+*输入				: 
+*返回值			:	无
+*******************************************************************************/
+void	USART_DMA_ConfigurationNRRemap(
+																USART_TypeDef* USARTx,	//串口号--USART1,USART2,USART3,UART4;//UART5不支持DMA
+																u32 USART_BaudRate,			//波特率
+																u32 *RXDBuffer,					//接收缓冲区地址::发送缓冲区地址在发送数据时设定，串口配置时借用接收缓冲区地址
+																u32 BufferSize					//设定接收缓冲区大小
+)	//USART_DMA配置--查询方式，不开中断
+{
+	//1)**********定义变量	
+	DMA_InitTypeDef DMA_Initstructure;
+	
+	USART_InitTypeDef USART_InitStructure;				//USART结构体	
+	GPIO_InitTypeDef GPIO_InitStructure;					//GPIO结构体
+	
+	DMA_Channel_TypeDef* DMAx_Channeltx=0;			//DMA发送通道请求信号---当DMA串口发送数据完成时，会发起DMA中断
+	DMA_Channel_TypeDef* DMAx_Channelrx=0;			//DMA接收通道请求信号---DMA串口接收由串口发起中断，因此此处接收通道中断不使用
+//	u8 DMAx_Channelx_IRQChannel=0;							//DMA中断源
+	u32 DMAx_FLAG_GLtx=0;												//DMA串口发送中断全局变量			
+	u32 DMAx_FLAG_GLrx=0;												//DMA串口接收中断全局变量
+	
+	u16 TXD_Pin=0;																//串口发送脚
+	u16 RXD_Pin=0;																//串口接收脚
+	GPIO_TypeDef* GPIO_TX=0;
+	GPIO_TypeDef* GPIO_RX=0;
+//	u8 USARTx_IRQChannel=0;
+	//2)******************************配置相关GPIO/串口时钟打开
+	//2.1)**********USART1
+	if(USARTx==USART1)
+	{
+		
+		gUSART1_BufferSizebac=BufferSize;		//串口1DMA缓冲大小备份，配置时写入实际值，计算接收数据个数里需要使用
+		
+		TXD_Pin=GPIO_Pin_6;											//USART1-TX>PA9
+		RXD_Pin=GPIO_Pin_7;										//USART1-RX>PA10
+		
+		GPIO_TX=GPIOB;
+		GPIO_RX=GPIOB;
+		
+//		USARTx_IRQChannel=USART1_IRQChannel;		//中断
+		
+		GPIO_PinRemapConfig(GPIO_Remap_USART1,ENABLE);				//I/O口重映射开启
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_AFIO,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);	//USART1时钟开启
+
+	}
+	//2.2)**********USART2
+	else if(USARTx==USART2)
+	{
+		gUSART2_BufferSizebac=BufferSize;		//串口2DMA缓冲大小备份，配置时写入实际值，计算接收数据个数里需要使用
+		
+		TXD_Pin=GPIO_Pin_2;		//USART2-TX>PA2
+		RXD_Pin=GPIO_Pin_3;		//USART2-RX>PA3
+		
+		GPIO_TX=GPIOA;
+		GPIO_RX=GPIOA;
+		
+//		USARTx_IRQChannel=USART2_IRQChannel;		//中断
+		
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);	//USART1时钟开启
+
+	}
+	//2.3)**********USART3
+	else if(USARTx==USART3)
+	{
+		gUSART3_BufferSizebac=BufferSize;		//串口3DMA缓冲大小备份，配置时写入实际值，计算接收数据个数里需要使用
+		
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);				//关闭AFIO时钟,为关闭JTAG功能
+		GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);  //关闭JTAG功能
+//		GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);  		//关闭SWD功能
+		
+		
+		TXD_Pin=GPIO_Pin_10;	//USART3-TX>PB10
+		RXD_Pin=GPIO_Pin_11;	//USART3-RX>PB11
+		
+		GPIO_TX=GPIOB;
+		GPIO_RX=GPIOB;
+		
+//		USARTx_IRQChannel=USART3_IRQChannel;		//中断
+		
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);	//USART1时钟开启
+		
+
+	}
+	//2.4)**********USART4
+	else if(USARTx==UART4)
+	{
+		gUART4_BufferSizebac=BufferSize;		//串口4DMA缓冲大小备份，配置时写入实际值，计算接收数据个数里需要使用
+		
+		TXD_Pin=GPIO_Pin_10;	//USART1-TX>PC10
+		RXD_Pin=GPIO_Pin_11;	//USART1-RX>PC11
+		
+		GPIO_TX=GPIOC;
+		GPIO_RX=GPIOC;
+		
+//		USARTx_IRQChannel=UART4_IRQChannel;		//中断
+		
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC|RCC_APB2Periph_AFIO,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);	//USART1时钟开启
+	}
+	//2.5)**********USART5
+	else if(USARTx==UART5)
+	{
+		gUART5_BufferSizebac=BufferSize;		//-----串口5无DMA
+		
+		TXD_Pin=GPIO_Pin_12;	//USART1-TX>PC12
+		RXD_Pin=GPIO_Pin_2;		//USART1-RX>PD2
+		
+		GPIO_TX=GPIOC;
+		GPIO_RX=GPIOD;
+		
+//		USARTx_IRQChannel=UART5_IRQChannel;		//中断
+		
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD,ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART5, ENABLE);	//USART1时钟开启
+	}
+	//3)**********初始化串口
+	//3.1)**********初始化TXD引脚
+	GPIO_InitStructure.GPIO_Pin = TXD_Pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIO_TX,&GPIO_InitStructure);
+
+	//3.2)**********初始化RXD引脚
+	GPIO_InitStructure.GPIO_Pin = RXD_Pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;							//上拉输入
+	GPIO_Init(GPIO_RX,&GPIO_InitStructure);
+	
+	//3.3)**********初始化串口参数
+	USART_DeInit(USARTx);
+	USART_InitStructure.USART_BaudRate = USART_BaudRate; 					//波特率
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;		//数据位
+	USART_InitStructure.USART_StopBits = USART_StopBits_1;				//停止位
+	USART_InitStructure.USART_Parity = USART_Parity_No ; 					//奇偶校验
+	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;//流控
+	USART_Init(USARTx, &USART_InitStructure);											//初始化串口
+	
+	
+	
+	//2)******************************DMA
+	//4)**********根据串口索引相关DMA通道及其它参数
+	if(USARTx==USART1)
+	{
+		DMAx_Channeltx=DMA1_Channel4;
+		DMAx_Channelrx=DMA1_Channel5;
+//		DMAx_Channelx_IRQChannel=DMA1_Channel4_IRQChannel;
+		DMAx_FLAG_GLtx=DMA1_FLAG_GL4;
+		DMAx_FLAG_GLrx=DMA1_FLAG_GL5;
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1,ENABLE);	
+	}
+	else if(USARTx==USART2)
+	{
+		DMAx_Channeltx=DMA1_Channel7;
+		DMAx_Channelrx=DMA1_Channel6;
+//		DMAx_Channelx_IRQChannel=DMA1_Channel7_IRQChannel;
+		DMAx_FLAG_GLtx=DMA1_FLAG_GL7;
+		DMAx_FLAG_GLrx=DMA1_FLAG_GL6;
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1,ENABLE);	
+	}
+	else if(USARTx==USART3)
+	{
+		DMAx_Channeltx=DMA1_Channel2;
+		DMAx_Channelrx=DMA1_Channel3;
+//		DMAx_Channelx_IRQChannel=DMA1_Channel2_IRQChannel;
+		DMAx_FLAG_GLtx=DMA1_FLAG_GL2;
+		DMAx_FLAG_GLrx=DMA1_FLAG_GL3;
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1,ENABLE);	
+	}
+	else if(USARTx==UART4)
+	{
+		DMAx_Channeltx=DMA2_Channel5;
+		DMAx_Channelrx=DMA2_Channel3;
+//		DMAx_Channelx_IRQChannel=DMA2_Channel3_IRQChannel;
+		DMAx_FLAG_GLtx=DMA2_FLAG_GL5;
+		DMAx_FLAG_GLrx=DMA2_FLAG_GL3;
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA2,ENABLE);	
+	}
+	else if(USARTx==UART5)
+	{
+		//UART5不支持DMA
+	}
+	//5)**********DMA发送初始化，外设作为DMA的目的端
+	DMA_Initstructure.DMA_PeripheralBaseAddr =  (u32)(&USARTx->DR);					//DMA外设源地址
+	DMA_Initstructure.DMA_MemoryBaseAddr     = (u32)RXDBuffer;							//DMA数据内存地址
+	DMA_Initstructure.DMA_DIR = DMA_DIR_PeripheralDST;											//DMA_DIR_PeripheralDST（外设作为DMA的目的端），DMA_DIR_PeripheralSRC（外设作为数据传输的来源）
+	DMA_Initstructure.DMA_BufferSize = BufferSize; 													//指定DMA通道的DMA缓存的大小
+//	DMA_Initstructure.DMA_BufferSize = sizeof(MemoryAddr[0]); 						//指定DMA通道的DMA缓存的大小
+	DMA_Initstructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;				//DMA_PeripheralInc_Enable（外设地址寄存器递增），DMA_PeripheralInc_Disable（外设地址寄存器不变），
+	DMA_Initstructure.DMA_MemoryInc =DMA_MemoryInc_Enable;									//DMA_MemoryInc_Enable（内存地址寄存器递增），DMA_MemoryInc_Disable（内存地址寄存器不变）
+	DMA_Initstructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;	//外设数据宽度--DMA_PeripheralDataSize_Byte（数据宽度为8位），DMA_PeripheralDataSize_HalfWord（数据宽度为16位），DMA_PeripheralDataSize_Word（数据宽度为32位）
+	DMA_Initstructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;					//内存数据宽度--DMA_MemoryDataSize_Byte（数据宽度为8位），DMA_MemoryDataSize_HalfWord（数据宽度为16位），DMA_MemoryDataSize_Word（数据宽度为32位）
+	DMA_Initstructure.DMA_Mode = DMA_Mode_Normal;														//DMA工作模式--DMA_Mode_Normal（只传送一次）, DMA_Mode_Circular（不停地传送）
+	DMA_Initstructure.DMA_Priority = DMA_Priority_High; 										//DMA通道的转输优先级--DMA_Priority_VeryHigh（非常高）DMA_Priority_High（高)，DMA_Priority_Medium（中），DMA_Priority_Low（低）
+	DMA_Initstructure.DMA_M2M = DMA_M2M_Disable;														//DMA通道的内存到内存传输--DMA_M2M_Enable(设置为内存到内存传输)，DMA_M2M_Disable（非内存到内存传输）
+	DMA_Init(DMAx_Channeltx,&DMA_Initstructure);														//初始化DMA
+
+	//6)**********DMA接收初始化，外设作为DMA的源端
+	DMA_Initstructure.DMA_PeripheralBaseAddr =  (u32)(&USARTx->DR);					//DMA外设源地址
+	DMA_Initstructure.DMA_MemoryBaseAddr     = 	(u32)RXDBuffer;							//DMA数据内存地址
+	DMA_Initstructure.DMA_DIR = DMA_DIR_PeripheralSRC;											//DMA_DIR_PeripheralDST（外设作为DMA的目的端），DMA_DIR_PeripheralSRC（外设作为数据传输的来源）
+	DMA_Initstructure.DMA_BufferSize = BufferSize; 													//指定DMA通道的DMA缓存的大小
+//	DMA_Initstructure.DMA_BufferSize = sizeof(MemoryAddr); 								//指定DMA通道的DMA缓存的大小
+	DMA_Initstructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;				//DMA_PeripheralInc_Enable（外设地址寄存器递增），DMA_PeripheralInc_Disable（外设地址寄存器不变），
+	DMA_Initstructure.DMA_MemoryInc =DMA_MemoryInc_Enable;									//DMA_MemoryInc_Enable（内存地址寄存器递增），DMA_MemoryInc_Disable（内存地址寄存器不变）
+	DMA_Initstructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;	//外设数据宽度--DMA_PeripheralDataSize_Byte（数据宽度为8位），DMA_PeripheralDataSize_HalfWord（数据宽度为16位），DMA_PeripheralDataSize_Word（数据宽度为32位）
+	DMA_Initstructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;					//内存数据宽度--DMA_MemoryDataSize_Byte（数据宽度为8位），DMA_MemoryDataSize_HalfWord（数据宽度为16位），DMA_MemoryDataSize_Word（数据宽度为32位）
+	DMA_Initstructure.DMA_Mode = DMA_Mode_Normal;														//DMA工作模式--DMA_Mode_Normal（只传送一次）, DMA_Mode_Circular（不停地传送）
+	DMA_Initstructure.DMA_Priority = DMA_Priority_High; 										//DMA通道的转输优先级--DMA_Priority_VeryHigh（非常高）DMA_Priority_High（高)，DMA_Priority_Medium（中），DMA_Priority_Low（低）
+	DMA_Initstructure.DMA_M2M = DMA_M2M_Disable;														//DMA通道的内存到内存传输--DMA_M2M_Enable(设置为内存到内存传输)，DMA_M2M_Disable（非内存到内存传输）
+	DMA_Init(DMAx_Channelrx,&DMA_Initstructure);														//初始化DMA	
+	
+	//8)**********配置相关中断
+	//8.1)**********串口接收中断配置
+	//--将串口接收中断关闭，然后开启串口空闲中断，利用DMA自动接收串口数据
+	//--若DMA接收未开启，则使用串口接收中断
+	//--若DMA接收开启，串口接收中断应该关闭，在DMA配置中会将串口接收中断关闭
+//	USART_ITConfig(USARTx,USART_IT_RXNE, DISABLE);				//接收中断--关：因为DMA自动接收，
+	
+	/* 启动DMA1通道5*/
+	DMA_Cmd(DMAx_Channeltx,DISABLE);				//关闭DMA发送----需要发送时再打开
+	//10.2)**********使能串口
+	DMA_Cmd(DMAx_Channelrx,ENABLE);					//打开DMA接收----自动接收串口数据	
+	//9.1)**********关闭DMA发送	
+	
+	//8.2)**********使能串口DMA方式接收
+	USART_DMACmd(USARTx,USART_DMAReq_Rx,ENABLE);
+	//8.3)**********使能串口DMA方式发送
+	USART_DMACmd(USARTx,USART_DMAReq_Tx,ENABLE);
+	//9)**********清除相关中断标志位	
+	//	DMA_Cmd(DMAx_Channeltx,ENABLE);
+	//9.2)**********使能相关DMA通道传输完成中断
+	DMA_ITConfig(DMAx_Channeltx,DMA_IT_TC, DISABLE);
+	//9.3)**********清除串口DMA方式发送中断全局标志
+	DMA_ClearFlag(DMAx_FLAG_GLtx);                                 					// 清除DMA所有标志
+	//9.3)**********清除串口DMA方式接收中断全局标志
+	DMA_ClearFlag(DMAx_FLAG_GLrx);                                 					// 清除DMA所有标志	
+	//10.1)**********启动串口DMA方式接收	
+	
+	USART_ITConfig(USARTx,USART_IT_IDLE, DISABLE);					//使用空闲中断，DMA自动接收，检测到总线空闲表示发送端已经发送完成，数据保存在DMA缓冲器中
+	USART_ClearITPendingBit(USARTx,USART_IT_IDLE); 					//清除空闲串口标志位
+	
+	USART_Cmd(USARTx, ENABLE);
+
+}
+/*******************************************************************************
 * 函数名			:	USART_ReadBuffer
 * 功能描述		:	串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer， 
 * 输入			: void
@@ -1926,6 +2179,23 @@ void	RS485_DMA_ConfigurationNR(
 {
 	USART_DMA_ConfigurationNR	(RS485_Info->USARTx,USART_BaudRate,RXDBuffer,BufferSize);		//USART_DMA配置--查询方式，不开中断
 	GPIO_Configuration_OPP50	(RS485_Info->RS485_CTL_PORT,RS485_Info->RS485_CTL_Pin);			//将GPIO相应管脚配置为APP(复用推挽)输出模式，最大速度50MHz----V20170605
+	RS485_Info->RS485_CTL_PORT->BRR 		= RS485_Info->RS485_CTL_Pin;				//RS485接收开启
+}
+/*******************************************************************************
+*函数名			:	USART_DMA_ConfigurationNr
+*功能描述		:	USART_DMA配置--查询方式，不开中断,配置完默认为接收状态
+*输入				: 
+*返回值			:	无
+*******************************************************************************/
+void	RS485_DMA_ConfigurationNRRemap(
+																RS485_TypeDef *RS485_Info,	//包含RS485选用的串口号和收发控制脚信息
+																u32 USART_BaudRate,					//波特率
+																u32 *RXDBuffer,							//接收缓冲区地址::发送缓冲区地址在发送数据时设定，串口配置时借用接收缓冲区地址
+																u32 BufferSize							//设定接收缓冲区大小
+)	//USART_DMA配置--查询方式，不开中断,配置完默认为接收状态
+{
+	USART_DMA_ConfigurationNRRemap	(RS485_Info->USARTx,USART_BaudRate,RXDBuffer,BufferSize);		//USART_DMA配置--查询方式，不开中断
+	GPIO_Configuration_OPP50				(RS485_Info->RS485_CTL_PORT,RS485_Info->RS485_CTL_Pin);			//将GPIO相应管脚配置为APP(复用推挽)输出模式，最大速度50MHz----V20170605
 	RS485_Info->RS485_CTL_PORT->BRR 		= RS485_Info->RS485_CTL_Pin;				//RS485接收开启
 }
 /*******************************************************************************
