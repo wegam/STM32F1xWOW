@@ -86373,9 +86373,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>507</LineNumber>
+          <LineNumber>532</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134220220</Address>
+          <Address>134220224</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -86384,7 +86384,23 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>..\..\Examples\APP_HC\PL013V11.C</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\PL013V11\../../Examples/APP_HC/PL013V11.C\507</Expression>
+          <Expression>\\PL013V11\../../Examples/APP_HC/PL013V11.C\532</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>512</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134220410</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\Examples\APP_HC\PL013V11.C</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\PL013V11\../../Examples/APP_HC/PL013V11.C\512</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -86661,6 +86677,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -86718,7 +86735,7 @@
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>sBorad,0x10</ItemText>
+          <ItemText>sBorad</ItemText>
         </Ww>
         <Ww>
           <count>4</count>

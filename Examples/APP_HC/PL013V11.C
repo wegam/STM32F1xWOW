@@ -113,7 +113,7 @@ void PL013V11_Server(void)
 	RS485_Server();										//RS485接收数据
 	
 	DataServer();			//处理接收到的有效数据
-	if(SYSTIME%10	==	0)	//1ms
+	if(SYSTIME%5	==	0)	//1ms
 	DisplayServer();	//显示服务程序，根据显示命令刷新
 	
 	
@@ -247,8 +247,7 @@ void CD4511_DISPALY(u8 wei,u16 num)
 			GPIO_ResetBits(PortEN3,PinEN3);
 			GPIO_SetBits(PortA1,PinA1);
 			GPIO_SetBits(PortA3,PinA3);
-			GPIO_ResetBits(DPPort,DPPin);
-			
+			GPIO_ResetBits(DPPort,DPPin);			
 		}
 		return;
 	}
@@ -488,12 +487,40 @@ void DisplayServer(void)		//显示服务程序，根据显示命令刷新
 		}
 		if(DspCmd.DispEnNum)		//显示数值	：	0-不显示，		1-显示，此时小数点不显示
 		{
-			CD4511_DISPALY((u8)DSPCount%3+1,DSPNum);		//刷新数据
+//			CD4511_DISPALY((u8)DSPCount%3+1,DSPNum);		//刷新数据
+			if(DspCmd.DispMdNum)	//数值模式	：	0-静态显示，	1-0.5S闪烁
+			{
+				if((DSPCount%1000)>500)
+				{
+					CD4511_DISPALY((u8)DSPCount%3+1,(u16)DSPNum);		//刷新数据
+				}
+				else
+				{
+					CD4511_DISPALY(0,0);						//不显示
+				}
+			}
+			else
+			{
+				CD4511_DISPALY((u8)DSPCount%3+1,(u16)DSPNum);		//刷新数据
+			}
 		}
 		else if(DspCmd.DispEnDp)		//显示点		：	0-不显示，		1-显示
 		{
-//			CD4511_DISPALY(0,0);				//个位显示小数点
-			CD4511_DisplayDp();		//个位显示小数点
+			if(DspCmd.DispMdDp)			//点模式		：	0-静态显示，	1-0.5S闪烁
+			{
+				if((DSPCount%1000)<500)
+				{
+					CD4511_DISPALY(0,1);		//显示小数点
+				}
+				else
+				{
+					CD4511_DISPALY(0,0);		//关闭小数点
+				}
+			}
+			else
+			{
+				CD4511_DisplayDp();		//个位显示小数点
+			}
 		}
 	}
 	else

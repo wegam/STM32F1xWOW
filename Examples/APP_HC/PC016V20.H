@@ -74,7 +74,7 @@
 #define	LockPin4			GPIO_Pin_4
 
 
-#define	DefaultOnTime	30000				//默认锁吸合时间30S
+#define	DefaultOnTime	30000				//默认(最小)锁吸合时间30S
 #define	MaxOnTime			120000			//锁吸合最大时间120S	2分钟
 #define	SegOnTime			30000				//插入药箱后数码管常亮时间30S
 
@@ -112,6 +112,7 @@ typedef enum
 	eBoxOff		=	0x25,		//药箱取走
 	eBoxBack	=	0x26,		//药箱收回
 	eReadErr	=	0x27,		//读卡器通讯异常
+	eBoxTake	=	0x28,		//药箱被强制取走
 }StatusCodeDef;
 typedef enum
 {
@@ -200,7 +201,7 @@ typedef struct _sSeg
 typedef	struct	_LockFlag		//锁控制标志及吸合时间
 {
 	unsigned long	On					:1;		//0-不处理，1-开锁
-	unsigned long	Off					:1;		//0-不处理，1-释放锁
+//	unsigned long	Off					:1;		//0-不处理，1-释放锁
 	unsigned long	LockOnTime	:30;	//锁吸合时间，最大值0x3FFF FFFF
 	GPIO_TypeDef*	GPIOx;
 	u16	GPIO_Pin_n;
@@ -218,20 +219,18 @@ typedef	struct	_Time		//锁控制标志0--不处理，1--开锁操作
 typedef	struct	_sBoxStatus		//端口状态--：有卡/无卡
 {
 	unsigned short	BoxFlg		:1;	//bit0：0-无卡,1-有卡
-	unsigned short	BoxPro		:1;	//bit1：0-药箱无操作记录，1-药箱有操作记录（取药）;之前操作为取药，重新获取到卡表示药箱已收回
-	unsigned short	BoxBack		:1;	//bit2：0-无操作，1-药箱收回,收回后需要上报药箱号（有BoxOff标志时设置此位）
-	unsigned short	BoxRead		:1;	//bit3：0-读卡器正常，1-读卡器通讯异常
-	unsigned short	BoxSeg		:1;	//bit4：0-无操作，1-需要更新数码管
-	unsigned short	BoxOff		:1;	//bit5：0-无操作，1-药箱被取走（有BoxDel请求时设置此位）
-	unsigned short	BoxDel		:1;	//bit6：0-无待处理操作，	1-移除药箱请求(数码管数值闪烁)
-	unsigned short	RecData		:1;	//bit7：0-无接收到卡数据，1-有接收到卡数据
-	unsigned short	ClrData		:1;	//bit8：0-无操作，1-删除数据请求(药箱不在）需要删除数据及更新数码管
-//	unsigned short	BoxEnNum	:1;	//bit9：显示数值	：	0-不显示，		1-显示
-//	unsigned short	BoxMdNum	:1;	//bit10：数值模式	：	0-静态显示，	1-0.5S闪烁
-//	unsigned short	BoxEnDp		:1;	//bit11：显示点		：	0-不显示，		1-显示
-//	unsigned short	BoxMdDp		:1;	//bit12：点模式		：	0-静态显示，	1-0.5S闪烁
-	unsigned short	GetID			:1;	//bit13：获取ID请求：	0-无请求，		1-有请求	，需要上报ID
-	unsigned short	SendID		:1;	//bit14：主动上报ID标志：	0-无操作，		1-检测到药箱插入	，需要上报ID
+	unsigned short	BoxBack		:1;	//bit1：0-无操作，1-药箱收回,收回后需要上报药箱号（有BoxOff标志时设置此位）
+	unsigned short	BoxRead		:1;	//bit2：0-读卡器正常，1-读卡器通讯异常
+	unsigned short	BoxSeg		:1;	//bit3：0-无操作，1-需要更新数码管
+	unsigned short	BoxOff		:1;	//bit4：0-无操作，1-药箱被取走（有BoxDel请求时设置此位）
+	unsigned short	RecData		:1;	//bit5：0-无接收到卡数据，1-有接收到卡数据
+	unsigned short	ClrData		:1;	//bit6：0-无操作，1-删除数据请求(药箱不在）需要删除数据及更新数码管
+	unsigned short	GetID			:1;	//bit7：0-无请求，		1-有请求	，获取ID请求需要上报ID
+	unsigned short	GetBox		:1;	//bit8：0-无请求，		1-有请求	，取药(数码管数值闪烁)
+	unsigned short	SendID		:1;	//bit14：0-无操作，	1-检测到药箱插入，主动上报ID，如果是取药，取消主动上报，使用状态上报	
+	unsigned short	SendSts		:1;	//bit10：0-无操作，1-取药状态下药箱变化后需要上报药箱状态或者在无数据情况下上报状态
+	unsigned short	BoxTout		:1;	//bit11：0-无操作，1-取药超时
+	unsigned short	BoxTake		:1;	//bit11：0-无操作，1-药箱被强制取走
 }sBoxStatusDef;
 
 //=======================================================端口/槽位所有信息结构体
@@ -252,6 +251,7 @@ typedef	struct	_Step
 {
 	unsigned char 	ReadCard		:1;			//bit0:	0-未执行读卡,需要读卡，		1-已读完卡
 	unsigned char 	WriteSeg		:1;			//bit1:	0-未更新数码管,需要更新，	1-已更新(读卡过程中不更新数码管，免得占用串口）
+	unsigned char 	BoxStatus		:1;			//bit3:	0-未更新药箱状态，需要更新，	1-已更新
 } StepDef;	
 //=======================================================板内端口/板内数据
 typedef	struct	_sBorad		//端口状态--：有卡/无卡
@@ -317,8 +317,8 @@ extern u8 ICCardReadCount4;
 //==============其它变量
 
 extern u8 SwitchData;						//存储拔码开关最新地址，如果地址变化，再重新配置运行参数
-extern u32	SYSTIME;						//系统计时器
-extern TimeDef	SYSTime;				//系统运行相关计时器
+//extern u32	SYSTIME;						//系统计时器
+//extern TimeDef	SYSTime;				//系统运行相关计时器
 extern u32	Port4TimeOut;				//端口4连续读数超时
 
 
@@ -341,8 +341,9 @@ void BusFrameProcessSendBox(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//发送药箱数据
 
 void BusFrameProcessPacketAndSend(sFarmeDef*	sFarme);					//按照协议打包数据并发送
 void BusFrameProcessLock(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//锁命令处理
-//=======================
 
+//=================================================================================================================取药
+void BoardGetBoxProcess(sBoradDef*	sBorad);		//取药操作及取药计时
 
 //=================================================================================================================读卡器程序
 u8 	 BoardCardReaderServer(void);					//读取IC卡数据
