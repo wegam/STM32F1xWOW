@@ -9,7 +9,7 @@
 #define	Bus485CtlPort			GPIOA
 #define	Bus485CtlPin			GPIO_Pin_1
 #define	Bus485BaudRate		19200											//波特率
-#define	Bus485DataSize		64												//一条消息携带的最大数据个数
+#define	Bus485DataSize		16												//一条消息携带的最大数据个数
 
 #define	DPPort	GPIOB				//小数点控制端口
 #define	DPPin		GPIO_Pin_4	//小数点控制微管脚

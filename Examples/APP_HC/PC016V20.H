@@ -32,7 +32,7 @@
 #define	ICCardReadPort3					UART4			//J3
 #define	ICCardReadPort4					UART5			//J4---不支持DMA传输
 #define	ICCardReadBaudRate			19200
-#define	ICCardReadBufferSize		32				//接收到IC读卡器完整数据大小（协议+数据）
+#define	ICCardReadBufferSize		22				//接收到IC读卡器完整数据大小（协议+数据）
 //#define	ICCardDataSize					16				//IC卡数据大小（有效卡号字节长度）
 #define	ICDataStartByte					2					//16字节数据中有效卡号起始位 0~15
 #define	ICDataNum								3					//16字节数据中有效卡号字节数
@@ -40,13 +40,15 @@
 #define	CardStartByte						0					//16字节数据中有效卡号起始位 0~15
 #define	CardLength							4					//16字节数据中有效卡号字节数
 
+//==============复用端口
+
 //==============端口---总线485
 #define	Bus485Port				USART2
 #define	Bus485CtlPort			GPIOA
 #define	Bus485CtlPin			GPIO_Pin_1
 #define	Bus485BaudRate		19200											//波特率
 #define	BusDataSize				256												//一条消息携带的最大数据个数
-#define	Bus485BufferSize	sizeof(sCommunicationDef)	//一条消息的最大缓存大小（协议数据+数据）
+#define	Bus485BufferSize	300												//一条消息的最大缓存大小（协议数据+数据）
 #define	CommProtocolLenth		11											//标准协议部分数据长度//sizeof(sCommHeadDef)+sizeof(sCommStartDef)+sizeof(sCommAddrDef)+sizeof(eCommErrorCodeDef)
 #define	CommBasicLenth			4													//数据长度nLength中地址和状态码的长度
 
@@ -55,7 +57,7 @@
 #define	Seg485CtlPort			GPIOB
 #define	Seg485CtlPin			GPIO_Pin_5
 #define	Seg485BaudRate		19200
-#define	Seg485BufferSize	16
+#define	Seg485BufferSize	22
 //==============端口---锁
 #define	LockPort(n)		LockPort##n
 #define	LockPin(n)		LockPin##n
@@ -74,6 +76,10 @@
 
 #define	DefaultOnTime	30000				//默认锁吸合时间30S
 #define	MaxOnTime			120000			//锁吸合最大时间120S	2分钟
+#define	SegOnTime			30000				//插入药箱后数码管常亮时间30S
+
+
+#define	Pt(n)	GPIO_SetBits(LockPort(n),	LockPin(n))
 
 //u8 ICCARD_CMD_GetDataBlock1[] =
 //{
@@ -92,30 +98,32 @@
 //	0x0D,		/* Crc16-LOW */
 //	0x1E   	/* F-End*/						//为帧尾，上位机下发时固定为0X1E，下位机应答时固定为0X2D；
 //};
-
-
-//=========================盒子
-typedef	enum	_ePortNum		//端口编号
+typedef enum
 {
-	ePort1	=	1,
-	ePort2	=	2,
-	ePort3	=	3,
-	ePort4	=	4
-}ePortNumDef;
-//=========================通讯
-typedef	enum	_BoxStatus
+	eGetID	=	0x92,		//上位机主动获取ID请求应答命令
+	eSendID	=	0x93,		//下位机主动上传ID号命令
+	eLock		=	0x93,		//锁控制命令上报
+}BusCmdDef;
+typedef enum
 {
-	BoxOn		=	0x01,			//无盒子或者取出
-	BoxOff	=	0x02			//有盒子
-}BoxStatusDef;
+	eNoErr		=	0x00,		//无错误
+	eNoData		=	0x23,		//无药箱数据
+	eBoxTout	=	0x24,		//取药箱超时
+	eBoxOff		=	0x25,		//药箱取走
+	eBoxBack	=	0x26,		//药箱收回
+	eReadErr	=	0x27,		//读卡器通讯异常
+}StatusCodeDef;
+typedef enum
+{
+	eHead			=	0x7E,		//头标识
+	eEnd			=	0x7F,		//结束标识
+}BusFarmeDef;
 //=========================读卡器
 typedef	struct	_ICCRC16
 {
 	u8 CRC_H;
 	u8 CRC_L;
 }ICCRC16Def;
-
-
 
 typedef	struct	_ICBuffer			//读卡器数据格式
 {
@@ -140,188 +148,36 @@ typedef	struct	_ICReadCmd		//读卡命令格式
 	u8 End;
 }ReadCmdDef;
 
-
-//=========================通讯
-typedef	enum	_eCommHead
-{
-	eCommHead1	=	0xFA,
-	eCommHead2	=	0xF5
-}eCommHeadDef;
-#define IS_eCommHead(Head) (	Head == eCommHead1 ||	Head == eCommHead2	)
-typedef	enum	_eCommErrorCode
-{
-	eCommErr00	=	0x00,		//无错误
-	eCommErr01	=	0x01,		//忙状态
-	eCommErr02	=	0x02,		//数据非法
-	eCommErr03	=	0x03,		//
-	eCommErr04	=	0x04,		//
-	eCommErr05	=	0x05,		//
-	eCommErr06	=	0x06,		//
-	eCommErr07	=	0x07,		//
-	eCommErr08	=	0x08,		//
-	eCommErr09	=	0x09,		//
-	eCommErr10	=	0x0A,		//
-	eCommErr11	=	0x0B,		//
-	eCommErr12	=	0x0C,		//
-	eCommErr13	=	0x0D,		//
-	eCommErr14	=	0x0E,		//
-	eCommErr15	=	0x0F,		//
-	eCommErr16	=	0x11,		//抽屉开状态
-	eCommErr17	=	0x12,		//抽屉关状态
-	eCommErr18	=	0x13,		//称重数据不稳定
-	eCommErr19	=	0x14,		//
-	eCommErr20	=	0x15,		//
-	eCommErr21	=	0x16,		//
-	eCommErr22	=	0x17,		//
-	eCommErr23	=	0x18,		//
-	eCommErr24	=	0x19,		//
-	eCommErr25	=	0x1A,		//
-	eCommErr26	=	0x1B,		//
-	eCommErr27	=	0x1C,		//
-	eCommErr28	=	0x1D,		//
-	eCommErr29	=	0x1E,		//
-	eCommErr30	=	0x1F,		//
-	eCommErr31	=	0x1F,		//
-	eCommErr32	=	0x20,		//
-	eCommErr33	=	0x21,		//单位重量错误
-	eCommErr34	=	0x22,		//余量不足
-	eCommErr35	=	0x23,		//无药箱数据/无卡
-	eCommErr36	=	0x24,		//取药箱超时
-	eCommErr37	=	0x25,		//药箱取走
-	eCommErr38	=	0x26,		//药箱收回
-	eCommErr39	=	0x27		//读卡器通讯异常
-}eCommErrorCodeDef;
-//================命令类型
-typedef	enum	_eCommCmd
-{
-	eCommCmd00	=	0x00,		//未定义----
-	eCommCmd01	=	0x01,		//写入数量
-	eCommCmd02	=	0x02,		//强制弹出
-	eCommCmd03	=	0x03,		//未定义----
-	eCommCmd04	=	0x04,		//加药
-	eCommCmd05	=	0x05,		//未定义----
-	eCommCmd06	=	0x06,		//取药
-	eCommCmd07	=	0x07,		//盘点
-	eCommCmd08	=	0x08,		//写入提示
-	eCommCmd09	=	0x09,		//写入注释
-	eCommCmd10	=	0x0A,		//
-	eCommCmd11	=	0x0B,		//
-	eCommCmd12	=	0x0C,		//
-	eCommCmd13	=	0x0D,		//
-	eCommCmd14	=	0x0E,		//
-	eCommCmd15	=	0x0F,		//
-	eCommCmd16	=	0x11,		//
-	eCommCmd17	=	0x12,		//获取指定IC卡号
-	eCommCmd18	=	0x13		//开锁取药箱
-}eCommCmdDef;
-#define IS_eCommCmd(Cmd) (	Cmd == eCommCmd17 ||	Cmd == eCommCmd18	)
-//================应答类型
-typedef	enum	_eCommAck
-{
-	eCommAck00	=	0x00,		//
-	eCommAck01	=	0x01,		//
-	eCommAck02	=	0x02,		//
-	eCommAck03	=	0x03,		//
-	eCommAck04	=	0x04,		//
-	eCommAck05	=	0x05,		//
-	eCommAck06	=	0x06,		//
-	eCommAck07	=	0x07,		//
-	eCommAck08	=	0x08,		//
-	eCommAck09	=	0x09,		//
-	eCommAck10	=	0x0A,		//
-	eCommAck11	=	0x0B,		//
-	eCommAck12	=	0x0C,		//
-	eCommAck13	=	0x0D,		//
-	eCommAck129	=	0x81,		//写入数量
-	eCommAck130	=	0x82,		//强制弹出
-	eCommAck131	=	0x83,		//
-	eCommAck132	=	0x84,		//加药
-	eCommAck133	=	0x85,		//
-	eCommAck134	=	0x86,		//取药
-	eCommAck135	=	0x87,		//盘点
-	eCommAck136	=	0x88,		//写入提示
-	eCommAck137	=	0x89,		//写入注释
-	eCommAck138	=	0x8A,		//
-	eCommAck139	=	0x8B,		//
-	eCommAck145	=	0x91,		//
-	eCommAck146	=	0x92,		//获取指定IC卡号应答
-	eCommAck147	=	0x93		//开锁取药箱
-}eCommAckDef;
-//================运行状态
-typedef	enum	_eRunStep
-{
-	eIDLE,				//空闲/释放
-	eCheckBox,		//检查药箱
-	eUpdataSeg,		//更新数码管
-	eGetBox,			//取药箱
-	eLockSet
-}eRunStepDef;		//运行状态
-//================识别符结构体0xFA 0xF5
-typedef	struct	_sCommHead
-{
-	eCommHeadDef	eHead1;
-	eCommHeadDef	eHead2;
-}sCommHeadDef;
-//================起始段数据结构体
-typedef	struct	_sCommStart
-{	
-	u8 						nSerial;		//流水号0x01~0xFF
-	eCommCmdDef 	eCmd;				//命令号：
-	u8						nBcc8;			//8位数异或校验码：地址段+异常码+数据段 校验
-	u8						nUserCode;	//用户码0x01~0xFF,上位机使用标识，不做处理，原数返回
-	u8						nLength;		//地址段+异常码+数据段 的总字节数
-}sCommStartDef;
-//================地址段结构体
-typedef	struct	_sCommAddr
-{	
-	u8 	Addr1;		//柜地址(单元柜号)
-	u8 	Addr2;		//层地址
-	u8	Addr3;		//槽地址（端口号）
-}sCommAddrDef;
-//================总线通讯结构体（通讯协议）
-typedef	struct	_sCommunication
-{
-	sCommHeadDef			sHead;								//识别符	0xFA 0xF5
-	sCommStartDef			sStart;								//起始段
-	sCommAddrDef			sAddr;								//地址段
-	eCommErrorCodeDef eErrorCode;						//异常码(状态码）
-	u8 								data[BusDataSize];		//DataBuffer
-}sCommunicationDef;
-
-
 //================485总线通讯结构体（病区柜）
 typedef	struct	_sFarme
 {
-	u8	Head;								//识别符	0x7E
-	u8	dAdd;								//目标地址（暂时理解为单元柜地址）
-	u8	sAdd;								//源地址 下发为0x00
-	u8	SN;				//流水号
-	u8	Cmd;	//命令号：0x12-获取指定IC卡号，0x13取药
-	u8	Ucode;		//用户码：不处理，原样返回
-	u8	Length;		//数据长度
+	u8	Head;			//b0识别符	0x7E
+	u8	dAdd;			//b1目标地址（暂时理解为单元柜地址）下发为接收地址，上传为0x00
+	u8	sAdd;			//b2源地址 下发为0x00，上传为本地址
+	u8	SN;				//b3流水号 0x01~0xFF 每次使用后加1
+	u8	Cmd;			//b4命令号：0x12-获取指定IC卡号，0x13取药
+	u8	Ucode;		//b5用户码：不处理，原样返回
+	u8	Length;		//b6地址+异常码固定长度为4，卡数据长度为3
 	
-	u8 	Addr1;		//柜地址(单元柜号)
-	u8 	Addr2;		//层地址
-	u8	Addr3;		//槽地址（端口号）	
+	u8 	Addr1;		//b7柜地址(单元柜号)
+	u8 	Addr2;		//b8层地址
+	u8	Addr3;		//b9槽地址（端口号）	
 	
 	u8	data[BusDataSize];		//DataBuffer
 	
 	u8	EC;				//错误码
-	u8	Bcc8;			//异或校验	//计算范围为起始段到数据段(dAdd~data[n])
+	u8	Bcc8;			//异或校验	//计算范围为起始段到数据段(dAdd~data[n])到错误码
 	u8	End;			//结束符
 }sFarmeDef;
-
-
-////=======================更新数码管结构体
-typedef struct _SegFlg
-{
-	unsigned char Seg1	:2;		//显示数值	：	0-不处理，		1-显示，2-显示点，3-点闪烁
-	unsigned char Seg2	:2;		//显示点		：	0-不显示，		1-显示
-	unsigned char Seg3	:2;		//数值模式	：	0-静态显示，	1-0.5S闪烁
-	unsigned char Seg4	:2;		//点模式		：	0-静态显示，	1-0.5S闪烁
-} SegFlgDef;
-
-//=======================命令结构体
+//typedef	struct	_sBusData
+//{
+//	u8	dAdd;			//目标地址（暂时理解为单元柜地址）上级请求下级的地址
+//	u8	Ucode;		//用户码：不处理，原样返回
+//	u8 	Addr1;		//柜地址(单元柜号)
+//	u8 	Addr2;		//层地址
+//	u8	Addr3;		//槽地址（端口号）	
+//}sBusDataDef;
+//=======================================================数码管通讯结构体：插入药箱常亮30S；取药箱请求：一定时间内闪烁；无药箱：小数点一直闪烁；读卡通讯故障：小数点常亮
 typedef struct _SegCmd
 {
 	unsigned char DispEnNum	:1;		//bit0显示数值	：	0-不显示，		1-显示
@@ -333,88 +189,91 @@ typedef struct _SegCmd
 
 typedef struct _sSeg 
 {
-	unsigned char desAddr;				/*目的地址*/
+	unsigned char desAddr;				//目的地址---数码管拔码地址
 	unsigned char srcAddr;				/*源地址*/
 	unsigned char runningNumber;	/*流水号*/
 	SegCmdDef			cmd;						/*命令*/
 	unsigned char len;						/*长度*/
-	unsigned char data[8];				/*数据,高位在前,data[0~3]为显示内容,data[4~7]为闪烁时间,0表示不闪烁*/ //显示时间为0xFFFF FFFF表示为常亮
+	unsigned char data[8];				/*数据,高位在前,data[0~3]为显示内容,data[4~7]为闪烁时间*/ 
 } sSegDef;			//数码管数据结构体
-
-
+//=======================================================锁结构体
 typedef	struct	_LockFlag		//锁控制标志及吸合时间
 {
 	unsigned long	On					:1;		//0-不处理，1-开锁
 	unsigned long	Off					:1;		//0-不处理，1-释放锁
 	unsigned long	LockOnTime	:30;	//锁吸合时间，最大值0x3FFF FFFF
+	GPIO_TypeDef*	GPIOx;
+	u16	GPIO_Pin_n;
 }LockFlagDef;
+//=======================================================时间结构体
 typedef	struct	_Time		//锁控制标志0--不处理，1--开锁操作
 {
 	unsigned long	TimeSYS;	//系统计时器
 	unsigned long	TimeSEG;	//数码管更新数据计时器----可用于检测数码管通讯状态 20ms外发一个数码管状态
 	unsigned long	TimeBOX;	//药箱检测计时器	每个端口分配100mS时间检测----可用于检测读卡器通讯状态
 	unsigned long	TimeBUS;	//外部总线时间
+	unsigned long	TimeCard;	//读卡器时间
 }TimeDef;
+//=======================================================槽位状态结构体
 typedef	struct	_sBoxStatus		//端口状态--：有卡/无卡
 {
-	unsigned short	BoxFlg	:1;	//bit0：0-无卡,1-有卡
-	unsigned short	BoxPro	:1;	//bit1：0-药箱无操作记录，1-药箱有操作记录（取药）;之前操作为取药，重新获取到卡表示药箱已收回
-	unsigned short	BoxSta	:1;	//bit2：0-无操作，1-药箱收回,收回后需要上报药箱号
-	unsigned short	BoxRead	:1;	//bit3：0-读卡器正常，1-读卡器通讯异常
-	unsigned short	BoxSeg	:1;	//bit4：0-无操作，1-需要未将卡号发给数码管
-	unsigned short	BoxCmd	:1;	//bit5：0-无操作，1-获取IC卡号操作
-	unsigned short	BoxDel	:1;	//bit6：0-无待处理操作，	1-移除药箱请求(数码管数值闪烁)
-	unsigned short	RecData	:1;	//bit7：0-无接收到卡数据，1-有接收到卡数据
-	unsigned short	ClrData	:1;	//bit8：0-无操作，1-请求清除药箱在线状态
+	unsigned short	BoxFlg		:1;	//bit0：0-无卡,1-有卡
+	unsigned short	BoxPro		:1;	//bit1：0-药箱无操作记录，1-药箱有操作记录（取药）;之前操作为取药，重新获取到卡表示药箱已收回
+	unsigned short	BoxBack		:1;	//bit2：0-无操作，1-药箱收回,收回后需要上报药箱号（有BoxOff标志时设置此位）
+	unsigned short	BoxRead		:1;	//bit3：0-读卡器正常，1-读卡器通讯异常
+	unsigned short	BoxSeg		:1;	//bit4：0-无操作，1-需要更新数码管
+	unsigned short	BoxOff		:1;	//bit5：0-无操作，1-药箱被取走（有BoxDel请求时设置此位）
+	unsigned short	BoxDel		:1;	//bit6：0-无待处理操作，	1-移除药箱请求(数码管数值闪烁)
+	unsigned short	RecData		:1;	//bit7：0-无接收到卡数据，1-有接收到卡数据
+	unsigned short	ClrData		:1;	//bit8：0-无操作，1-删除数据请求(药箱不在）需要删除数据及更新数码管
+//	unsigned short	BoxEnNum	:1;	//bit9：显示数值	：	0-不显示，		1-显示
+//	unsigned short	BoxMdNum	:1;	//bit10：数值模式	：	0-静态显示，	1-0.5S闪烁
+//	unsigned short	BoxEnDp		:1;	//bit11：显示点		：	0-不显示，		1-显示
+//	unsigned short	BoxMdDp		:1;	//bit12：点模式		：	0-静态显示，	1-0.5S闪烁
+	unsigned short	GetID			:1;	//bit13：获取ID请求：	0-无请求，		1-有请求	，需要上报ID
+	unsigned short	SendID		:1;	//bit14：主动上报ID标志：	0-无操作，		1-检测到药箱插入	，需要上报ID
 }sBoxStatusDef;
 
-typedef	struct	_PortFlag	
-{
-	unsigned char	Port1Flg;	//bit0:0无卡,1有卡；bit1：0药箱无操作记录，1药箱有操作记录；bit1：0药箱取走，1药箱收回；bit3：1-有卡,2-药箱取走，3-读卡器通讯异常
-	unsigned char	Port2Flg;
-	unsigned char	Port3Flg;
-	unsigned char	Port4Flg;
-}PortFlagDef;
-
-typedef	struct	_ICData	//IC卡数据
-{
-	u8	Port1Data[ICDataNum];
-	u8	Port2Data[ICDataNum];
-	u8	Port3Data[ICDataNum];
-	u8	Port4Data[ICDataNum];
-}ICDataDef;
-
-
-//=========端口/槽位所有信息结构体
+//=======================================================端口/槽位所有信息结构体
 typedef	struct	_Port
 {
 	sBoxStatusDef		Status;								//箱子状态
 	sSegDef					Seg;									//数码管数据结构体
 	LockFlagDef			Lock;									//锁信息
+//	sBusDataDef			BusData;							//保存上级下发的相关数据
 	unsigned char 	CardData[CardLength];	//卡号数据CardData[0]为百位，CardData[1]为十位，CardData[2]为个位
 	unsigned long		CardNumber;						//十进制
 	unsigned short	TimeCount;						//计时器	
 	unsigned char		Ucode;								//用户码
-	unsigned char		Cmd;									//上位机下发的命令
+	unsigned char		PortNum;							//槽地址（端口号）
 } PortDef;
-	
-//==========板内端口
+//=======================================================运行步骤
+typedef	struct	_Step
+{
+	unsigned char 	ReadCard		:1;			//bit0:	0-未执行读卡,需要读卡，		1-已读完卡
+	unsigned char 	WriteSeg		:1;			//bit1:	0-未更新数码管,需要更新，	1-已更新(读卡过程中不更新数码管，免得占用串口）
+} StepDef;	
+//=======================================================板内端口/板内数据
 typedef	struct	_sBorad		//端口状态--：有卡/无卡
 {
 	PortDef	Port1;
 	PortDef	Port2;
 	PortDef	Port3;
 	PortDef	Port4;
+	StepDef	Step;
+	TimeDef	Time;		//各功能计时器
+	u8	Nserial;		//流水号 1~0xFF
 }sBoradDef;
 
 
-
-
-extern sSegDef	sSeg;			//数码管数据结构体
-extern SegFlgDef	SegFlg;	//更新数码管结构体	
-//=========================运行
+//=======================================================全局变量
+extern sBoradDef	sBorad;					//端口/槽位所有信息结构体
 extern SWITCHID_CONF	SWITCHID;			//拔码开关
-//extern LockFlagDef	LockFlag;				//锁控制标志0--不处理，1--开锁操作，当层需要检测药箱状态并在状态更新后上报结果
+
+//==============读卡器命令
+extern const u8 CardReaderCmd_SetArea[14];		//设置读卡器读卡区域命令
+extern const u8 CardReaderCmd_ReadData[14];		//读卡命令
+
 
 //==============485结体体
 extern RS485_TypeDef	RS485_Bus;	//总线通讯485
@@ -427,31 +286,14 @@ extern sFarmeDef	sFarmeRxd;		//总线485数据结构体---接收
 extern sFarmeDef	sFarmeRev;		//总线485数据结构体---缓存
 extern u8 RS485BusTxd[Bus485BufferSize];
 
-extern sCommunicationDef	sCommData;				//总线485数据结构体---待处理
-extern sCommunicationDef	sCommDataTxd;			//总线485数据结构体---发送
-extern sCommunicationDef	sCommDataRxd;			//总线485数据结构体---接收
-extern sCommunicationDef	sCommDataRev;			//总线485数据结构体---缓存
-
-//extern u8 RS485BusTxd[Bus485BufferSize];
-//extern u8 RS485BusRxd[Bus485BufferSize];
-//extern u8 RS485BusRev[Bus485BufferSize];
 
 extern u8 Seg485Txd[Seg485BufferSize];
 extern u8 Seg485Rxd[Seg485BufferSize];
 extern u8 Seg485Rev[Seg485BufferSize];
 
 //==============读卡器缓冲区
-//extern sGetIDflagDef	sGetID;					//获取ID请求标志
-//extern PortFlagDef	PortFlag;	//端口状态--：有卡/无卡
-extern sBoradDef	sBorad;					//端口/槽位所有信息结构体
-//extern sBoxStatusDef	sBoxStatus;			//各药箱状态
-extern sBoxStatusDef	sBoxStatus1;	//药箱1状态
-extern sBoxStatusDef	sBoxStatus2;	//药箱2状态
-extern sBoxStatusDef	sBoxStatus3;	//药箱3状态
-extern sBoxStatusDef	sBoxStatus4;	//药箱4状态
 extern ReadCmdDef	ReadCmd;			//读卡命令
 extern u8	CardData[CardLength];		//卡有效数据缓存						
-extern ICDataDef	ICData;				//4个端口IC数据
 extern u8 ICCardReadRxd[ICCardReadBufferSize];
 extern u8 ICCardReadRev[ICCardReadBufferSize];
 
@@ -473,73 +315,57 @@ extern u8 ICCardReadCount3;
 extern u8 ICCardReadCount4;
 
 //==============其它变量
-extern eRunStepDef	eRunStep;		//运行状态
+
 extern u8 SwitchData;						//存储拔码开关最新地址，如果地址变化，再重新配置运行参数
 extern u32	SYSTIME;						//系统计时器
 extern TimeDef	SYSTime;				//系统运行相关计时器
 extern u32	Port4TimeOut;				//端口4连续读数超时
-//extern u32	LockOnTime[4];		//锁吸合时间，如果时间为0则释放锁
 
 
-
-
-
-//========================主程序
+//=================================================================================================================主程序
 void PC016V20_Configuration(void);
 void PC016V20_Server(void);
 
-//========================服务程序
 
+
+//=================================================================================================================协议程序
 void RS485_Server(void);							//RS485收发处理
-u8 ICCardReader_Server(void);					//读取IC卡数据
-void Lock_Server(sBoradDef*	sBorad);
-
-
-
-
-//========================配置程序
-void RS485_Configuration(void);					//RS485配置
-void ICCardReader_Configuration(void);	//读卡器配置
-void SWITCHID_Configuration(void);			//拔码开关初始化及读数
-void Lock_Configuration(void);			//锁初始化
-
-
-//========================驱动程序
-void ICCardReader_Read(u8 Num,u32* Cmd);				//读相应端口的卡
-void CardReader_Set(void);							//设置读头读卡扇区、块号、KEYA/KEYB、读卡密码0x44
-void ICCardReader_ReadAll(void);			//发送4个端口读卡指令
-void ICCardReader_CheckCard(void);
-//void ICCardDataPacket(void);		//数据打包
-
-void SegSendData(u8	Port,u32 Data,u32 Time);			//向数码管发显示数据
-
-
-void LockOnTimeSet(void);			//设置锁吸合时间
-void ResetData(void);					//重置相关变量
-
-//=======================
-void ProtocolFrameServer(void);		//协议服务
-void ProtocolFrameGet(void);			//按照协议打包数据
-void ProtocolFrameSetData(void);			//按照协议建立数据包
-void ProtocolFrameAnalysis(sCommunicationDef* sCommData,sCommunicationDef* sCommDataTxd);	//根据协议分析数据
-void ProtocolFrameSend(sCommunicationDef* sCommData);			//根据协议打包发送帧数据
-
 
 void BusFrameAck(sFarmeDef*	sFarme);			//外部总线应答
-void BusFrameProcess(sFarmeDef*	sFarme,sBoradDef*	sBorad);			//外部总线应答
+void MessageProcess(sFarmeDef*	sFarme,sBoradDef*	sBorad);				//外部总线消息处理
 
-void BusFrameProcessData(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//数据命令处理
+void BusFrameProcessGetID(sFarmeDef*	sFarme,sBoradDef*	sBorad);		//数据命令处理
+void BusFrameProcessGetBox(sFarmeDef*	sFarme,sBoradDef*	sBorad);		//数据命令处理---取药
+
+void BusFrameProcessSendBox(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//发送药箱数据
+
+void BusFrameProcessPacketAndSend(sFarmeDef*	sFarme);					//按照协议打包数据并发送
 void BusFrameProcessLock(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//锁命令处理
+//=======================
 
-void BoardServer(sBoradDef*	sBorad);										//
 
-void BoardGetCardData(sCommunicationDef* sCommData);		//获取IC卡数据或者状态
+//=================================================================================================================读卡器程序
+u8 	 BoardCardReaderServer(void);					//读取IC卡数据
+void BoardCardReaderReadAll(sBoradDef*	sBorad);			//发送4个端口读卡指令
 void BoardSaveCardData(sBoradDef*	sBorad);		//根据状态保存卡号及设置相关状态
 void BoardClrCardData(sBoradDef*	sBorad);		//删除卡号数据及设置相关状态
 
-void BoardSetLockTime(sCommunicationDef* sCommData);		//设置锁吸合时间
-
+//=================================================================================================================数码管控制程序
 void BoardSetSeg(sBoradDef*	sBorad);			//根据标志设置数码管状态（无箱，有箱，取箱，读卡通讯不良）
+//=================================================================================================================锁程序
+void Lock_Server(sBoradDef*	sBorad);
+//=================================================================================================================硬件驱动程序
+void HALUsartRemapEnable(void);				//使能串口复用
+void HALUsartRemapDisable(void);			//关闭串口复用
+void HALSendSeg(u32* Buffer);					//向数码管发送数据
+
+//=================================================================================================================配置程序
+void Lock_Configuration(void);				//锁初始化
+void Switch_Configuration(void);			//拔码开关初始化及读数
+void RS485_Configuration(void);				//RS485配置
+void CardReader_Configuration(void);	//读卡器配置
+void Data_Initialize(void);						//参数初始化
+void ResetData(void);									//重置相关变量
 #endif
 
 

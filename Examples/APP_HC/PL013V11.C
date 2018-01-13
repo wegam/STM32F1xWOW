@@ -86,7 +86,7 @@ void PL013V11_Configuration(void)
 	
 	IWDG_Configuration(1000);							//独立看门狗配置---参数单位ms
 	
-	SysTick_Configuration(1000);					//系统嘀嗒时钟配置72MHz,单位为uS
+	SysTick_Configuration(200);					//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	CD4511_DisplayClear();		//清除显示
 }
@@ -104,7 +104,7 @@ void PL013V11_Server(void)
 	
 	IWDG_Feed();											//独立看门狗喂狗	
 	SYSTIME++;	
-	if(SYSTIME>=1000)
+	if(SYSTIME>=10000)	//2秒
 	{
 		SYSTIME=0;	
 		SwitchIdServer();		//检测拔码值有无变化，有则更新ID
@@ -113,7 +113,7 @@ void PL013V11_Server(void)
 	RS485_Server();										//RS485接收数据
 	
 	DataServer();			//处理接收到的有效数据
-
+	if(SYSTIME%10	==	0)	//1ms
 	DisplayServer();	//显示服务程序，根据显示命令刷新
 	
 	
@@ -233,7 +233,7 @@ void CD4511_DISPALY(u8 wei,u16 num)
 	
 	if(wei==0)		//小数点
 	{
-		if(wei==0&&num==0)		//小数点
+		if(num==0)		//小数点
 		{
 			GPIO_SetBits(PortA1,PinA1);
 			GPIO_SetBits(PortA3,PinA3);
@@ -242,10 +242,13 @@ void CD4511_DISPALY(u8 wei,u16 num)
 		}
 		else			//关显示
 		{
+			GPIO_ResetBits(PortEN1,PinEN1);
+			GPIO_ResetBits(PortEN2,PinEN2);
+			GPIO_ResetBits(PortEN3,PinEN3);
 			GPIO_SetBits(PortA1,PinA1);
 			GPIO_SetBits(PortA3,PinA3);
 			GPIO_ResetBits(DPPort,DPPin);
-			GPIO_SetBits(PortEN1,PinEN1);
+			
 		}
 		return;
 	}
@@ -347,7 +350,7 @@ void CD4511_DisplayClear(void)		//清除显示
 *******************************************************************************/
 void CD4511_DisplayDp(void)		//个位显示小数点
 {
-	CD4511_DISPALY(0,0);
+	CD4511_DISPALY(0,0);				//个位显示小数点
 }
 /*******************************************************************************
 *函数名		:	function
@@ -365,7 +368,8 @@ void RS485_Server(void)
 	{
 		if(sReceFarmeRev.desAddr	==	SwitchID)
 		{
-			memcpy((u8*)&sReceFarmeSrv,(u8*)&sReceFarmeRev,Bus485DataSize);
+			memcpy((u8*)&sReceFarmeSrv,(u8*)&sReceFarmeRev,sizeof(sReceFarmeDef));
+//			DataServer();		//处理接收到的有效数据
 		}
 //		else
 //		{
@@ -389,7 +393,7 @@ void DataServer(void)		//处理接收到的有效数据
 	{
 		return;
 	}
-	if(sReceFarmeSrv.desAddr)			//地址数据已加入，表示有新的有效数据
+	if(sReceFarmeSrv.desAddr	==	SwitchID)			//地址数据已加入，表示有新的有效数据
 	{
 		
 		u32	Num	=	0;
@@ -488,7 +492,8 @@ void DisplayServer(void)		//显示服务程序，根据显示命令刷新
 		}
 		else if(DspCmd.DispEnDp)		//显示点		：	0-不显示，		1-显示
 		{
-			GPIO_SetBits(DPPort,	DPPin);
+//			CD4511_DISPALY(0,0);				//个位显示小数点
+			CD4511_DisplayDp();		//个位显示小数点
 		}
 	}
 	else

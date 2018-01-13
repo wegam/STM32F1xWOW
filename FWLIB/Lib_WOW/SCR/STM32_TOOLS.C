@@ -49,7 +49,6 @@ u8 BCC8(u8 *Pointer,u16 num)			//“ÏªÚ–£—È
 	for(i_Num=0;i_Num<num;i_Num++)
 	{
 		temp=temp^Pointer[i_Num];
-//		Pointer++;	
 	}
 	return temp;
 }
