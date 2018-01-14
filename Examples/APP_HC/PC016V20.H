@@ -50,7 +50,9 @@
 #define	BusDataSize				256												//一条消息携带的最大数据个数
 #define	Bus485BufferSize	300												//一条消息的最大缓存大小（协议数据+数据）
 #define	CommProtocolLenth		11											//标准协议部分数据长度//sizeof(sCommHeadDef)+sizeof(sCommStartDef)+sizeof(sCommAddrDef)+sizeof(eCommErrorCodeDef)
-#define	CommBasicLenth			4													//数据长度nLength中地址和状态码的长度
+#define	CommBasicLenth			4												//数据长度nLength中地址和状态码的长度
+#define	FixedAddrLenth			4												//固定数据长度nLength中地址和状态码的长度
+#define	FixedDataLenth			3												//固定数据长度-----卡号数据
 
 //==============端口---数码管485
 #define	Seg485PortRmap		USART1		//端口重定义
@@ -76,6 +78,7 @@
 
 #define	DefaultOnTime	30000				//默认(最小)锁吸合时间30S
 #define	MaxOnTime			120000			//锁吸合最大时间120S	2分钟
+#define	LockOffTime		5000				//药箱取走后锁释放时间3S
 #define	SegOnTime			30000				//插入药箱后数码管常亮时间30S
 
 
@@ -164,9 +167,10 @@ typedef	struct	_sFarme
 	u8 	Addr2;		//b8层地址
 	u8	Addr3;		//b9槽地址（端口号）	
 	
-	u8	data[BusDataSize];		//DataBuffer
-	
 	u8	EC;				//错误码
+	
+	u8	data[BusDataSize];		//DataBuffer	
+	
 	u8	Bcc8;			//异或校验	//计算范围为起始段到数据段(dAdd~data[n])到错误码
 	u8	End;			//结束符
 }sFarmeDef;
@@ -187,8 +191,7 @@ typedef struct _SegCmd
 	unsigned char DispMdDp	:1;		//bit3点模式		：	0-静态显示，	1-0.5S闪烁
 	unsigned char DispTime	:1;		//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
 } SegCmdDef;
-
-typedef struct _sSeg 
+typedef struct _sSegFarme 	//数码管通讯数据格式
 {
 	unsigned char desAddr;				//目的地址---数码管拔码地址
 	unsigned char srcAddr;				/*源地址*/
@@ -196,13 +199,21 @@ typedef struct _sSeg
 	SegCmdDef			cmd;						/*命令*/
 	unsigned char len;						/*长度*/
 	unsigned char data[8];				/*数据,高位在前,data[0~3]为显示内容,data[4~7]为闪烁时间*/ 
-} sSegDef;			//数码管数据结构体
+} sSegFarmeDef;			//数码管数据结构体
+
 //=======================================================锁结构体
 typedef	struct	_LockFlag		//锁控制标志及吸合时间
 {
-	unsigned long	On					:1;		//0-不处理，1-开锁
-//	unsigned long	Off					:1;		//0-不处理，1-释放锁
-	unsigned long	LockOnTime	:30;	//锁吸合时间，最大值0x3FFF FFFF
+	struct
+	{
+		unsigned char LockFlg		:1;	//bit0：0-无操作,1-有操作请求(控制锁的状态）
+		unsigned char LockOn		:1;	//bit1：0-释放锁，1-开锁
+		unsigned char LockSts		:1;	//bit2：0-已释放，1-已开锁
+		unsigned char LockTout	:1;	//bit3：0-未超时，1-已超时(取药超时)
+	}sLockSts;		//药箱状态
+//	unsigned long	On					:1;		//0-不处理，1-开锁
+//	unsigned long	Status			:1;		//0-锁未开，1-已开
+	unsigned long	LockOnTime	;	//锁吸合时间，最大值0x3FFF FFFF
 	GPIO_TypeDef*	GPIOx;
 	u16	GPIO_Pin_n;
 }LockFlagDef;
@@ -218,30 +229,73 @@ typedef	struct	_Time		//锁控制标志0--不处理，1--开锁操作
 //=======================================================槽位状态结构体
 typedef	struct	_sBoxStatus		//端口状态--：有卡/无卡
 {
-	unsigned short	BoxFlg		:1;	//bit0：0-无卡,1-有卡
-	unsigned short	BoxBack		:1;	//bit1：0-无操作，1-药箱收回,收回后需要上报药箱号（有BoxOff标志时设置此位）
+//	unsigned short	BoxFlg		:1;	//bit0：0-无卡,1-有卡
+//	unsigned short	BoxBack		:1;	//bit1：0-无操作，1-药箱收回,收回后需要上报药箱号（有BoxOff标志时设置此位）
 	unsigned short	BoxRead		:1;	//bit2：0-读卡器正常，1-读卡器通讯异常
-	unsigned short	BoxSeg		:1;	//bit3：0-无操作，1-需要更新数码管
-	unsigned short	BoxOff		:1;	//bit4：0-无操作，1-药箱被取走（有BoxDel请求时设置此位）
-	unsigned short	RecData		:1;	//bit5：0-无接收到卡数据，1-有接收到卡数据
-	unsigned short	ClrData		:1;	//bit6：0-无操作，1-删除数据请求(药箱不在）需要删除数据及更新数码管
-	unsigned short	GetID			:1;	//bit7：0-无请求，		1-有请求	，获取ID请求需要上报ID
-	unsigned short	GetBox		:1;	//bit8：0-无请求，		1-有请求	，取药(数码管数值闪烁)
-	unsigned short	SendID		:1;	//bit14：0-无操作，	1-检测到药箱插入，主动上报ID，如果是取药，取消主动上报，使用状态上报	
-	unsigned short	SendSts		:1;	//bit10：0-无操作，1-取药状态下药箱变化后需要上报药箱状态或者在无数据情况下上报状态
-	unsigned short	BoxTout		:1;	//bit11：0-无操作，1-取药超时
-	unsigned short	BoxTake		:1;	//bit11：0-无操作，1-药箱被强制取走
-}sBoxStatusDef;
+//	unsigned short	BoxSeg		:1;	//bit3：0-无操作，1-需要更新数码管
+//	unsigned short	BoxOff		:1;	//bit4：0-无操作，1-药箱被取走（有BoxDel请求时设置此位）
+//	unsigned short	RecData		:1;	//bit5：0-无接收到卡数据，1-有接收到卡数据
+//	unsigned short	ClrData		:1;	//bit6：0-无操作，1-删除数据请求(药箱不在）需要删除数据及更新数码管
+//	unsigned short	GetID			:1;	//bit7：0-无请求，		1-有请求	，获取ID请求需要上报ID
+//	unsigned short	GetBox		:1;	//bit8：0-无请求，		1-有请求	，取药(数码管数值闪烁)
+//	unsigned short	SendID		:1;	//bit14：0-无操作，	1-检测到药箱插入，主动上报ID，如果是取药，取消主动上报，使用状态上报	
+//	unsigned short	SendSts		:1;	//bit10：0-无操作，1-取药状态下药箱变化后需要上报药箱状态或者在无数据情况下上报状态
+//	unsigned short	BoxTout		:1;	//bit11：0-无操作，1-取药超时
+//	unsigned short	BoxTake		:1;	//bit12：0-无操作，1-药箱被强制取走
+}sPortStatusDef;
+typedef struct _sSeg 
+{
+	struct
+	{
+		unsigned char SegFlg		:1;	//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+	}sSegSts;		//药箱状态
+	sSegFarmeDef 	SegFarme;
+} sSegDef;			//数码管数据结构体
+//=======================================================药箱结构体
+typedef	struct	_sBox		//端口状态--：有卡/无卡
+{
+	struct
+	{
+		unsigned char BoxFlg		:1;	//bit0：0-无操作,		1-操作
+		unsigned char BoxOn			:1;	//bit1：0-无药箱,		1-有药箱
+		unsigned char ReadID		:1;	//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)
+		unsigned char NoID			:1;	//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
+	}BoxSts;		//药箱状态
+	unsigned char 	CardData[CardLength];	//卡号数据CardData[0]为百位，CardData[1]为十位，CardData[2]为个位
+	unsigned long		CardNumber;						//十进制卡号
+}sBoxDef;
+//=======================================================总线请求结构体
+typedef	struct	_sBus		//端口状态--：有卡/无卡
+{
+	struct
+	{
+		unsigned char BusFlg		:1;	//bit0：0-无操作,	1-有待处理事件(上报数据或者状态）
+		unsigned char GetID			:1;	//bit1：0-无请求，	1-有请求	，获取ID请求需要上报ID
+		unsigned char GetBox		:1;	//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
+		unsigned char GotBox		:1;	//bit3：0-无操作，	1-药箱已被取走
+		unsigned char TakeBox		:1;	//bit4：0-无操作，	1-药箱被强制取
+		unsigned char BoxBack		:1;	//bit5：0-无操作，1-药箱收回,收回后需要上报药箱号（有GotBox标志时设置此位）
+		unsigned char TimeOut		:1;	//bit6：0-无操作，	1-取药超时
+		unsigned char SendID		:1;	//bit7：0-无操作，	1-检测到药箱插入，主动上报ID，如果是取药，取消主动上报，使用状态上报
+		
+	}BusqSts;		//药箱状态
+	unsigned char 	CardData[CardLength];	//卡号数据CardData[0]为百位，CardData[1]为十位，CardData[2]为个位
+	sFarmeDef		sBusFarme;		//485总线结构体
+}sBusDef;
+
 
 //=======================================================端口/槽位所有信息结构体
 typedef	struct	_Port
 {
-	sBoxStatusDef		Status;								//箱子状态
+	sPortStatusDef	Status;								//箱子状态
 	sSegDef					Seg;									//数码管数据结构体
 	LockFlagDef			Lock;									//锁信息
-//	sBusDataDef			BusData;							//保存上级下发的相关数据
-	unsigned char 	CardData[CardLength];	//卡号数据CardData[0]为百位，CardData[1]为十位，CardData[2]为个位
-	unsigned long		CardNumber;						//十进制
+	sBoxDef					sBox;									//药箱相关信息
+	sBusDef					sBus;								//总线请求结构体
+	
+//	sBusDataDef			BusData;						//保存上级下发的相关数据
+	
+//	unsigned long		CardNumber;						//十进制
 	unsigned short	TimeCount;						//计时器	
 	unsigned char		Ucode;								//用户码
 	unsigned char		PortNum;							//槽地址（端口号）
@@ -334,6 +388,9 @@ void RS485_Server(void);							//RS485收发处理
 void BusFrameAck(sFarmeDef*	sFarme);			//外部总线应答
 void MessageProcess(sFarmeDef*	sFarme,sBoradDef*	sBorad);				//外部总线消息处理
 
+void MessageAnalysis(sFarmeDef*	sFarme);		//解析消息
+void MessagePacket(sFarmeDef*	sFarme);			//打包消息
+
 void BusFrameProcessGetID(sFarmeDef*	sFarme,sBoradDef*	sBorad);		//数据命令处理
 void BusFrameProcessGetBox(sFarmeDef*	sFarme,sBoradDef*	sBorad);		//数据命令处理---取药
 
@@ -342,11 +399,13 @@ void BusFrameProcessSendBox(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//发送药箱数据
 void BusFrameProcessPacketAndSend(sFarmeDef*	sFarme);					//按照协议打包数据并发送
 void BusFrameProcessLock(sFarmeDef*	sFarme,sBoradDef*	sBorad);	//锁命令处理
 
-//=================================================================================================================取药
+//=================================================================================================================药箱
+void BoardBoxProcess(sBoradDef*	sBorad);				//药箱处理程序
 void BoardGetBoxProcess(sBoradDef*	sBorad);		//取药操作及取药计时
 
 //=================================================================================================================读卡器程序
 u8 	 BoardCardReaderServer(void);					//读取IC卡数据
+u8 	 BoardCardDataAnalysis(ICBufferDef* CardData);		//读取IC卡数据校验，返回0失败，作废，返回1正确
 void BoardCardReaderReadAll(sBoradDef*	sBorad);			//发送4个端口读卡指令
 void BoardSaveCardData(sBoradDef*	sBorad);		//根据状态保存卡号及设置相关状态
 void BoardClrCardData(sBoradDef*	sBorad);		//删除卡号数据及设置相关状态
@@ -358,7 +417,7 @@ void Lock_Server(sBoradDef*	sBorad);
 //=================================================================================================================硬件驱动程序
 void HALUsartRemapEnable(void);				//使能串口复用
 void HALUsartRemapDisable(void);			//关闭串口复用
-void HALSendSeg(u32* Buffer);					//向数码管发送数据
+void HALSendSeg(u32* Buffer,u16 Length);					//向数码管发送数据
 
 //=================================================================================================================配置程序
 void Lock_Configuration(void);				//锁初始化

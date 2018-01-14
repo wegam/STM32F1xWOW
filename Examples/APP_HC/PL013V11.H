@@ -38,7 +38,7 @@
 //=======================命令结构体
 typedef struct _Cmd
 {
-	unsigned char DispEnNum	:1;		//显示数值	：	0-不显示，		1-显示
+	unsigned char DispEnNum	:1;		//显示数值	：	0-不显示，		1-显示,数值显示优先于点显示，如果有数值显示，则点不显示
 	unsigned char DispEnDp	:1;		//显示点		：	0-不显示，		1-显示
 	unsigned char DispMdNum	:1;		//数值模式	：	0-静态显示，	1-0.5S闪烁
 	unsigned char DispMdDp	:1;		//点模式		：	0-静态显示，	1-0.5S闪烁
@@ -90,6 +90,10 @@ void RS485_Server(void);			//RS485接收数据
 
 void DataServer(void);		//处理接收到的有效数据
 
+void CD4511_DisplayClear(void);		//清除显示包括小数点
+void CD4511_DisplayDp(void);		//个位显示小数点
+void CD4511_DisplayNum(u8 wei,u16 num);		//指定位显示指定数值
+void CD4511_DisplayTest(void);			//显示测试：000~999刷新显示---带小数点
 void DisplayServer(void);		//显示服务程序，根据显示命令刷新
 
 void SwitchIdServer(void);		//检测拔码值有无变化，有则更新ID

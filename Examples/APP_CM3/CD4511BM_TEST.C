@@ -52,14 +52,14 @@ void CD4511BM_TEST_Configuration(void)
 void CD4511BM_TEST_Server(void)
 {
 	++Time;	
-	if(Time>=3)
+	if(Time>=500)
 	{
 		Time=0;	
 		++data;		
 	}
-	if(data>999)
+	if(data>100)
 	{
-		GPIO_Toggle	(GPIOA,	GPIO_Pin_0);		//将GPIO相应管脚输出翻转----V20170605
+//		GPIO_Toggle	(GPIOA,	GPIO_Pin_0);		//将GPIO相应管脚输出翻转----V20170605
 		data=0;
 	}
 	SEG_DISPALY(Time%3,data);
@@ -91,6 +91,8 @@ void CD4511BM_PinSet(void)
 	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_5);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_14);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_15);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
+	
+	GPIO_Configuration_OPP50	(GPIOB,		GPIO_Pin_4);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度2MHz----V20170605
 	
 	//SEG第一位数码管
 	CD4511_Pin1.CD4511_A0_PORT=GPIOB;
@@ -156,31 +158,53 @@ void CD4511BM_PinSet(void)
 *******************************************************************************/
 void SEG_DISPALY(u8 wei,u16 num)
 {
-	CD4511_DisplayOFF(&CD4511_Pin1);			//关闭显示---关NPN三极管
-	CD4511_DisplayOFF(&CD4511_Pin2);			//关闭显示---关NPN三极管
-	CD4511_DisplayOFF(&CD4511_Pin3);			//关闭显示---关NPN三极管
-	if(wei==2)
-	{
-//		if(num>100)
-//		{
-			CD4511_WriteData(&CD4511_Pin3,num/100);
-//		}
-	}
-	else if(wei==1)
-	{
-//		if(num>=10||num>=100)
-//		{
-//			if(num>=100)
-//			{
-				num=num%100;
-//			}
-			CD4511_WriteData(&CD4511_Pin2,num/10);
-//		}
-	}
-	else
-	{
-		CD4511_WriteData(&CD4511_Pin1,num%10);
-	}
+	PB4=1;			//小数点
+	PB5=1;
+	PB14=1;
+	PB15=1;
+	
+//	CD4511_WriteData(&CD4511_Pin3,10);		//BCD转换为Segment输出
+	CD4511_WriteData(&CD4511_Pin3,num);		//BCD转换为Segment输出
+	
+//	CD4511_Clear(&CD4511_Pin3);					//清除输出：bitA~bitG输出低电平
+//	CD4511_WriteData(&CD4511_Pin3,0);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,1);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,2);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,3);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,4);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,5);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,6);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,7);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,8);		//BCD转换为Segment输出
+//	CD4511_WriteData(&CD4511_Pin3,9);		//BCD转换为Segment输出
+	
+//	CD4511_DisplayOFF(&CD4511_Pin1);			//关闭显示---关NPN三极管
+//	CD4511_DisplayOFF(&CD4511_Pin2);			//关闭显示---关NPN三极管
+//	CD4511_DisplayOFF(&CD4511_Pin3);			//关闭显示---关NPN三极管
+//	if(wei==2)
+//	{
+////		if(num>100)
+////		{
+//			CD4511_WriteData(&CD4511_Pin3,num/100);
+////		}
+//	}
+//	else if(wei==1)
+//	{
+////		if(num>=10||num>=100)
+////		{
+////			if(num>=100)
+////			{
+//				num=num%100;
+////			}
+//			CD4511_WriteData(&CD4511_Pin2,num/10);
+////		}
+//	}
+//	else
+//	{
+//		CD4511_WriteData(&CD4511_Pin1,num%10);
+//	}
+
+
 	
 //	if(time%100>0)
 //	{

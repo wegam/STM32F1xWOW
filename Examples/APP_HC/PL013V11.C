@@ -24,7 +24,7 @@
 
 
 //************485通讯数据
-
+CD4511_Pindef	CD4511;
 
 SWITCHID_CONF	SWITCHID;			//拔码开关
 RS485_TypeDef	RS485_Bus;				//总线通讯485
@@ -49,11 +49,11 @@ u8 Bus485Txd[Bus485DataSize]={0};
 u8 SwitchID=0;				//拔码开关地址 //单元板ID----从右到左依次为增高，最右边为最低位，最高位为1表示测试模式，测试模式下从0到9循环显示
 
 vu8	LongDsp		=	0;			//0--在显示时间内显示，1-常亮,不再显示倒计时
-vu32	DSPTIME		=	0;			//显示总时间--单位mS
-vu32	DSPCount	=	0;			//显示计时--单位mS
-vu32	SYSTIME		=	0;			//循环计时变量
-vu32	DSPNum		=	0;			//显示数据
-
+vu32	DSPTIME		=	0;		//显示总时间--单位mS
+vu32	DSPCount	=	0;		//显示计时--单位mS
+vu32	SYSTIME		=	0;		//循环计时变量
+vu32	DSPNum		=	0;		//显示数据
+u8	PowerOn			=	0;		//上电PowerOn为0，前2秒显示ID 0.5秒闪烁
 
 
 
@@ -89,6 +89,10 @@ void PL013V11_Configuration(void)
 	SysTick_Configuration(200);					//系统嘀嗒时钟配置72MHz,单位为uS
 	
 	CD4511_DisplayClear();		//清除显示
+	
+	PowerOn			=	0;					//上电PowerOn为0，前2秒显示测试
+	
+	DSPCount	=	0;		//显示计时--单位mS
 }
 /*******************************************************************************
 * 函数名		:	
@@ -104,9 +108,9 @@ void PL013V11_Server(void)
 	
 	IWDG_Feed();											//独立看门狗喂狗	
 	SYSTIME++;	
-	if(SYSTIME>=10000)	//2秒
+	if(SYSTIME>=5000)	//1秒
 	{
-		SYSTIME=0;	
+		SYSTIME=0;
 		SwitchIdServer();		//检测拔码值有无变化，有则更新ID
 	}
 	
@@ -188,10 +192,28 @@ void CD4511_Configuration(void)			//数码管驱动
 	GPIO_Configuration_OPP50	(DPPort,	DPPin);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 	GPIO_ResetBits(DPPort,	DPPin);
 	
-	GPIO_Configuration_OPP50	(PortA0,PinA0);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50	(PortA1,PinA1);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50	(PortA2,PinA2);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
-	GPIO_Configuration_OPP50	(PortA3,PinA3);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+	//A/A0
+	CD4511.CD4511_A0_PORT	=	PortA0;		//A/A0
+	CD4511.CD4511_A0_Pin	=	PinA0;
+	
+	//B/A1
+	CD4511.CD4511_A1_PORT	=	PortA1;		//A/A0
+	CD4511.CD4511_A1_Pin	=	PinA1;
+	
+	//C/A2
+	CD4511.CD4511_A2_PORT	=	PortA2;		//A/A0
+	CD4511.CD4511_A2_Pin	=	PinA2;
+	
+	//D/A3
+	CD4511.CD4511_A3_PORT	=	PortA3;		//A/A0
+	CD4511.CD4511_A3_Pin	=	PinA3;
+	
+	CD4511_PinConf(&CD4511);
+	
+//	GPIO_Configuration_OPP50	(PortA0,PinA0);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50	(PortA1,PinA1);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50	(PortA2,PinA2);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
+//	GPIO_Configuration_OPP50	(PortA3,PinA3);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 	
 	GPIO_Configuration_OPP50	(PortEN1,PinEN1);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
 	GPIO_Configuration_OPP50	(PortEN2,PinEN2);			//将GPIO相应管脚配置为PP(推挽)输出模式，最大速度50MHz----V20170605
@@ -199,158 +221,8 @@ void CD4511_Configuration(void)			//数码管驱动
 	
 }
 
-/*******************************************************************************
-*函数名		:	function
-*功能描述	:	函数功能说明
-*输入			: 
-*输出			:	无
-*返回值		:	无
-*例程			:
-*******************************************************************************/
-void CD4511_DISPALY(u8 wei,u16 num)
-{
-	u32 Num	=	0;
-	GPIO_ResetBits(PortEN1,PinEN1);
-	GPIO_ResetBits(PortEN2,PinEN2);
-	GPIO_ResetBits(PortEN3,PinEN3);
-	
-	GPIO_ResetBits(DPPort,DPPin);
-	
-	Num	=	0;
-	while(Num++<1000);
-	
-	
-	GPIO_ResetBits(PortA0,PinA0);
-//	GPIO_ResetBits(PortA1,PinA1);
-	GPIO_ResetBits(PortA2,PinA2);
-//	GPIO_ResetBits(PortA3,PinA3);
-	
-	GPIO_SetBits(PortA1,PinA1);
-	GPIO_SetBits(PortA3,PinA3);
-	
-	Num	=	0;
-	while(Num++<1000);
-	
-	if(wei==0)		//小数点
-	{
-		if(num==0)		//小数点
-		{
-			GPIO_SetBits(PortA1,PinA1);
-			GPIO_SetBits(PortA3,PinA3);
-			GPIO_SetBits(DPPort,DPPin);
-			GPIO_SetBits(PortEN1,PinEN1);
-		}
-		else			//关显示
-		{
-			GPIO_ResetBits(PortEN1,PinEN1);
-			GPIO_ResetBits(PortEN2,PinEN2);
-			GPIO_ResetBits(PortEN3,PinEN3);
-			GPIO_SetBits(PortA1,PinA1);
-			GPIO_SetBits(PortA3,PinA3);
-			GPIO_ResetBits(DPPort,DPPin);			
-		}
-		return;
-	}
-	else if(wei==1)
-	{
-		num	=	num%10;
-	}
-	else if(wei==2)
-	{
-		num	=	(num%100)/10;
-	}
-	else if(wei==3)
-	{
-		num	=	(num%1000)/100;
-	}
-	
-//	//A0
-	if((num&0x01)==0x01)
-	{
-		GPIO_SetBits(PortA0,PinA0);
-	}
-	else
-	{
-		GPIO_ResetBits(PortA0,PinA0);
-	}
-	//A1
-	if((num&0x02)==0x02)
-	{
-		GPIO_SetBits(PortA1,PinA1);
-	}
-	else
-	{
-		GPIO_ResetBits(PortA1,PinA1);
-	}
-	//A2
-	if((num&0x04)==0x04)
-	{
-		GPIO_SetBits(PortA2,PinA2);
-	}
-	else
-	{
-		GPIO_ResetBits(PortA2,PinA2);
-	}
-	//A3
-	if((num&0x08)==0x08)
-	{
-		GPIO_SetBits(PortA3,PinA3);
-	}
-	else
-	{
-		GPIO_ResetBits(PortA3,PinA3);
-	}
-
-	
-	
-	Num	=	0;
-	while(Num++<1000);
-		
-	if(wei==3)		//百位
-	{
-		GPIO_SetBits(PortEN3,PinEN3);
-	}
-	else if(wei==2)	//十位
-	{
-		GPIO_SetBits(PortEN2,PinEN2);
-	}
-	else if(wei==1)	//个位
-	{
-		GPIO_SetBits(PortEN1,PinEN1);
-	}
-	else			//关显示
-	{
-		GPIO_ResetBits(PortEN1,PinEN1);
-		GPIO_ResetBits(PortEN2,PinEN2);
-		GPIO_ResetBits(PortEN3,PinEN3);
-	}
 
 
-}
-/*******************************************************************************
-*函数名		:	function
-*功能描述	:	函数功能说明
-*输入			: 
-*输出			:	无
-*返回值		:	无
-*例程			:
-*******************************************************************************/
-void CD4511_DisplayClear(void)		//清除显示
-{
-	CD4511_DISPALY(0,1);
-}
-/*******************************************************************************
-*函数名		:	function
-*功能描述	:	函数功能说明
-*输入			: 
-*输出			:	无
-*返回值		:	无
-*例程			:
-*******************************************************************************/
-void CD4511_DisplayDp(void)		//个位显示小数点
-{
-	CD4511_DISPALY(0,0);				//个位显示小数点
-}
 /*******************************************************************************
 *函数名		:	function
 *功能描述	:	函数功能说明
@@ -435,6 +307,100 @@ void DataServer(void)		//处理接收到的有效数据
 	}
 }
 /*******************************************************************************
+*函数名		:	function
+*功能描述	:	函数功能说明
+*输入			: 
+*输出			:	无
+*返回值		:	无
+*例程			:
+*******************************************************************************/
+void CD4511_DisplayClear(void)		//清除显示包括小数点
+{
+	GPIO_ResetBits(PortEN1,PinEN1);
+	GPIO_ResetBits(PortEN2,PinEN2);
+	GPIO_ResetBits(PortEN3,PinEN3);
+	GPIO_ResetBits(DPPort,DPPin);		//关闭小数点
+	CD4511_Clear(&CD4511);					//清除输出：bitA~bitG输出低电平
+}
+/*******************************************************************************
+*函数名		:	function
+*功能描述	:	函数功能说明
+*输入			: 
+*输出			:	无
+*返回值		:	无
+*例程			:
+*******************************************************************************/
+void CD4511_DisplayDp(void)		//个位显示小数点
+{
+	CD4511_Clear(&CD4511);				//清除输出：bitA~bitG输出低电平
+	GPIO_SetBits(DPPort,DPPin);		//点亮小数点
+	GPIO_SetBits(PortEN1,PinEN1);	//使能个位
+	GPIO_ResetBits(PortEN2,PinEN2);
+	GPIO_ResetBits(PortEN3,PinEN3);
+}
+
+/*******************************************************************************
+*函数名		:	function
+*功能描述	:	函数功能说明
+*输入			: 
+*输出			:	无
+*返回值		:	无
+*例程			:
+*******************************************************************************/
+void CD4511_DisplayNum(u8 wei,u16 num)		//指定位显示指定数值
+{
+	u32 Num	=	0;
+	GPIO_ResetBits(DPPort,DPPin);		//关小数点
+	GPIO_ResetBits(PortEN1,PinEN1);
+	GPIO_ResetBits(PortEN2,PinEN2);
+	GPIO_ResetBits(PortEN3,PinEN3);
+	if(wei	==	0)	//个位
+	{
+		CD4511_WriteData(&CD4511,num%10);	//BCD转换为Segment输出 只输出0~9
+		GPIO_SetBits(PortEN1,PinEN1);			//转换完再开EN脚可消影		
+	}
+	else if(wei	==	1)	//十位
+	{
+		CD4511_WriteData(&CD4511,num%100/10);	//BCD转换为Segment输出 只输出0~9
+		GPIO_SetBits(PortEN2,PinEN2);
+	}
+	else if(wei	==	2)	//百位
+	{
+		CD4511_WriteData(&CD4511,num/100);	//BCD转换为Segment输出 只输出0~9
+		GPIO_SetBits(PortEN3,PinEN3);
+	}
+}
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	function
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	
+*******************************************************************************/
+void CD4511_DisplayTest(void)		//显示测试：000~999刷新显示---带小数点
+{
+	u16	Num	=	0;
+	
+	DSPCount++;
+	if(DSPCount>=1000)
+	{
+		DSPCount	=	0;			
+	}	
+	if(DSPCount%200	==	0)
+	{		
+		DSPNum++;
+		if(DSPNum	>	9)
+		{
+			DSPNum	=	0;
+		}
+	}
+	Num	=	DSPNum*100+DSPNum*10+DSPNum;
+	GPIO_SetBits(DPPort,DPPin);
+	CD4511_DisplayNum((u8)DSPCount%3,Num);		//刷新数据	
+}
+/*******************************************************************************
 *函数名			:	function
 *功能描述		:	function
 *输入				: 
@@ -445,123 +411,104 @@ void DataServer(void)		//处理接收到的有效数据
 *******************************************************************************/
 void DisplayServer(void)		//显示服务程序，根据显示命令刷新
 {
-//	DSPNum	=	1;
-//	CD4511_DISPALY((u8)SYSTIME%3+1,(u16)DSPNum);		//刷新数据
-//	return;
-//	CD4511_DisplayOFF(&CD4511_Pin1);			//关闭显示---关NPN三极管
-//	CD4511_DisplayOFF(&CD4511_Pin2);			//关闭显示---关NPN三极管
-//	CD4511_DisplayOFF(&CD4511_Pin3);			//关闭显示---关NPN三极管
-	
-	if(SwitchID==0	||	(SwitchID&0x20)==0x20)		//未拔码或者为测试模式sw6为1表示测试模式
+	//================测试模式：未拔码,最高位SW6为1
+	//PowerOn			=	0;			//上电PowerOn为0，前2秒显示测试
+	if(SwitchID==0	||	(SwitchID&0x20)==0x20	)		//未拔码或者为测试模式sw6为1表示测试模式
 	{
-		DSPCount++;
-		if(DSPCount>=900)
-		{
-			DSPCount	=	0;			
-		}
-		if(DSPCount%300	==	0)
-		{
-			u8	Num	=	0;
-			DSPNum	=	DSPNum%10;
-			if(DSPNum	==	9)
-			{
-				DSPNum	=	0;
-			}
-			else
-			{
-				DSPNum++;
-				Num	=	DSPNum;
-			}
-			DSPNum	=	Num*100+Num*10+Num;
-		}
-		CD4511_DISPALY((u8)DSPCount%3+1,DSPNum);		//刷新数据
-		GPIO_ResetBits(DPPort,DPPin);
-		return;
+		SwitchIdServer();				//检测拔码值有无变化
+		CD4511_DisplayTest();		//显示测试：000~999刷新显示---带小数点
 	}
-	else if(LongDsp	==	1)				//0--在显示时间内显示，1-常亮,不再显示倒计时，此时小数点不显示
+	else if(PowerOn==0)		//上电PowerOn为0，前2秒显示ID 0.5秒闪烁
 	{
-		DSPCount++;
-		if(DSPCount>=1000)
+		if(DSPCount++<2000)
 		{
-			DSPCount	=	0;
+			GPIO_ResetBits(DPPort,DPPin);		//关闭小数点
+			CD4511_DisplayNum((u8)DSPCount%3,(u16)SwitchID);		//刷新数据
 		}
-		if(DspCmd.DispEnNum)		//显示数值	：	0-不显示，		1-显示，此时小数点不显示
+		else
 		{
-//			CD4511_DISPALY((u8)DSPCount%3+1,DSPNum);		//刷新数据
-			if(DspCmd.DispMdNum)	//数值模式	：	0-静态显示，	1-0.5S闪烁
+			CD4511_DisplayClear();														//清除显示
+			DSPCount	=	0;		//显示计时--单位mS
+			PowerOn			=	1;		//上电PowerOn为0，前2秒显示测试	
+		}
+	}
+	//================数值模式：显示数值，分长亮，定时亮，闪烁
+	else if(DspCmd.DispEnNum)											//显示数值	：	0-不显示，		1-显示,数值显示优先于点显示，如果有数值显示，则点不显示
+	{
+		//LongDsp	//0--在显示时间内显示，1-常亮,不再显示倒计时
+		//----常亮
+		if((LongDsp!=0))			//长亮或者定时亮
+		{
+			if(DSPCount++>1000)
 			{
-				if((DSPCount%1000)>500)
-				{
-					CD4511_DISPALY((u8)DSPCount%3+1,(u16)DSPNum);		//刷新数据
-				}
-				else
-				{
-					CD4511_DISPALY(0,0);						//不显示
-				}
+				DSPCount=0;
+			}
+			if((DspCmd.DispMdNum==1)&&((DSPCount%1000)>500))	//数值模式	：	0-静态显示，	1-0.5S闪烁
+			{
+				CD4511_DisplayClear();														//清除显示
 			}
 			else
 			{
-				CD4511_DISPALY((u8)DSPCount%3+1,(u16)DSPNum);		//刷新数据
+				CD4511_DisplayNum((u8)DSPCount%3,(u16)DSPNum);		//刷新数据
 			}
 		}
-		else if(DspCmd.DispEnDp)		//显示点		：	0-不显示，		1-显示
+		//----定时显示
+		else if(DSPCount++<=DSPTIME)
 		{
-			if(DspCmd.DispMdDp)			//点模式		：	0-静态显示，	1-0.5S闪烁
+			if((DspCmd.DispMdNum==1)&&((DSPCount%1000)>500))	//数值模式	：	0-静态显示，	1-0.5S闪烁
 			{
-				if((DSPCount%1000)<500)
-				{
-					CD4511_DISPALY(0,1);		//显示小数点
-				}
-				else
-				{
-					CD4511_DISPALY(0,0);		//关闭小数点
-				}
+				CD4511_DisplayClear();														//清除显示
+			}
+			else
+			{
+				CD4511_DisplayNum((u8)DSPCount%3,(u16)DSPNum);		//刷新数据
+			}
+		}
+		else
+		{
+			CD4511_DisplayClear();		//清除显示
+		}
+	}
+	//================点模式：显示数值，分长亮，定时亮，闪烁
+	else if(DspCmd.DispEnDp)		//显示点		：	0-不显示，		1-显示
+	{
+		//----常亮
+		if((LongDsp!=0)||(DSPCount<=DSPTIME))							//长亮或者定时亮
+		{
+			if(DSPCount++>1000)
+			{
+				DSPCount=0;
+			}
+			if((DspCmd.DispMdDp==1)&&((DSPCount%1000)>500))	//数值模式	：	0-静态显示，	1-0.5S闪烁
+			{
+				CD4511_DisplayClear();														//清除显示
 			}
 			else
 			{
 				CD4511_DisplayDp();		//个位显示小数点
 			}
 		}
+		else if(DSPCount++<=DSPTIME)
+		{
+			if((DspCmd.DispMdDp==1)&&((DSPCount%1000)>500))	//数值模式	：	0-静态显示，	1-0.5S闪烁
+			{
+				CD4511_DisplayClear();														//清除显示
+			}
+			else
+			{
+				CD4511_DisplayDp();		//个位显示小数点
+			}
+		}
+		//----定时显示
+		else
+		{
+			CD4511_DisplayClear();		//清除显示
+		}
 	}
 	else
 	{
-		if(DSPTIME	==0)
-		{
-			return;
-		}
-		if(DSPCount>=DSPTIME)		//显示时间已用完，需要关闭显示
-		{
-			DSPTIME	=	0;
-			DSPCount=	0;
-			CD4511_DisplayClear();		//清除显示
-		}
-		if((DspCmd.DispEnNum)&&DSPTIME)		//显示数值	：	0-不显示，		1-显示，此时小数点不显示
-		{
-			DSPCount	++;
-			if(DspCmd.DispMdNum)	//数值模式	：	0-静态显示，	1-0.5S闪烁
-			{
-				if((DSPCount%1000)>500)
-				{
-					CD4511_DISPALY((u8)DSPCount%3+1,(u16)DSPNum);		//刷新数据
-				}
-				else
-				{
-					CD4511_DISPALY(0,0);						//不显示
-				}
-			}
-			else		//不闪烁
-			{
-				CD4511_DISPALY((u8)DSPCount%3+1,(u16)DSPNum);		//刷新数据
-			}
-		}
-		else if(DspCmd.DispEnDp==1)		//显示点		：	0-不显示，		1-显示
-		{
-			if(DspCmd.DispMdDp	&&	DSPCount%500==0)				//点模式		：	0-静态显示，	1-0.5S闪烁
-			{
-				GPIO_Toggle	(DPPort,	DPPin);		//将GPIO相应管脚输出翻转----V20170605
-			}
-		}
-	}	
+		CD4511_DisplayClear();		//清除显示
+	}
 }
 /*******************************************************************************
 *函数名			:	function
@@ -575,10 +522,10 @@ void DisplayServer(void)		//显示服务程序，根据显示命令刷新
 void SwitchIdServer(void)		//检测拔码值有无变化
 {
 	SWITCHID_Read(&SWITCHID);		//
-	if(SwitchID	!=	(SWITCHID.nSWITCHID)&0x3F)
+	if(SwitchID	!=	((SWITCHID.nSWITCHID)&0x003F))
 	{
 		SwitchID	=	(SWITCHID.nSWITCHID)&0x3F;
-		CD4511_DisplayClear();		//清除显示
+		PL013V11_Configuration();								//拔码有变化，重新初始化，类似重新上电
 	}
 }
 
