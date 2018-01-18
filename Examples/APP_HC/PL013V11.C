@@ -282,10 +282,10 @@ void DataServer(void)		//处理接收到的有效数据
 		Num	|=	sReceFarmeSrv.data[2];
 		Num<<=8;
 		Num	|=	sReceFarmeSrv.data[3];
-		DSPNum	=		Num;		//
+		DSPNum	=		Num%1000;		//
 
 		//==============获取显示时间
-		if(sReceFarmeSrv.cmd.DispTime	==0)
+		if(sReceFarmeSrv.cmd.DispTime	==0)	//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
 		{
 			LongDsp	=	1;			//0--在显示时间内显示，1-常亮,不再显示倒计时
 		}
@@ -293,13 +293,14 @@ void DataServer(void)		//处理接收到的有效数据
 		{
 			LongDsp	=	0;			//0--在显示时间内显示，1-常亮,不再显示倒计时
 			Num	=	0;
-			Num	|=	sReceFarmeSrv.data[4];
-			Num<<=8;
-			Num	|=	sReceFarmeSrv.data[5];
-			Num<<=8;
-			Num	|=	sReceFarmeSrv.data[6];
-			Num<<=8;
-			Num	|=	sReceFarmeSrv.data[7];
+			memcpy(&Num,&(sReceFarmeSrv.data[4]),4);			//按32位整数传输
+//			Num	|=	sReceFarmeSrv.data[4];
+//			Num<<=8;
+//			Num	|=	sReceFarmeSrv.data[5];
+//			Num<<=8;
+//			Num	|=	sReceFarmeSrv.data[6];
+//			Num<<=8;
+//			Num	|=	sReceFarmeSrv.data[7];
 			DSPTIME	=		Num;		//
 		}
 		//==============数据取完，清除数据

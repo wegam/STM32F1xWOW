@@ -19,9 +19,9 @@
 
 #define	HSE_USE
 
-#ifndef	HSE_USE
-	#define	HSI_USE
-#endif
+//#ifndef	HSE_USE
+//	#define	HSI_USE
+//#endif
 
 
 /*******************************************************************************

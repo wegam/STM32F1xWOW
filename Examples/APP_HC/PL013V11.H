@@ -88,7 +88,7 @@ void CD4511_DisplayDp(void);			//个位显示小数点
 
 void RS485_Server(void);			//RS485接收数据
 
-void DataServer(void);		//处理接收到的有效数据
+void DataServer(void);				//处理接收到的有效数据
 
 void CD4511_DisplayClear(void);		//清除显示包括小数点
 void CD4511_DisplayDp(void);		//个位显示小数点

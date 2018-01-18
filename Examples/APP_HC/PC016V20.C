@@ -3,7 +3,7 @@
 #include "PC016V20.H"
 #include "HC_PHY.H"
 
-
+//#define PC016V20Test
 
 //==============¶Á¿¨ÃüÁî
 const u8 CardReaderCmd_ReadData[14]	=
@@ -30,13 +30,47 @@ const u8 CardReaderCmd_SetArea[14] =
 	0x44,  	/* CmdType 	*/			//ÃüÁîÀàĞÍ
 	0x01,  	/* Sector 	*/			//ÉÈÇø£º0,1,ÆäÖĞ0ÎªÖ»¶Á£¬Îª¿¨ĞÅÏ¢
 	0x01,  	/* Block 	*/				//¿éºÅ£º0,1,2	//²úÆ·Ê¹ÓÃ1
-	0x60,   /* KeyType	*/			//1×Ö½ÚÃÜÔ¿Ä£Ê½ KEYA£¨0x60£©/KEYB(0x61)
-	0xFF,   /* PassWord0 */					//6×Ö½ÚÃÜÂë
+	0x00,   /* KeyType	*/			//1×Ö½ÚÃÜÔ¿Ä£Ê½ KEYA£¨0x60£©/KEYB(0x61) 00Îª¹Ø±ÕÖ÷¶¯ÉÏ´«¹¦ÄÜ
+	0xFF,   /* PassWord0 */			//6×Ö½ÚÃÜÂë
 	0xFF,   /* PassWord1 */
 	0xFF,   /* PassWord2 */
 	0xFF,		/* PassWord3 */
 	0xFF,   /* PassWord4 */
 	0xFF,		/* PassWord5 */
+	0x9F,		/* Crc16-HIGN  	*/	//1×Ö½ÚÉÈÇøºÅ
+	0x6F,   /* Crc16-LOW 		*/	//1×Ö½Ú¿éºÅ
+	0x1E   	/* F-End*/					//ÎªÖ¡Î²£¬ÉÏÎ»»úÏÂ·¢Ê±¹Ì¶¨Îª0X1E£¬ÏÂÎ»»úÓ¦´ğÊ±¹Ì¶¨Îª0X2D£»
+};
+//=================Ğ´¿¨Êı¾İ	
+u8 CardReaderCmd_WriteData[30] =
+{
+	0xE1,   /* F-Head 	*/			//ÎªÖ¡Í·£¬ÉÏÎ»»úÏÂ·¢Ê±¹Ì¶¨Îª0XE1£¬ÏÂÎ»»úÓ¦´ğÊ±¹Ì¶¨Îª0XD2£»
+	0x25,  	/* CmdType 	*/			//ÃüÁîÀàĞÍ
+	0x01,  	/* Sector 	*/			//ÉÈÇø£º0,1,ÆäÖĞ0ÎªÖ»¶Á£¬Îª¿¨ĞÅÏ¢
+	0x01,  	/* Block 	*/				//¿éºÅ£º0,1,2	//²úÆ·Ê¹ÓÃ1
+	0x60,   /* KeyType	*/			//1×Ö½ÚÃÜÔ¿Ä£Ê½ KEYA£¨0x60£©/KEYB(0x61)
+	0xFF,   /* PassWord0 */			//6×Ö½ÚÃÜÂë
+	0xFF,   /* PassWord1 */
+	0xFF,   /* PassWord2 */
+	0xFF,		/* PassWord3 */
+	0xFF,   /* PassWord4 */
+	0xFF,		/* PassWord5 */
+	0x00,
+	0x00,
+	0x01,
+	0x68,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
 	0x9F,		/* Crc16-HIGN  	*/	//1×Ö½ÚÉÈÇøºÅ
 	0x6F,   /* Crc16-LOW 		*/	//1×Ö½Ú¿éºÅ
 	0x1E   	/* F-End*/					//ÎªÖ¡Î²£¬ÉÏÎ»»úÏÂ·¢Ê±¹Ì¶¨Îª0X1E£¬ÏÂÎ»»úÓ¦´ğÊ±¹Ì¶¨Îª0X2D£»
@@ -51,9 +85,9 @@ RS485_TypeDef	RS485_Seg7;				//ÊıÂë¹ÜÏÔÊ¾485
 
 //==============485»º³åÇø
 //sFarmeDef	sFarme;				//×ÜÏß485Êı¾İ½á¹¹Ìå---´ı´¦Àí
-sFarmeDef	sFarmeTxd;		//×ÜÏß485Êı¾İ½á¹¹Ìå---·¢ËÍ
-sFarmeDef	sFarmeRxd;		//×ÜÏß485Êı¾İ½á¹¹Ìå---½ÓÊÕ
-sFarmeDef	sFarmeRev;		//×ÜÏß485Êı¾İ½á¹¹Ìå---»º´æ
+sMs485FrmDef	sFarmeTxd;		//×ÜÏß485Êı¾İ½á¹¹Ìå---·¢ËÍ
+sMs485FrmDef	sFarmeRxd;		//×ÜÏß485Êı¾İ½á¹¹Ìå---½ÓÊÕ
+sMs485FrmDef	sFarmeRev;		//×ÜÏß485Êı¾İ½á¹¹Ìå---»º´æ
 u8 RS485BusTxd[Bus485BufferSize];
 
 //u8 Seg485Txd[Seg485BufferSize]	=	{0};
@@ -63,9 +97,12 @@ u8 Seg485Rxd[Seg485BufferSize]	=	{0};
 u8 CardData[CardLength];		//¿¨ÓĞĞ§Êı¾İ»º´æ
 //ICDataDef	ICData;					//4¸ö¶Ë¿ÚICÊı¾İ
 
-			
-u8 ICCardReadRxd[ICCardReadBufferSize]={0};
-u8 ICCardReadRev[ICCardReadBufferSize]={0};
+u8 PowerUpFlag	=	0;				//ÉÏµç±êÖ¾£¬0Î´ÉÏµçÍê£¬1ÉÏµçÍê
+u16	PowerTime	=	0;					//ÉÏµçÊ±¼ä	
+u8 WriteCardFlag	=	0;			//Ğ´¿¨±êÖ¾£¬
+
+u8 ICCardReadRxd[CardBufferSize]={0};
+u8 ICCardReadRev[CardBufferSize]={0};
 
 ICBufferDef ICCardReadRxd1;
 ICBufferDef ICCardReadRev1;
@@ -76,13 +113,23 @@ ICBufferDef ICCardReadRev2;
 ICBufferDef ICCardReadRxd3;
 ICBufferDef ICCardReadRev3;
 
-//ICBufferDef ICCardReadRxd4;
-//ICBufferDef ICCardReadRev4;
+
+u16 CardReaderTimeCount1	=	0;		//¶Á¿¨³¬Ê±¼ÆÊ±
+u16 CardReaderTimeCount2	=	0;		//¶Á¿¨³¬Ê±¼ÆÊ±
+u16 CardReaderTimeCount3	=	0;		//¶Á¿¨³¬Ê±¼ÆÊ±
+u16 CardReaderTimeCount4	=	0;		//¶Á¿¨³¬Ê±¼ÆÊ±
 
 u8 ICCardReadCount1	=	0;			//
 u8 ICCardReadCount2	=	0;
 u8 ICCardReadCount3	=	0;
 u8 ICCardReadCount4	=	0;
+
+//·ÀÖ¹È¡¿¨Ê±¶Á¿¨²»ÎÈ¶¨ÎóÈÏÎªÒÑÊÕ»Ø¿¨£ºÈ¡¿¨ºó0.5ÃëÔÙÊÕµ½¿¨Êı¾İµ±×÷ÊÕ»Ø
+u16	CKtime	=	200;		//¶Á¿¨·À¶¶Ê±¼ä
+u16 ICCardReadTime1	=	0;			//
+u16 ICCardReadTime2	=	0;
+u16 ICCardReadTime3	=	0;
+u16 ICCardReadTime4	=	0;
 
 //==============ÆäËü±äÁ¿
 
@@ -111,7 +158,7 @@ void PC016V20_Configuration(void)
 	SYS_Configuration();							//ÏµÍ³ÅäÖÃ---´ò¿ªÏµÍ³Ê±ÖÓ STM32_SYS.H	
 	
 	//========================ÑÓÊ±1Ãë£¬µÈ´ıÉÏµçÎÈ¶¨
-	SysTick_DeleyS(1);								//SysTickÑÓÊ±nS
+	SysTick_DeleymS(50);					//SysTickÑÓÊ±nmS
 	
 	//========================Ó²¼ş³õÊ¼»¯
 	Lock_Configuration();							//Ëø³õÊ¼»¯
@@ -132,8 +179,17 @@ void PC016V20_Configuration(void)
 	USART_DMASend	(ICCardReadPort2,(u32*)CardReaderCmd_SetArea,14);	//ÉèÖÃ¶ÁÍ·¶Á¿¨ÉÈÇø¡¢¿éºÅ¡¢KEYA/KEYB¡¢¶Á¿¨ÃÜÂë0x44
 	USART_DMASend	(ICCardReadPort3,(u32*)CardReaderCmd_SetArea,14);	//ÉèÖÃ¶ÁÍ·¶Á¿¨ÉÈÇø¡¢¿éºÅ¡¢KEYA/KEYB¡¢¶Á¿¨ÃÜÂë0x44
 	USART_Send		(ICCardReadPort4,(u8*)CardReaderCmd_SetArea,14);	//ÉèÖÃ¶ÁÍ·¶Á¿¨ÉÈÇø¡¢¿éºÅ¡¢KEYA/KEYB¡¢¶Á¿¨ÃÜÂë0x44
-
+	SysTick_DeleymS(100);					//SysTickÑÓÊ±nmS
 	//========================ÉÏµç¶Á¿¨
+	
+	USART_DMASend	(ICCardReadPort1,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
+
+	USART_DMASend	(ICCardReadPort2,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
+
+	USART_DMASend	(ICCardReadPort3,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
+
+	USART_Send		(ICCardReadPort4,(u8*)CardReaderCmd_ReadData,14);			//´®¿Ú5·¢ËÍ³ÌĞò
+		
 //	ICCardReader_ReadAll();			//·¢ËÍ4¸ö¶Ë¿Ú¶Á¿¨Ö¸Áî
 	
 //	//==================ÉÏµç¶Á¿¨
@@ -162,31 +218,51 @@ void PC016V20_Configuration(void)
 void PC016V20_Server(void)
 {
 	u8	Num	=	0;
-	
+#ifdef PC016V20Test
+	IWDG_Feed();						//¶ÀÁ¢¿´ÃÅ¹·Î¹¹·
+	sBorad.sPlu.Time.TimeSYS++;
+	if(sBorad.sPlu.Time.TimeSYS>=100)
+	{
+		sBorad.sPlu.Time.TimeSYS=0;
+		USART_DMASend	(ICCardReadPort3,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
+		RS485_DMASend(&RS485_Bus,(u32*)CardReaderCmd_ReadData,14);	//RS485-DMA·¢ËÍ³ÌĞò
+	}
+	return;
+#endif
 	//========================ÅĞ¶ÏÊÇ·ñÎª´®¿ÚÖĞ¶Ï½øÈëPC016V20_Server
 	//---ÓÉÓÚ´®¿Ú5ÎŞDMA¹¦ÄÜ£¬´®¿ÚÖĞ¶Ï½øÈëPC016V20_Server£¬½ÓÊÕÍêÊı¾İ²»¼ÌĞøÍùÏÂÖ´ĞĞ
-	Num	=	BoardCardReaderServer();	//RS485ÊÕ·¢´¦Àí
+//	Num	=	BoardCardReaderServer();	//RS485ÊÕ·¢´¦Àí
+	Num	=	CardReaderPortn();	//RS485ÊÕ·¢´¦Àí
 	if(Num	==1)									//RS485ÊÕ·¢´¦Àí
 	{
 		return;					//´®¿Ú5ÎŞDMA¹¦ÄÜ£¬´®¿ÚÖĞ¶Ï½øÈëPC016V20_Server£¬½ÓÊÕÍêÊı¾İ²»¼ÌĞøÍùÏÂÖ´ĞĞ
 	}
-	//========================¼ÆÊ±Æ÷
-	sBorad.Time.TimeSYS++;
-	if(sBorad.Time.TimeSYS>=2000)
+	if(PowerTime<PowerT)
 	{
-		sBorad.Time.TimeSYS		=	0;		//ÏµÍ³¼ÆÊ±Æ÷
-		sBorad.Time.TimeSEG		=	0;		//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
-		sBorad.Time.TimeBOX		=	0;		//Ò©Ïä¼ì²â¼ÆÊ±Æ÷	Ã¿¸ö¶Ë¿Ú·ÖÅä100mSÊ±¼ä¼ì²â----¿ÉÓÃÓÚ¼ì²â¶Á¿¨Æ÷Í¨Ñ¶×´Ì¬
-		sBorad.Time.TimeBUS		=	0;		//Íâ²¿×ÜÏßÊ±¼ä
-		sBorad.Time.TimeCard	=	0;		//¶Á¿¨Æ÷Ê±¼ä	
+		PowerTime++;
+	}
+	else
+	{
+		PowerUpFlag	=	1;				//ÉÏµç±êÖ¾£¬0Î´ÉÏµçÍê£¬1ÉÏµçÍê
+	}
+	//========================¼ÆÊ±Æ÷
+	sBorad.sPlu.Time.TimeSYS++;
+	if(sBorad.sPlu.Time.TimeSYS>=2000)
+	{
+		sBorad.sPlu.Time.TimeSYS		=	0;		//ÏµÍ³¼ÆÊ±Æ÷
+		sBorad.sPlu.Time.TimeSEG		=	0;		//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+		sBorad.sPlu.Time.TimeBOX		=	0;		//Ò©Ïä¼ì²â¼ÆÊ±Æ÷	Ã¿¸ö¶Ë¿Ú·ÖÅä100mSÊ±¼ä¼ì²â----¿ÉÓÃÓÚ¼ì²â¶Á¿¨Æ÷Í¨Ñ¶×´Ì¬
+		sBorad.sPlu.Time.TimeBUS		=	0;		//Íâ²¿×ÜÏßÊ±¼ä
+		sBorad.sPlu.Time.TimeCard		=	0;		//¶Á¿¨Æ÷Ê±¼ä	
 	
-		sBorad.Step.ReadCard	=	0;		//bit0:	0-Î´Ö´ĞĞ¶Á¿¨,ĞèÒª¶Á¿¨£¬		1-ÒÑ¶ÁÍê¿¨
-		sBorad.Step.WriteSeg	=	1;		//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ(¶Á¿¨¹ı³ÌÖĞ²»¸üĞÂÊıÂë¹Ü£¬ÃâµÃÕ¼ÓÃ´®¿Ú£©		
+		sBorad.sPlu.Step.ReadCard	=	0;		//bit0:	0-Î´Ö´ĞĞ¶Á¿¨,ĞèÒª¶Á¿¨£¬		1-ÒÑ¶ÁÍê¿¨
+		sBorad.sPlu.Step.WriteSeg	=	1;		//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ(¶Á¿¨¹ı³ÌÖĞ²»¸üĞÂÊıÂë¹Ü£¬ÃâµÃÕ¼ÓÃ´®¿Ú£©		
 		return;				//Í¬²½Ê±¼ä
 	}
 	//========================¶ÀÁ¢¿´ÃÅ¹·Î¹¹·
 	IWDG_Feed();						//¶ÀÁ¢¿´ÃÅ¹·Î¹¹·
 	
+	CardReadTimeCount();			//È¡¿¨ºóµ¹¼ÆÊ±£¬Èç¹ûµ¹¼ÆÊ±Î´Íê³ÉÔÙÊÕ»Ø¿¨Êı¾İ£¬¶Á¿¨²»ÎÈ¶¨Ê±µÄÎó¶¯×÷
 	//========================´®¿Ú5½ÓÊÕ³¬Ê±£º±íÊ¾ÎŞĞÂÊı¾İ£¬ÎŞÊı¾İ»òÕßÊı¾İÖ¡½ÓÊÕÍê³É
 	Port4TimeOut++;
 	if(Port4TimeOut>=5)
@@ -199,7 +275,9 @@ void PC016V20_Server(void)
 
 	BoardSetSeg(&sBorad);		//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬	
 
-	BoardCardReaderReadAll(&sBorad);			//·¢ËÍ4¸ö¶Ë¿Ú¶Á¿¨Ö¸Áî	
+	BoardCardReaderReadAll(&sBorad);			//·¢ËÍ4¸ö¶Ë¿Ú¶Á¿¨Ö¸Áî
+
+	CardReaderError();			//ÖØÖÃÏà¹Ø±äÁ¿	
 
 	BoardGetBoxProcess(&sBorad);					//È¡Ò©²Ù×÷¼°È¡Ò©¼ÆÊ±
 	RS485_Server();
@@ -214,6 +292,46 @@ void PC016V20_Server(void)
 
 //======
 
+
+//=================================================================================================================RS485Íâ²¿×ÜÏß´¦Àí
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	ÏûÏ¢´¦Àí:Íâ²¿RS485×ÜÏßÊı¾İ½ÓÊÕÓë·¢ËÍ¹ÜÀí 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+* ĞŞ¸ÄÊ±¼ä		: ÎŞ
+* ĞŞ¸ÄÄÚÈİ		: ÎŞ
+* ÆäËü			: 
+*******************************************************************************/
+//void MessageProcess(void)								//ÏûÏ¢´¦Àí:Íâ²¿RS485×ÜÏßÊı¾İ½ÓÊÕÓë·¢ËÍ¹ÜÀí
+//{
+//	MessageProcessRecevie();				//ÏûÏ¢½ÓÊÕ´¦Àí
+//	MessageProcessSend();						//ÏûÏ¢·¢ËÍ´¦Àí
+//}
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+* ĞŞ¸ÄÊ±¼ä		: ÎŞ
+* ĞŞ¸ÄÄÚÈİ		: ÎŞ
+* ÆäËü			: 
+*******************************************************************************/
+void MessageProcessRecevie(void)				//ÏûÏ¢½ÓÊÕ´¦Àí
+{
+}
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+* ĞŞ¸ÄÊ±¼ä		: ÎŞ
+* ĞŞ¸ÄÄÚÈİ		: ÎŞ
+* ÆäËü			: 
+*******************************************************************************/
+void MessageProcessSend(void)						//ÏûÏ¢·¢ËÍ´¦Àí
+{
+}
 
 //=================================================================================================================Ğ­Òé³ÌĞò
 /*******************************************************************************
@@ -244,18 +362,21 @@ void RS485_Server(void)							//RS485ÊÕ·¢´¦Àí
 	MessageAnalysis(&sFarmeRev);				//½âÎöÏûÏ¢
 	if((sFarmeRev.Head==0x7E)&&(sFarmeRev.Cmd==0x12)&&(sFarmeRev.dAdd ==SwitchData))			//»ñÈ¡Ö¸¶¨IC¿¨ºÅÖ¸Áî,»ñÈ¡IC¿¨ºÅÎª±¾²ã²Ù×÷
 	{
+		sBorad.Nserial	=	sFarmeRev.nSerial;		//±£´æÁ÷Ë®ºÅ
 		BusFrameAck(&sFarmeRev);										//Íâ²¿×ÜÏßÓ¦´ğ
 		BusFrameProcessGetID(&sFarmeRev,&sBorad);		//Êı¾İÃüÁî´¦Àí
 	}
 	else if(
 					((sFarmeRev.Head==0x7E)&&(sFarmeRev.Cmd==0x13)&&(sFarmeRev.dAdd ==SwitchData-1))													//È¡Ò©Ö¸Áî£¬±¾²ã¸ºÔğ¿ªËø
-				||((sFarmeRev.Head==0x7E)&&(sFarmeRev.Cmd==0x93)&&(sFarmeRev.sAdd ==SwitchData-1)&&((sFarmeRev.EC==eBoxOff)||(sFarmeRev.EC==eBoxTout)||(sFarmeRev.EC==eNoData)))		//È¡Ò©Ö¸Áî£¬Ò©ÒÑÈ¡×ß£¬ÊÍ·ÅËø
+//				||((sFarmeRev.Head==0x7E)&&(sFarmeRev.Cmd==0x93)&&(sFarmeRev.sAdd ==SwitchData-1)&&((sFarmeRev.EC==eBoxOff)||(sFarmeRev.EC==eBoxTout)||(sFarmeRev.EC==eNoData)))		//È¡Ò©Ö¸Áî£¬Ò©ÒÑÈ¡×ß£¬ÊÍ·ÅËø
+				||((sFarmeRev.Head==0x7E)&&(sFarmeRev.Cmd==0x93)&&(sFarmeRev.sAdd ==SwitchData-1)&&((sFarmeRev.StsCode==eBoxOff)))		//È¡Ò©Ö¸Áî£¬Ò©ÒÑÈ¡×ß£¬ÊÍ·ÅËø
 					)
 	{
 		BusFrameProcessLock(&sFarmeRev,&sBorad);				//ËøÃüÁî´¦Àí
 	}
 	else if((sFarmeRev.Head==0x7E)&&(((sFarmeRev.Cmd==0x13)&&(sFarmeRev.dAdd ==SwitchData))))			//È¡Ò©Ö¸Áî£¬±¾²ã´¦Àí¼ì²éÒ©ÏäÓĞÎŞÈ¡×ß
 	{
+		sBorad.Nserial	=	sFarmeRev.nSerial;				//±£´æÁ÷Ë®ºÅ
 		BusFrameAck(&sFarmeRev);										//Íâ²¿×ÜÏßÓ¦´ğ
 		BusFrameProcessGetBox(&sFarmeRev,&sBorad);			//Êı¾İÃüÁî´¦Àí---È¡Ò©
 	}
@@ -272,15 +393,15 @@ void RS485_Server(void)							//RS485ÊÕ·¢´¦Àí
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void BusFrameAck(sFarmeDef*	sFarme)			//Íâ²¿×ÜÏßÓ¦´ğ
+void BusFrameAck(sMs485FrmDef*	sFarme)			//Íâ²¿×ÜÏßÓ¦´ğ
 {
 	u8 Temp	=	0;
 	u8 Temp1	=	0;
-	sBorad.Time.TimeBUS	=	0;						//ÇåÁã£¬ÒÔÃâÊı¾İ»Ø¸´Ê±³åÍ»
+	sBorad.sPlu.Time.TimeBUS	=	0;						//ÇåÁã£¬ÒÔÃâÊı¾İ»Ø¸´Ê±³åÍ»
 	RS485BusTxd[0]	=	0x7E;
 	RS485BusTxd[1]	=	sFarme->sAdd;
 	RS485BusTxd[2]	=	sFarme->dAdd;
-	RS485BusTxd[3]	=	sFarme->SN;
+	RS485BusTxd[3]	=	sFarme->nSerial;
 	RS485BusTxd[4]	=	sFarme->Cmd;
 	RS485BusTxd[5]	=	sFarme->Ucode;
 	RS485BusTxd[6]	=	0x00;								//´íÎóÂë
@@ -304,7 +425,7 @@ void BusFrameAck(sFarmeDef*	sFarme)			//Íâ²¿×ÜÏßÓ¦´ğ
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void MessageProcess(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//Íâ²¿×ÜÏßÏûÏ¢´¦Àí
+void MessageProcess(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//Íâ²¿×ÜÏßÏûÏ¢´¦Àí
 {
 	BusFrameProcessSendBox(sFarme,sBorad);			//·¢ËÍÒ©ÏäÊı¾İ
 }
@@ -317,7 +438,7 @@ void MessageProcess(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//Íâ²¿×ÜÏßÏûÏ¢´¦Àí
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void MessageAnalysis(sFarmeDef*	sFarme)				//½âÎöÏûÏ¢
+void MessageAnalysis(sMs485FrmDef*	sFarme)				//½âÎöÏûÏ¢
 {
 	if(sFarme->Length==FixedAddrLenth)		//Êı¾İ³¤¶ÈÎªFixedAddrLenth±íÊ¾ÎŞÊı¾İ//¹Ì¶¨Êı¾İ³¤¶ÈnLengthÖĞµØÖ·ºÍ×´Ì¬ÂëµÄ³¤¶È
 	{
@@ -339,7 +460,7 @@ void MessageAnalysis(sFarmeDef*	sFarme)				//½âÎöÏûÏ¢
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void MessagePacket(sFarmeDef*	sFarme)			//´ò°üÏûÏ¢
+void MessagePacket(sMs485FrmDef*	sFarme)			//´ò°üÏûÏ¢
 {
 }
 
@@ -352,16 +473,23 @@ void MessagePacket(sFarmeDef*	sFarme)			//´ò°üÏûÏ¢
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void BusFrameProcessGetID(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//±£´æ»ñÈ¡IDÇëÇó±êÖ¾
+void BusFrameProcessGetID(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//±£´æ»ñÈ¡IDÇëÇó±êÖ¾
 {
+	u8 WriteSegFlg	=	0;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
 	u8 Num	=	0;
 	PortDef*	Port	=	&(sBorad->Port1);
 	//================±£´æ±êÊ¶
 	for(Num=0;Num<MaxPortNum;Num++)
 	{
-		if(sFarme->Addr3	==	Num+1)			//¶Ë¿ÚµØÖ·
+		if(sFarme->Addr.Addr3	==	Num+1)			//¶Ë¿ÚµØÖ·
 		{
-			sBorad->Nserial	=	sFarme->SN;		//±£´æÁ÷Ë®ºÅ
+//			sBorad->Nserial	=	sFarme->SN;		//±£´æÁ÷Ë®ºÅ
+			//========ÊıÂë¹Ü£ºÃ¿´Î»ñÈ¡IDÖ¸Áî¾ÍµãÁÁÊıÂë¹Ü 30Ãë
+			Port->Seg.sSegSts.SegFlg	=	1;	//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+//			sBorad->Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+			WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+			
+			Port->sBus.BusqSts.BusFlg	=	1;	//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
 			Port->sBus.BusqSts.GetID	=	1;	//bit1£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬»ñÈ¡IDÇëÇóĞèÒªÉÏ±¨ID
 			break;			//ÍË³öFor
 		}
@@ -370,6 +498,11 @@ void BusFrameProcessGetID(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//±£´æ»ñÈ¡IDÇëÇ
 			Port=(PortDef*)((u32)Port+sizeof(PortDef));			//Ö¸ÏòÏÂÒ»¶Ë¿Ú
 		}
 	}
+	if(WriteSegFlg)				//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	{
+		sBorad->sPlu.Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+		sBorad->sPlu.Time.TimeSEG		=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+	}
 }
 /*******************************************************************************
 *º¯ÊıÃû			:	function
@@ -380,139 +513,247 @@ void BusFrameProcessGetID(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//±£´æ»ñÈ¡IDÇëÇ
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void BusFrameProcessSendBox(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//·¢ËÍÒ©ÏäÊı¾İ
+void BusFrameProcessSendBox(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//·¢ËÍÒ©ÏäÊı¾İ
 {
 	u8	Flag	=	0;				//´¦Àí±êÖ¾
 	u8 	Num		=	0;
+	u8 	Temp	=	0;
+	u8 	Temp1	=	0;
 	PortDef*	Port;
 	Port	=	&(sBorad->Port1);
 	//=========================¼ì²éÓĞÎŞÊı¾İĞèÒªÉÏ±¨
-	for(Num=0;Num<MaxPortNum;Num++)
+//	for(Num=0;Num<MaxPortNum;Num++)
+//	{
+//		if(Port->sBus.BusqSts.BusFlg	==	1)	//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+//		{
+////			Port->sBus.BusqSts.BusFlg	=	0;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+//			Flag	=	1;
+//			break;			//ÍË³öFor
+//		}
+//		if(Num<MaxPortNum-1)
+//		{
+//			Port=(PortDef*)((u32)Port+sizeof(PortDef));			//Ö¸ÏòÏÂÒ»¶Ë¿Ú
+//		}
+//	}
+//	if(Flag	==0)
+//	{
+//		return;	//ÍË³ö£¬²»ÍùÏÂÖ´ĞĞ
+//	}
+	//=========================ÉÏ±¨Êı¾İ
+	sBorad->sPlu.Time.TimeBUS	++;							//Íâ²¿×ÜÏßÊ±¼ä	
+	if(((sBorad->sPlu.Time.TimeBUS)%30)	==	0)	//20ms·¢ËÍÒ»¸öÖ¡
 	{
-		if(Port->sBus.BusqSts.BusFlg	==	1)	//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+		Port	=	&(sBorad->Port1);					//ÖØĞÂÖ¸Ïò¶Ë¿Ú1
+		for(Num=0;Num<MaxPortNum;Num++)
 		{
-			Flag	=	1;
-			break;			//ÍË³öFor
-		}
-		if(Num<MaxPortNum-1)
-		{
-			Port=(PortDef*)((u32)Port+sizeof(PortDef));			//Ö¸ÏòÏÂÒ»¶Ë¿Ú
+			if(Port->sBus.BusqSts.BusFlg	==	1)	//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+			{
+				Flag	=	1;
+				Port->sBus.BusqSts.BusFlg	=	0;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+				if(Port->sBus.BusqSts.GetID	==1)	//bit1£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬»ñÈ¡IDÇëÇóĞèÒªÉÏ±¨ID
+				{
+					Port->sBus.BusqSts.GetID	=	0;	//bit1£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬»ñÈ¡IDÇëÇóĞèÒªÉÏ±¨ID
+					Port->sBus.sBusFarme.Ucode	=	Port->sBus.Ucode;			//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+					Port->sBus.sBusFarme.Cmd		=	eGetID;					//ÉÏÎ»»úÖ÷¶¯»ñÈ¡IDÇëÇóÓ¦´ğÃüÁî
+					if(Port->sBox.BoxSts.ReadErr	==1)		//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+					{
+						Port->sBus.sBusFarme.StsCode	=	eReadErr;						//¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
+					}
+					else if(Port->sBox.BoxSts.BoxOn	==0)	//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä
+					{
+						Port->sBus.sBusFarme.StsCode	=	eNoData;						//ÎŞÒ©ÏäÊı¾İ
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
+					}
+					else
+					{
+						Port->sBus.sBusFarme.StsCode	=	eNoErr;							//ÎŞ´íÎó
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
+					}
+					break;			//ÍË³öFor
+				}
+				//=======È¡Ò©£ºÎŞÒ©ÏäÊı¾İÊ±Ó¦´ğÎŞÊı¾İ¼°Çå³ıÏà¹Ø±êÖ¾Î»
+				else if(Port->sBus.BusqSts.GetBox	==1)	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+				{
+					//¶Á¿¨Æ÷»µ
+					if(Port->sBox.BoxSts.ReadErr	==	1)	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+					{
+						Port->sBus.BusqSts.GetBox		=	0;		//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+						Port->sBus.BusqSts.GotBox		=	0;		//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+						Port->sBus.BusqSts.TakeBox	=	0;		//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+						Port->sBus.BusqSts.BoxBack	=	0;		//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+						Port->sBus.BusqSts.TimeOut	=	0;		//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
+						Port->sBus.BusqSts.SendID		=	0;		//bit7£º0-ÎŞ²Ù×÷£¬	1-¼ì²âµ½Ò©Ïä²åÈë£¬Ö÷¶¯ÉÏ±¨ID£¬Èç¹ûÊÇÈ¡Ò©£¬È¡ÏûÖ÷¶¯ÉÏ±¨£¬Ê¹ÓÃ×´Ì¬ÉÏ±¨
+
+						
+						Port->sBus.sBusFarme.Ucode	=	Port->sBus.Ucode;	//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+						Port->sBus.sBusFarme.Cmd		=	eGetBox;			//È¡Ò©ÃüÁîÉÏ±¨
+						Port->sBus.sBusFarme.StsCode			=	eReadErr;				//Ò©ÏäÈ¡×ß
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
+						
+						break;			//ÍË³öFor
+					}
+					//¶Á¿¨Æ÷Õı³££ºÎŞÒ©Ïä
+					else if(Port->sBox.BoxSts.BoxOn	==	0)		//bit2£º0-¶Á¿¨Æ÷Õı³££¬1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+					{
+						Port->sBus.BusqSts.GetBox		=	0;		//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+						Port->sBus.BusqSts.GotBox		=	0;		//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+						Port->sBus.BusqSts.TakeBox	=	0;		//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+						Port->sBus.BusqSts.BoxBack	=	0;		//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+						Port->sBus.BusqSts.TimeOut	=	0;		//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
+						Port->sBus.BusqSts.SendID		=	0;		//bit7£º0-ÎŞ²Ù×÷£¬	1-¼ì²âµ½Ò©Ïä²åÈë£¬Ö÷¶¯ÉÏ±¨ID£¬Èç¹ûÊÇÈ¡Ò©£¬È¡ÏûÖ÷¶¯ÉÏ±¨£¬Ê¹ÓÃ×´Ì¬ÉÏ±¨
+						
+						Port->sBus.sBusFarme.Ucode	=	Port->sBus.Ucode;	//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+						Port->sBus.sBusFarme.Cmd		=	eGetBox;			//È¡Ò©ÃüÁîÉÏ±¨
+						Port->sBus.sBusFarme.StsCode			=	eNoData;				//Ò©ÏäÈ¡×ß
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
+						
+						break;			//ÍË³öFor
+					}
+					else
+					{
+						Flag	=	0;
+					}
+					break;			//ÍË³öFor
+				}
+				//=======ÒÔÏÂÈıÌõ×¢ÒâÏÈºóË³Ğò
+				else if(Port->sBus.BusqSts.BoxBack	==1)	//bit5£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÊÕ»Ø
+				{
+					Port->sBus.BusqSts.BoxBack	=	0;		//bit5£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÊÕ»Ø
+					//¸ù¾İÒÔÉÏÁ½Ìõ±êÖ¾È·¶¨ÉÏ±¨ÀàĞÍ
+					if(Port->sBus.BusqSts.GotBox	==1)	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß£¨ÉÏ´«¿¨ºÅ£©ÓÃ»§ÂëÎª0x00
+					{
+						Port->sBus.BusqSts.GetBox		=	0;		//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+						Port->sBus.BusqSts.TimeOut	=	0;		//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
+						
+						Port->sBus.BusqSts.GotBox	=	0;		//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+						Port->sBus.sBusFarme.Ucode	=	0x00;			//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+						Port->sBus.sBusFarme.Cmd		=	eLock;						//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
+						Port->sBus.sBusFarme.StsCode			=	eBoxBack;					//Ò©ÏäÊÕ»Ø
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;					
+					}
+					else if(Port->sBus.BusqSts.TakeBox	==1)	//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+					{
+						Port->sBus.BusqSts.TakeBox	=	0;				//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+						Port->sBus.sBusFarme.Ucode	=	0x00;							//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+						Port->sBus.sBusFarme.Cmd		=	eSendID;					//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
+						Port->sBus.sBusFarme.StsCode			=	eBoxBack;					//Ò©ÏäÊÕ»Ø
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
+					}
+					else
+					{
+						Port->sBus.BusqSts.TakeBox	=	0;		//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+						Port->sBus.sBusFarme.Ucode	=	0x00;								//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+						Port->sBus.sBusFarme.Cmd		=	eSendID;					//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
+						Port->sBus.sBusFarme.StsCode			=	eBoxBack;							//Ò©ÏäÊÕ»Ø
+						Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
+					}				
+					break;			//ÍË³öFor
+				}
+				else if(Port->sBus.BusqSts.GotBox	==1)	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+				{
+					//´Ë±êÖ¾²»ÄÜÇå³ı£¬ĞèÒªµÈ´ıÒ©ÏäÊÕ»Ø
+	//				Port->sBus.BusqSts.GotBox	=	0;				//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+					Port->sBus.sBusFarme.Ucode	=	Port->sBus.Ucode;			//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+					Port->sBus.sBusFarme.Cmd		=	eLock;				//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
+					Port->sBus.sBusFarme.StsCode		=	eBoxOff;			//Ò©ÏäÈ¡×ß
+					Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
+					break;			//ÍË³öFor
+				}
+				else if(Port->sBus.BusqSts.TakeBox	==1)	//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+				{
+					//´Ë±êÖ¾²»ÄÜÇå³ı£¬ĞèÒªµÈ´ıÒ©ÏäÊÕ»Ø
+	//				Port->sBus.BusqSts.TakeBox	=	0;				//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+					Port->sBus.sBusFarme.Ucode	=	0x00;			//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+					Port->sBus.sBusFarme.Cmd		=	eLock;			//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
+					Port->sBus.sBusFarme.StsCode		=	eBoxTake;			//Ò©Ïä±»Ç¿ÖÆÈ¡×ß
+					Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
+					break;			//ÍË³öFor
+				}
+				
+				else if(Port->sBus.BusqSts.TimeOut	==1)	//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±(Ö»ÉÏ´«×´Ì¬£¬²»ÉÏ´«¿¨ºÅ£©
+				{	
+					Port->sBus.BusqSts.TimeOut	=	0;				//bit10£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©×´Ì¬ÏÂÈ¡³öÒ©ÏäºóĞèÒªÉÏ±¨Ò©Ïä×´Ì¬
+					Port->sBus.sBusFarme.Ucode	=	Port->sBus.Ucode;	//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
+					Port->sBus.sBusFarme.Cmd		=	eLock;				//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
+					Port->sBus.sBusFarme.StsCode			=	eBoxTout;			//Ò©ÏäÊÕ»Ø
+//					Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;		//´ø¿¨ºÅÉÏ´«
+					Port->sBus.sBusFarme.Length	=	FixedAddrLenth;		//²»´ø¿¨ºÅÉÏ´«
+					break;			//ÍË³öFor
+				}
+				else
+				{
+					Flag	=	0;
+				}
+//				break;			//ÍË³öFor
+			}
+			if(Num<MaxPortNum-1)
+			{
+				Port=(PortDef*)((u32)Port+sizeof(PortDef));			//Ö¸ÏòÏÂÒ»¶Ë¿Ú
+			}
+//			else if(Num==MaxPortNum-1)
+//			{
+//				Port->sBus.BusqSts.BusFlg	=	0;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+//			}
 		}
 	}
 	if(Flag	==0)
 	{
 		return;	//ÍË³ö£¬²»ÍùÏÂÖ´ĞĞ
 	}
-	//=========================ÉÏ±¨Êı¾İ
-	sBorad->Time.TimeBUS	++;							//Íâ²¿×ÜÏßÊ±¼ä	
-	if((sBorad->Time.TimeBUS%20)	==	0)	//20ms·¢ËÍÒ»¸öÖ¡
-	{
-		Port	=	&(sBorad->Port1);					//ÖØĞÂÖ¸Ïò¶Ë¿Ú1
-		for(Num=0;Num<MaxPortNum;Num++)
-		{
-			if(Port->sBus.BusqSts.GetID	==1)	//bit1£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬»ñÈ¡IDÇëÇóĞèÒªÉÏ±¨ID
-			{
-				Port->sBus.BusqSts.GetID	=	0;	//bit1£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬»ñÈ¡IDÇëÇóĞèÒªÉÏ±¨ID
-//				Port->sBus.sBusFarme.Ucode;			//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-				Port->sBus.sBusFarme.Cmd		=	eGetID;					//ÉÏÎ»»úÖ÷¶¯»ñÈ¡IDÇëÇóÓ¦´ğÃüÁî
-				if(Port->Status.BoxRead	==1)		//bit2£º0-¶Á¿¨Æ÷Õı³££¬1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
-				{
-					Port->sBus.sBusFarme.EC	=	eReadErr;						//¶Á¿¨Æ÷Í¨Ñ¶Òì³£
-					Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
-				}
-				else if(Port->sBox.BoxSts.BoxOn	==0)	//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä
-				{
-					Port->sBus.sBusFarme.EC	=	eNoData;						//ÎŞÒ©ÏäÊı¾İ
-					Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
-				}
-				else
-				{
-					Port->sBus.sBusFarme.EC	=	eNoErr;							//ÎŞ´íÎó
-					Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
-				}
-				break;			//ÍË³öFor
-			}
-			//=======ÒÔÏÂÈıÌõ×¢ÒâÏÈºóË³Ğò
-			else if(Port->sBus.BusqSts.BoxBack	==1)	//bit5£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÊÕ»Ø
-			{
-				//¸ù¾İÒÔÉÏÁ½Ìõ±êÖ¾È·¶¨ÉÏ±¨ÀàĞÍ
-				if(Port->sBus.BusqSts.GotBox	==1)	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
-				{
-					Port->sBus.BusqSts.GotBox	=	0;		//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
-//					sFarme->Ucode	=	Port->Ucode;			//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-					Port->sBus.sBusFarme.Cmd		=	eLock;						//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
-					Port->sBus.sBusFarme.EC			=	eBoxBack;					//Ò©ÏäÊÕ»Ø
-					Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;					
-				}
-				else if(Port->sBus.BusqSts.TakeBox	==1)	//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
-				{
-					Port->sBus.BusqSts.TakeBox	=	0;				//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
-					Port->sBus.sBusFarme.Ucode	=	0x00;							//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-					Port->sBus.sBusFarme.Cmd		=	eSendID;					//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
-					Port->sBus.sBusFarme.EC			=	eBoxBack;					//Ò©ÏäÊÕ»Ø
-					Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
-				}
-				else
-				{
-					Port->sBus.BusqSts.TakeBox	=	0;		//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
-					Port->sBus.sBusFarme.Ucode	=	0x00;								//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-					Port->sBus.sBusFarme.Cmd		=	eSendID;					//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
-					Port->sBus.sBusFarme.EC			=	0x00;							//Ò©ÏäÊÕ»Ø
-					Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
-				}				
-				break;			//ÍË³öFor
-			}
-			else if(Port->sBus.BusqSts.GotBox	==1)	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
-			{
-				//´Ë±êÖ¾²»ÄÜÇå³ı£¬ĞèÒªµÈ´ıÒ©ÏäÊÕ»Ø
-//				Port->sBus.BusqSts.GotBox	=	0;				//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
-//				Port->sBus.sBusFarme.Ucode	=	Port->Ucode;	//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-				Port->sBus.sBusFarme.Cmd		=	eLock;				//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
-				Port->sBus.sBusFarme.EC		=	eBoxOff;			//Ò©ÏäÈ¡×ß
-				Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
-				break;			//ÍË³öFor
-			}
-			else if(Port->sBus.BusqSts.TakeBox	==1)	//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
-			{
-				//´Ë±êÖ¾²»ÄÜÇå³ı£¬ĞèÒªµÈ´ıÒ©ÏäÊÕ»Ø
-//				Port->sBus.BusqSts.TakeBox	=	0;				//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
-//				Port->sBus.sBusFarme.Ucode	=	0x00;					//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-				Port->sBus.sBusFarme.Cmd		=	eLock;			//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
-				Port->sBus.sBusFarme.EC		=	eBoxTake;			//Ò©Ïä±»Ç¿ÖÆÈ¡×ß
-				Port->sBus.sBusFarme.Length	=	FixedAddrLenth;
-				break;			//ÍË³öFor
-			}
-			
-			else if(Port->sBus.BusqSts.TimeOut	==1)	//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
-			{	
-				Port->sBus.BusqSts.TimeOut	=	0;				//bit10£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©×´Ì¬ÏÂÈ¡³öÒ©ÏäºóĞèÒªÉÏ±¨Ò©Ïä×´Ì¬
-//				Port->sBus.sBusFarme.Ucode	=	Port->Ucode;	//Êı¾İÖ¡µ½´ïµ×²ãºó£¬»Ø¸´µÄÊı¾İÖ¡×ÜÊÇ½«Æä°´Ô­Öµ·µ»Ø¡£ÈôÊı¾İÖ¡ÊÇµ×²ãÉè±¸×ÔÖ÷·¢³ö£¬ÔòÓÃ»§ÂëÉèÎª0£¬Òò´Ë¹æ¶¨¹¤¿ØÖ÷»ú²»ÄÜ½«ÏÂĞĞÊı¾İÖ¡µÄÓÃ»§ÂëÉèÎª0¡£
-				Port->sBus.sBusFarme.Cmd		=	eLock;				//ÏÂÎ»»úÖ÷¶¯ÉÏ´«IDºÅÃüÁî
-				Port->sBus.sBusFarme.EC			=	eBoxTout;			//Ò©ÏäÊÕ»Ø
-				Port->sBus.sBusFarme.Length	=	FixedAddrLenth+FixedDataLenth;
-				break;			//ÍË³öFor
-			}
-			if(Num<MaxPortNum-1)
-			{
-				Port=(PortDef*)((u32)Port+sizeof(PortDef));			//Ö¸ÏòÏÂÒ»¶Ë¿Ú
-			}
-		}
-	}
-	else
-	{
-		return;		//Ê±¼äÎ´µ½£¬ÍË³ö£¬²»´¦Àí
-	}
+//	else
+//	{
+//		return;		//Ê±¼äÎ´µ½£¬ÍË³ö£¬²»´¦Àí
+//	}
 	//=========================Ğ´ÈëÊı¾İ
 
 	sBorad->Nserial+=1;												//Á÷Ë®ºÅ¼Ó1
-	Port->sBus.sBusFarme.SN	=	sBorad->Nserial;						//Á÷Ë®ºÅ
-	Port->sBus.sBusFarme.Head		=	eHead;		//Í·±êÊ¶
+//	Port->sBus.sBusFarme.nSerial	=	sBorad->Nserial;
+	Port->sBus.sBusFarme.nSerial	=	0x00;					//Á÷Ë®ºÅ:²»ÄÜÓÃ7F 7EÖ¡Í·Ö¡Î²»á³åÍ»
+	Port->sBus.sBusFarme.Head		=	ePro485Head;		//Í·±êÊ¶
 	Port->sBus.sBusFarme.dAdd		=	0x00;
 	Port->sBus.sBusFarme.sAdd		=	SwitchData;
-	Port->sBus.sBusFarme.Addr2	=	SwitchData;
-	Port->sBus.sBusFarme.Addr3	=	Port->PortNum;						//²ÛµØÖ·£¨¶Ë¿ÚºÅ£©
-	Port->sBus.sBusFarme.Bcc8		=	BCC8((u8*)&(Port->sBus.sBusFarme.dAdd),6+Port->sBus.sBusFarme.Length);		//Òì»òĞ£Ñé	//¼ÆËã·¶Î§ÎªÆğÊ¼¶Îµ½Êı¾İ¶Î(dAdd~data[n])µ½´íÎóÂë
-	Port->sBus.sBusFarme.End		=	eEnd;			//½áÊø±êÊ¶
+	Port->sBus.sBusFarme.Addr.Addr2	=	SwitchData;			//²ãµØÖ·
+	Port->sBus.sBusFarme.Addr.Addr3	=	Port->PortNum;						//²ÛµØÖ·£¨¶Ë¿ÚºÅ£©
+	//=======¿¨ºÅ
+	Port->sBus.sBusFarme.data[0]	=	Port->sBox.CardData[2]&0x0F;
+	Port->sBus.sBusFarme.data[1]	=	Port->sBox.CardData[3]>>4&0x0F;
+	Port->sBus.sBusFarme.data[2]	=	Port->sBox.CardData[3]&0x0F;
+	
+	memcpy(RS485BusTxd,(u8*)&Port->sBus.sBusFarme,14);
+//	memcpy(Port->sBus.sBusFarme.data,&(Port->sBox.CardData[1]),3);
+	//BCC8
+//		u8 	Num		=	0;
+//	u8 	Temp		=	0;
+	for(Temp=1;Temp<7+Port->sBus.sBusFarme.Length;Temp++)
+	{
+		Temp1=Temp1^RS485BusTxd[Temp];
+	}
+	Port->sBus.sBusFarme.Bcc8	=	Temp1;
+	
+//	Port->sBus.sBusFarme.Bcc8		=	BCC8((u8*)&(Port->sBus.sBusFarme.dAdd),6+Port->sBus.sBusFarme.Length);		//Òì»òĞ£Ñé	//¼ÆËã·¶Î§ÎªÆğÊ¼¶Îµ½Êı¾İ¶Î(dAdd~data[n])µ½´íÎóÂë
+
+	Port->sBus.sBusFarme.End		=	ePro485End;			//½áÊø±êÊ¶
+//	if(Port->sBus.sBusFarme.Length>4)
+//	{
+//		Port->sBus.sBusFarme.data[3]	=	Port->sBus.sBusFarme.Bcc8;
+//		Port->sBus.sBusFarme.data[4]	=	Port->sBus.sBusFarme.End;
+//	}
+//	else
+//	{
+//		Port->sBus.sBusFarme.data[0]	=	Port->sBus.sBusFarme.Bcc8;
+//		Port->sBus.sBusFarme.data[1]	=	Port->sBus.sBusFarme.End;
+//	}
+	if(Port->sBus.sBusFarme.Length>4)
+	{
+		RS485BusTxd[14]	=	Port->sBus.sBusFarme.Bcc8;
+		RS485BusTxd[15]	=	Port->sBus.sBusFarme.End;
+	}
+	else
+	{
+		RS485BusTxd[11]	=	Port->sBus.sBusFarme.Bcc8;
+		RS485BusTxd[12]	=	Port->sBus.sBusFarme.End;
+	}
 	RS485_DMASend(&RS485_Bus,(u32*)RS485BusTxd,6+Port->sBus.sBusFarme.Length+3);	//RS485-DMA·¢ËÍ³ÌĞò
 //	BusFrameProcessPacketAndSend(sFarme);			//°´ÕÕĞ­Òé´ò°üÊı¾İ²¢·¢ËÍ
 }
@@ -525,22 +766,22 @@ void BusFrameProcessSendBox(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//·¢ËÍÒ©ÏäÊı¾
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void BusFrameProcessPacketAndSend(sFarmeDef*	sFarme)			//°´ÕÕĞ­Òé´ò°üÊı¾İ²¢·¢ËÍ
+void BusFrameProcessPacketAndSend(sMs485FrmDef*	sFarme)			//°´ÕÕĞ­Òé´ò°üÊı¾İ²¢·¢ËÍ
 {
 	u8 	Num		=	0;
 	u8	Temp	=	0;
 	u8	Temp1	=	0;
-	RS485BusTxd[0]	=	eHead;					//b0Ê¶±ğ·û	0x7E
+	RS485BusTxd[0]	=	ePro485Head;				//b0Ê¶±ğ·û	0x7E
 	RS485BusTxd[1]	=	0x00;						//b1Ä¿±êµØÖ·£¨ÔİÊ±Àí½âÎªµ¥Ôª¹ñµØÖ·£©ÏÂ·¢Îª½ÓÊÕµØÖ·£¬ÉÏ´«Îª0x00
 	RS485BusTxd[2]	=	SwitchData;			//b2Ô´µØÖ· ÏÂ·¢Îª0x00£¬ÉÏ´«Îª±¾µØÖ·
-	RS485BusTxd[3]	=	sFarme->SN;			//b3Á÷Ë®ºÅ 0x01~0xFF Ã¿´ÎÊ¹ÓÃºó¼Ó1
+	RS485BusTxd[3]	=	sFarme->nSerial;			//b3Á÷Ë®ºÅ 0x01~0xFF Ã¿´ÎÊ¹ÓÃºó¼Ó1
 	RS485BusTxd[4]	=	sFarme->Cmd;		//b4ÃüÁîºÅ£º0x92-»ñÈ¡Ö¸¶¨IC¿¨ºÅ£¬0x93È¡Ò©»òÕßÖ÷¶¯ÉÏ±¨	
 	RS485BusTxd[5]	=	sFarme->Ucode;	//b5ÓÃ»§Âë£º²»´¦Àí£¬Ô­Ñù·µ»Ø
 	RS485BusTxd[6]	=	sFarme->Length;	//b6µØÖ·+Òì³£Âë¹Ì¶¨³¤¶ÈÎª4£¬¿¨Êı¾İ³¤¶ÈÎª3
 	RS485BusTxd[7]	=	0xFF;						//b7¹ñµØÖ·(µ¥Ôª¹ñºÅ)
 	RS485BusTxd[8]	=	SwitchData;						//b8²ãµØÖ·
-	RS485BusTxd[9]	=	sFarme->Addr3;	//b9²ÛµØÖ·£¨¶Ë¿ÚºÅ£©
-	RS485BusTxd[10]	=	sFarme->EC;//´íÎóÂë
+	RS485BusTxd[9]	=	sFarme->Addr.Addr3;	//b9²ÛµØÖ·£¨¶Ë¿ÚºÅ£©
+	RS485BusTxd[10]	=	sFarme->StsCode;//´íÎóÂë
 	
 	//================================¸´ÖÆÊı¾İ
 	if(sFarme->Length>4)
@@ -572,7 +813,7 @@ void BusFrameProcessPacketAndSend(sFarmeDef*	sFarme)			//°´ÕÕĞ­Òé´ò°üÊı¾İ²¢·¢ËÍ
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void BusFrameProcessGetBox(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//Êı¾İÃüÁî´¦Àí---È¡Ò©
+void BusFrameProcessGetBox(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//Êı¾İÃüÁî´¦Àí---È¡Ò©
 {
 	u8 WriteSegFlg	=	0;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
 	u8 Num	=	0;
@@ -580,13 +821,15 @@ void BusFrameProcessGetBox(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//Êı¾İÃüÁî´¦Àí
 	//================±£´æ±êÊ¶
 	for(Num=0;Num<MaxPortNum;Num++)
 	{
-		if(sFarme->Addr3	==	Num+1)					//¶Ë¿ÚµØÖ·
+		if(sFarme->Addr.Addr3	==	Num+1)					//¶Ë¿ÚµØÖ·
 		{
-			sBorad->Nserial	=	sFarme->SN;				//±£´æÁ÷Ë®ºÅ
-			Port->sBus.BusqSts.GetBox		=	1;		//bit2£º0-ÎŞÇëÇó£¬		1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
-			Port->Seg.sSegSts.SegFlg		=	1;		//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+//			sBorad->Nserial	=	sFarme->SN;				//±£´æÁ÷Ë®ºÅ
+			Port->sBus.Ucode	=	sFarme->Ucode;		//±£´æÓÃ»§Âë
+			Port->sBus.BusqSts.BusFlg		=	1;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+			Port->sBus.BusqSts.GetBox		=	1;			//bit2£º0-ÎŞÇëÇó£¬		1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+			Port->Seg.sSegSts.SegFlg		=	1;			//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
 //			Port->Status.SendSts	=	1;		//bit10£º0-ÎŞ²Ù×÷£¬1-È¡Ò©×´Ì¬ÏÂÒ©Ïä±ä»¯ºóĞèÒªÉÏ±¨Ò©Ïä×´Ì¬»òÕßÔÚÎŞÊı¾İÇé¿öÏÂÉÏ±¨×´Ì¬
-//			WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+			WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
 			//========»ñÈ¡ËøÎüºÏ/ÊıÂë¹ÜÉÁË¸Ê±¼ä
 			if(sFarme->Length<6)		//Î´ÅäÖÃÊ±¼ä
 			{
@@ -615,8 +858,8 @@ void BusFrameProcessGetBox(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//Êı¾İÃüÁî´¦Àí
 	}
 	if(WriteSegFlg)				//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
 	{
-		sBorad->Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
-		sBorad->Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+		sBorad->sPlu.Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+		sBorad->sPlu.Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
 	}
 }
 /*******************************************************************************
@@ -628,48 +871,53 @@ void BusFrameProcessGetBox(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//Êı¾İÃüÁî´¦Àí
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void BusFrameProcessLock(sFarmeDef*	sFarme,sBoradDef*	sBorad)			//ËøÃüÁî´¦Àí
+void BusFrameProcessLock(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//ËøÃüÁî´¦Àí
 {
 	u32	Time	=	0;
 	PortDef*	Port;
-	if(sFarme->Addr3	==1)
+	if(sFarme->Addr.Addr3	==1)
 	{
 		Port=&(sBorad->Port1);
 	}
-	else if(sFarme->Addr3	==2)
+	else if(sFarme->Addr.Addr3	==2)
 	{
 		Port=&(sBorad->Port2);
 	}
-	else if(sFarme->Addr3	==3)
+	else if(sFarme->Addr.Addr3	==3)
 	{
 		Port=&(sBorad->Port3);
 	}
-	else if(sFarme->Addr3	==4)
+	else if(sFarme->Addr.Addr3	==4)
 	{
 		Port=&(sBorad->Port4);
 	}
-	//=====Ò©ÒÑÈ¡×ßÏûÏ¢
-	if((sFarme->Cmd==eLock)&&((sFarmeRev.EC==eBoxOff)||(sFarmeRev.EC==eBoxTout)||(sFarmeRev.EC==eNoData)))
+	//=========================Ò©ÒÑÈ¡×ßÏûÏ¢
+//	if((sFarme->Cmd==eLock)&&((sFarmeRev.EC==eBoxOff)||(sFarmeRev.EC==eBoxTout)||(sFarmeRev.EC==eNoData)))
+	if((sFarme->Cmd==eLock)&&((sFarmeRev.StsCode==eBoxOff)))
 	{
-//		Port->Lock.Status=0;			//0-ËøÎ´¿ª£¬1-ÒÑ¿ªeNoData
-		Port->Lock.sLockSts.LockOn	=	1;
-		Port->Lock.LockOnTime	=	LockOffTime;		
+//		Port->Lock.Status=0;										//0-ËøÎ´¿ª£¬1-ÒÑ¿ªeNoData
+		if(Port->Lock.sLockSts.LockOn)
+		{
+			Port->Lock.LockOnTime	=	LockOffTime;	
+		}
+//		Port->Lock.sLockSts.LockOn	=	1;
+//		Port->Lock.LockOnTime	=	LockOffTime;		
 //		GPIO_ResetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//ÊÍ·ÅËø
 	}
-	else
+	else if(sFarme->Cmd==0x13)
 	{
 		//=====¼ì²éËøÎüºÏÊ±¼ä	
 		if(sFarme->Length	==4||sFarme->data[0]==0)//Î´ÅäÖÃÊ±¼ä»òÕßÎüºÏÊ±¼äÎª0±íÊ¾Ê¹ÓÃÄ¬ÈÏÖµ
 		{
-			Time	=	DefaultOnTime;		//Ä¬ÈÏËøÎüºÏÊ±¼ä
+			Time	=	DefaultOnTime-500;		//Ä¬ÈÏËøÎüºÏÊ±¼ä
 		}
 		else if(sFarme->data[0]>	MaxOnTime/1000)
 		{
-			Time	=	MaxOnTime;				//ËøÎüºÏ×î´óÊ±¼ä
+			Time	=	MaxOnTime-500;				//ËøÎüºÏ×î´óÊ±¼ä
 		}
 		else
 		{
-			Time	=	sFarme->data[0]*1000;
+			Time	=	sFarme->data[0]*1000-500;
 		}
 		
 		//======ÉèÖÃÊıÖµ
@@ -701,7 +949,7 @@ void BoardBoxProcess(sBoradDef*	sBorad)				//Ò©Ïä´¦Àí³ÌĞò
 * ĞŞ¸ÄÄÚÈİ		: ÎŞ
 * ÆäËü			: 
 *******************************************************************************/
-void BoardGetBoxProcess(sBoradDef*	sBorad)		//È¡Ò©Ê±µÄÊ±¼ä¹ÜÀí
+void BoardGetBoxProcess(sBoradDef*	sBorad)		//È¡Ò©Ê±µÄÊ±¼ä¹ÜÀí,°üÀ¨³¬Ê±
 {
 	u8 Num	=	0;
 	PortDef*	Port	=	&(sBorad->Port1);
@@ -727,6 +975,18 @@ void BoardGetBoxProcess(sBoradDef*	sBorad)		//È¡Ò©Ê±µÄÊ±¼ä¹ÜÀí
 					Port->Lock.sLockSts.LockFlg		=	0;	//bit0£º0-ÎŞ²Ù×÷, 1-ÓĞ²Ù×÷ÇëÇó(¿ØÖÆËøµÄ×´Ì¬£©
 					Port->Lock.sLockSts.LockSts		=	0;	//bit2£º0-ÒÑÊÍ·Å£¬1-ÒÑ¿ªËø
 					Port->Lock.sLockSts.LockTout	=	1;	//bit3£º0-Î´³¬Ê±£¬1-ÒÑ³¬Ê±(È¡Ò©³¬Ê±)
+					
+					//===========¹Ø±ÕÊıÂë¹Ü
+					Port->Seg.sSegSts.SegFlg			=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+					Port->Seg.sSegSts.SegTimeOut	=	1;	//bit1£º0-ÎŞ²Ù×÷,		1-È¡Ò©³¬Ê±£¬ĞèÒª¹Ø±ÕÊıÂë¹Ü
+					//===========×ÜÏß
+					Port->sBus.BusqSts.BusFlg			=	1;	//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş(ÉÏ±¨Êı¾İ»òÕß×´Ì¬£©
+					Port->sBus.BusqSts.GetBox			=	0;	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+					Port->sBus.BusqSts.GotBox			=	0;	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+					Port->sBus.BusqSts.TakeBox		=	0;	//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+					Port->sBus.BusqSts.BoxBack		=	0;	//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+					Port->sBus.BusqSts.TimeOut		=	1;	//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
+					Port->sBus.BusqSts.SendID			=	0;	//bit7£º0-ÎŞ²Ù×÷£¬	1-¼ì²âµ½Ò©Ïä²åÈë£¬Ö÷¶¯ÉÏ±¨ID£¬Èç¹ûÊÇÈ¡Ò©£¬È¡ÏûÖ÷¶¯ÉÏ±¨£¬Ê¹ÓÃ×´Ì¬ÉÏ±¨
 //					Port->Status.SendSts	=	1;	//bit10£º0-ÎŞ²Ù×÷£¬1-È¡Ò©×´Ì¬ÏÂÒ©Ïä±ä»¯ºóĞèÒªÉÏ±¨Ò©Ïä×´Ì¬»òÕßÔÚÎŞÊı¾İÇé¿öÏÂÉÏ±¨×´Ì¬
 				}
 			}
@@ -777,7 +1037,8 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
 			Status	=	&(sBorad.Port1.sBox);			//Ïä×Ó×´Ì¬
 			CardBuffer	=	&ICCardReadRev1;				//¿¨ÍêÕûÊı¾İ		
 			if(Num	==	22)	//ÓĞ¿¨
-			{			
+			{	
+				CardReaderTimeCount1	=	0;
 				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
 				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
 				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
@@ -785,6 +1046,8 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
 			}
 			else if(Num	==	6)//ÎŞ¿¨
 			{
+				CardReaderTimeCount1	=	0;
+				ICCardReadTime1	=500;					//·ÀÖ¹È¡¿¨Ê±¶Á¿¨²»ÎÈ¶¨ÎóÈÏÎªÒÑÊÕ»Ø¿¨
 				Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
 				BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 			}
@@ -800,7 +1063,8 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
 			Status	=	&(sBorad.Port2.sBox);			//Ïä×Ó×´Ì¬
 			CardBuffer	=	&ICCardReadRev2;				//¿¨ÍêÕûÊı¾İ		
 			if(Num	==	22)	//ÓĞ¿¨
-			{			
+			{	
+				CardReaderTimeCount2	=	0;				
 				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
 				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)		
 				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
@@ -808,6 +1072,7 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
 			}
 			else if(Num	==	6)//ÎŞ¿¨
 			{
+				CardReaderTimeCount2	=	0;
 				Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
 				BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 			}
@@ -824,6 +1089,7 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
 			CardBuffer	=	&ICCardReadRev3;				//¿¨ÍêÕûÊı¾İ		
 			if(Num	==	22)	//ÓĞ¿¨
 			{	
+				CardReaderTimeCount3	=	0;
 				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
 				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)		
 				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
@@ -831,11 +1097,223 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
 			}
 			else if(Num	==	6)//ÎŞ¿¨
 			{
+				CardReaderTimeCount3	=	0;
 				Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
 				BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 			}
 		}
 	}
+	//==============================Port4
+	if(USART_GetITStatus(ICCardReadPort4, USART_IT_RXNE))
+  {
+		Port4TimeOut	=	0;		//¶Ë¿Ú4Á¬Ğø¶ÁÊı³¬Ê±---Çå³ı
+		USART_ClearITPendingBit(ICCardReadPort4, USART_IT_RXNE);
+    ICCardReadRxd[ICCardReadCount4]	=	USART_ReceiveData(ICCardReadPort4);
+		ICCardReadCount4++;
+		
+		if(ICCardReadCount4==6	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24	&&	ICCardReadRxd[5]==0x2D)
+		{
+			CardReaderTimeCount4	=	0;
+			Status	=	&(sBorad.Port4.sBox);			//Ïä×Ó×´Ì¬
+			Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
+			BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			
+			ICCardReadCount4=0;
+		}
+		if(ICCardReadCount4>=22	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24)//ÓĞ¿¨
+		{
+			CardReaderTimeCount4	=	0;
+			Status	=	&(sBorad.Port4.sBox);			//Ïä×Ó×´Ì¬
+			CardBuffer	=	(ICBufferDef*)ICCardReadRxd;				//¿¨ÍêÕûÊı¾İ		
+			
+			memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
+			Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)		
+			BoardSaveCardData(&sBorad);														//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+		}
+		return 1;
+  }
+	else if(USART_GetITStatus(ICCardReadPort4, USART_IT_TC))
+  {   
+    USART_ClearITPendingBit(ICCardReadPort4, USART_IT_TC);
+		return 1;
+  }	
+	return 0;
+}
+/*******************************************************************************
+* º¯ÊıÃû			:	function
+* ¹¦ÄÜÃèÊö		:	º¯Êı¹¦ÄÜËµÃ÷ 
+* ÊäÈë			: void
+* ·µ»ØÖµ			: void
+* ĞŞ¸ÄÊ±¼ä		: ÎŞ
+* ĞŞ¸ÄÄÚÈİ		: ÎŞ
+* ÆäËü			: 
+*******************************************************************************/
+u8 CardReaderPortn(void)	//DMA½ÓÊÕ¶Á¿¨Æ÷Êı¾İ
+{
+	u16	Num	=	0;
+	sBoxDef*	Status;				//Ïä×Ó×´Ì¬
+	ICBufferDef*		CardBuffer;		//¿¨ÍêÕûÊı¾İ	
+	
+//	sBoxStatusDef	*TempStus;	//»ñÈ¡×´Ì¬²ÎÊıµØÖ·
+	//==============================Port1
+	Num	=	USART_ReadBufferIDLE(ICCardReadPort1,(u32*)&ICCardReadRev1,(u32*)&ICCardReadRxd1);	//´®¿Ú¿ÕÏĞÄ£Ê½¶Á´®¿Ú½ÓÊÕ»º³åÇø£¬Èç¹ûÓĞÊı¾İ£¬½«Êı¾İ¿½±´µ½RevBuffer,²¢·µ»Ø½ÓÊÕµ½µÄÊı¾İ¸öÊı£¬È»ºóÖØĞÂ½«½ÓÊÕ»º³åÇøµØÖ·Ö¸ÏòRxdBuffer
+	if(Num&&(ICCardReadTime1==0))
+	{
+		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev1);					//¶ÁÈ¡IC¿¨Êı¾İĞ£Ñé£¬·µ»Ø0Ê§°Ü£¬×÷·Ï£¬·µ»Ø1ÕıÈ·
+		if(temp	!=0)
+		{
+			Status	=	&(sBorad.Port1.sBox);			//Ïä×Ó×´Ì¬
+			CardBuffer	=	&ICCardReadRev1;			//¿¨ÍêÕûÊı¾İ		
+			if(Num	==	22)	//ÓĞ¿¨
+			{	
+				CardReaderTimeCount1	=	0;
+				ICCardReadTime1	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
+				if(!((CardData[0]==0x00)&&(CardData[1]==0x00)&&(CardData[2]==0x00)&&(CardData[3]==0x00)))
+				{
+					Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
+					BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+				}
+				
+//				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
+//				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+				
+			}
+			else if(Num	==	6)//ÎŞ¿¨
+			{
+				CardReaderTimeCount1	=	0;
+				ICCardReadTime1	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+				Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
+				BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			}
+		}		
+	}
+	//==============================Port2
+	Num	=	USART_ReadBufferIDLE(ICCardReadPort2,(u32*)&ICCardReadRev2,(u32*)&ICCardReadRxd2);	//´®¿Ú¿ÕÏĞÄ£Ê½¶Á´®¿Ú½ÓÊÕ»º³åÇø£¬Èç¹ûÓĞÊı¾İ£¬½«Êı¾İ¿½±´µ½RevBuffer,²¢·µ»Ø½ÓÊÕµ½µÄÊı¾İ¸öÊı£¬È»ºóÖØĞÂ½«½ÓÊÕ»º³åÇøµØÖ·Ö¸ÏòRxdBuffer
+	if(Num&&(ICCardReadTime2==0))
+	{
+		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev2);					//¶ÁÈ¡IC¿¨Êı¾İĞ£Ñé£¬·µ»Ø0Ê§°Ü£¬×÷·Ï£¬·µ»Ø1ÕıÈ·
+		if(temp	!=0)
+		{
+			Status	=	&(sBorad.Port2.sBox);			//Ïä×Ó×´Ì¬
+			CardBuffer	=	&ICCardReadRev2;				//¿¨ÍêÕûÊı¾İ		
+			if(Num	==	22)	//ÓĞ¿¨
+			{	
+				CardReaderTimeCount2	=	0;
+				ICCardReadTime2	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§				
+				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
+//				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)		
+//				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+				if(!((CardData[0]==0x00)&&(CardData[1]==0x00)&&(CardData[2]==0x00)&&(CardData[3]==0x00)))
+				{
+					Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
+					BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+				}
+				
+			}
+			else if(Num	==	6)//ÎŞ¿¨
+			{
+				CardReaderTimeCount2	=	0;
+				ICCardReadTime2	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+				Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
+				BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			}
+		}
+	}
+	//==============================Port3
+	Num	=	USART_ReadBufferIDLE(ICCardReadPort3,(u32*)&ICCardReadRev3,(u32*)&ICCardReadRxd3);	//´®¿Ú¿ÕÏĞÄ£Ê½¶Á´®¿Ú½ÓÊÕ»º³åÇø£¬Èç¹ûÓĞÊı¾İ£¬½«Êı¾İ¿½±´µ½RevBuffer,²¢·µ»Ø½ÓÊÕµ½µÄÊı¾İ¸öÊı£¬È»ºóÖØĞÂ½«½ÓÊÕ»º³åÇøµØÖ·Ö¸ÏòRxdBuffer
+	if(Num&&(ICCardReadTime3==0))
+	{
+		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev3);					//¶ÁÈ¡IC¿¨Êı¾İĞ£Ñé£¬·µ»Ø0Ê§°Ü£¬×÷·Ï£¬·µ»Ø1ÕıÈ·
+		if(temp	!=0)
+		{
+			Status	=	&(sBorad.Port3.sBox);			//Ïä×Ó×´Ì¬
+			CardBuffer	=	&ICCardReadRev3;				//¿¨ÍêÕûÊı¾İ		
+			if(Num	==	22)	//ÓĞ¿¨
+			{	
+				CardReaderTimeCount3	=	0;
+				ICCardReadTime3	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
+//				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)		
+//				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+				if(!((CardData[0]==0x00)&&(CardData[1]==0x00)&&(CardData[2]==0x00)&&(CardData[3]==0x00)))
+				{
+					Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
+					BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+				}
+				
+			}
+			else if(Num	==	6)//ÎŞ¿¨
+			{
+				CardReaderTimeCount3	=	0;
+				ICCardReadTime3	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+				Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
+				BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			}
+		}
+	}
+	//==============================Port4
+	if(USART_GetITStatus(ICCardReadPort4, USART_IT_RXNE))
+  {
+		if(ICCardReadTime4)		//È¡¿¨ºóÎ´µ½500ms¶Áµ½Êı¾İ
+		{
+			USART_ClearITPendingBit(ICCardReadPort4, USART_IT_RXNE);
+			return 1;	//ÍË³ö£¬²»½ÓÊÕÊı¾İ
+		}
+		Port4TimeOut	=	0;		//¶Ë¿Ú4Á¬Ğø¶ÁÊı³¬Ê±---Çå³ı
+		USART_ClearITPendingBit(ICCardReadPort4, USART_IT_RXNE);
+    ICCardReadRxd[ICCardReadCount4]	=	USART_ReceiveData(ICCardReadPort4);
+		ICCardReadCount4++;
+		
+		if(ICCardReadCount4==6	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24	&&	ICCardReadRxd[5]==0x2D)
+		{
+			CardReaderTimeCount4	=	0;
+			ICCardReadTime4	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+			Status	=	&(sBorad.Port4.sBox);			//Ïä×Ó×´Ì¬
+			Status->BoxSts.NoID	=	1;			//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
+			BoardClrCardData(&sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			
+			ICCardReadCount4=0;
+		}
+		if(ICCardReadCount4>=22	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24)//ÓĞ¿¨
+		{
+			CardReaderTimeCount4	=	0;
+			ICCardReadTime4	=	CKtime;				//È¡¿¨ºó500ms¶Áµ½¿¨µÄÊı¾İµ±×÷ÎŞĞ§
+			Status	=	&(sBorad.Port4.sBox);			//Ïä×Ó×´Ì¬
+			CardBuffer	=	(ICBufferDef*)ICCardReadRxd;				//¿¨ÍêÕûÊı¾İ		
+			
+			memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//¸´ÖÆ¿¨ºÅ
+//			Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)		
+//			BoardSaveCardData(&sBorad);														//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			if(!((CardData[0]==0x00)&&(CardData[1]==0x00)&&(CardData[2]==0x00)&&(CardData[3]==0x00)))
+			{
+				Status->BoxSts.ReadID	=	1;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
+				BoardSaveCardData(&sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+			}
+		}
+		return 1;
+  }
+	else if(USART_GetITStatus(ICCardReadPort4, USART_IT_TC))
+  {   
+    USART_ClearITPendingBit(ICCardReadPort4, USART_IT_TC);
+		return 1;
+  }	
+	return 0;
+}
+/*******************************************************************************
+*º¯ÊıÃû			:	CardReaderPort4
+*¹¦ÄÜÃèÊö		:	¶Ë¿Ú4¶Á¿¨---¶Ë¿Ú4ÓÃUART5£¬ÎŞ·¨Ê¹ÓÃDMAËÍÊı¾İ£¬Ö»ÄÜÓÃÖĞ¶Ï½ÓÊÕ
+*ÊäÈë				: 
+*·µ»ØÖµ			:	ÎŞ
+*ĞŞ¸ÄÊ±¼ä		:	ÎŞ
+*ĞŞ¸ÄËµÃ÷		:	ÎŞ
+*×¢ÊÍ				:	wegam@sina.com
+*******************************************************************************/
+u8 CardReaderPort4(void)	//¶Ë¿Ú4¶Á¿¨---¶Ë¿Ú4ÓÃUART5£¬ÎŞ·¨Ê¹ÓÃDMAËÍÊı¾İ£¬Ö»ÄÜÓÃÖĞ¶Ï½ÓÊÕ
+{
+	u16	Num	=	0;
+	sBoxDef*	Status;				//Ïä×Ó×´Ì¬
+	ICBufferDef*		CardBuffer;		//¿¨ÍêÕûÊı¾İ
 	//==============================Port4
 	if(USART_GetITStatus(ICCardReadPort4, USART_IT_RXNE))
   {
@@ -870,6 +1348,29 @@ u8 BoardCardReaderServer(void)							//¶ÁÈ¡IC¿¨Êı¾İ
   }	
 	return 0;
 }
+
+/*******************************************************************************
+*º¯ÊıÃû			:	function
+*¹¦ÄÜÃèÊö		:	function
+*ÊäÈë				: 
+*·µ»ØÖµ			:	ÎŞ
+*ĞŞ¸ÄÊ±¼ä		:	ÎŞ
+*ĞŞ¸ÄËµÃ÷		:	ÎŞ
+*×¢ÊÍ				:	wegam@sina.com
+*******************************************************************************/
+void CardReadTimeCount(void)			//È¡¿¨ºóµ¹¼ÆÊ±£¬Èç¹ûµ¹¼ÆÊ±Î´Íê³ÉÔÙÊÕ»Ø¿¨Êı¾İ£¬¶Á¿¨²»ÎÈ¶¨Ê±µÄÎó¶¯×÷
+{	
+////·ÀÖ¹È¡¿¨Ê±¶Á¿¨²»ÎÈ¶¨ÎóÈÏÎªÒÑÊÕ»Ø¿¨£ºÈ¡¿¨ºó0.5ÃëÔÙÊÕµ½¿¨Êı¾İµ±×÷ÊÕ»Ø
+	if(ICCardReadTime1>0)
+		ICCardReadTime1--;
+	if(ICCardReadTime2>0)
+		ICCardReadTime2--;
+	if(ICCardReadTime3>0)
+		ICCardReadTime3--;
+	if(ICCardReadTime4>0)
+		ICCardReadTime4--;
+}
+
 /*******************************************************************************
 *º¯ÊıÃû			:	function
 *¹¦ÄÜÃèÊö		:	function
@@ -902,28 +1403,69 @@ u8	BoardCardDataAnalysis(ICBufferDef* CardData)					//¶ÁÈ¡IC¿¨Êı¾İĞ£Ñé£¬·µ»Ø0Ê§°
 *******************************************************************************/
 void BoardCardReaderReadAll(sBoradDef*	sBorad)							//ÏòÏàÓ¦¶Ë¿Ú·¢ËÍ¶Á¿¨Ö¸Áî
 {
-	if(sBorad->Step.WriteSeg	==	0)		//ÊıÂë¹Ü¸üĞÂ±êÖ¾ÎªÎ´¸üĞÂ£¬ĞèÒª¸üĞÂ
+	if(sBorad->sPlu.Step.WriteSeg	==	0)		//ÊıÂë¹Ü¸üĞÂ±êÖ¾ÎªÎ´¸üĞÂ£¬ĞèÒª¸üĞÂ
 	{
 		return;
 	}
-	if(sBorad->Step.ReadCard	==	0)		//ÊıÂë¹Ü¸üĞÂ±êÖ¾ÎªÎ´¸üĞÂ£¬ĞèÒª¸üĞÂ	
+	if(sBorad->sPlu.Step.ReadCard	==	0)		//ÊıÂë¹Ü¸üĞÂ±êÖ¾ÎªÎ´¸üĞÂ£¬ĞèÒª¸üĞÂ	
 	{
-		sBorad->Time.TimeCard	++;							//¶Á¿¨Æ÷Ê±¼ä
-		if(sBorad->Time.TimeCard==15)					//µÈ´ı15msºó¿ªÊ¼£¬ÓÉÓÚÊıÂë¹Ü´®¿Ú¶Ë¿ÚÓë¶Á¿¨Æ÷¸´ÓÃ£¬ĞèÒªµÈ´ı
+		sBorad->sPlu.Time.TimeCard	++;							//¶Á¿¨Æ÷Ê±¼ä
+		if(sBorad->sPlu.Time.TimeCard==15)					//µÈ´ı15msºó¿ªÊ¼£¬ÓÉÓÚÊıÂë¹Ü´®¿Ú¶Ë¿ÚÓë¶Á¿¨Æ÷¸´ÓÃ£¬ĞèÒªµÈ´ı
 		{
 			HALUsartRemapDisable();					//¹Ø±Õ´®¿Ú¸´ÓÃ
 		}
-		else if(sBorad->Time.TimeCard>=20)
+		else if(WriteCardFlag==1)//Ğ´¿¨±êÖ¾£¬
 		{
+//			CardReaderCmd_WriteData;
+//			USART_DMASend	(CardReadPort1,(u32*)CardReaderCmd_WriteData,sizeof(CardReaderCmd_WriteData));	//´®¿ÚDMA·¢ËÍ³ÌĞò
+			WriteCardFlag	=	0;			//Ğ´¿¨±êÖ¾£¬
+		}
+		else if(sBorad->sPlu.Time.TimeCard>=20)
+		{
+//			if(sBorad->Port1.sBus.BusqSts.GetBox	==	1)	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
 			USART_DMASend	(ICCardReadPort1,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
+//			if(sBorad->Port2.sBus.BusqSts.GetBox	==	1|| sBorad->Port2.sBox.BoxSts.BoxOn ==	0)	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
 			USART_DMASend	(ICCardReadPort2,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
+//			if(sBorad->Port3.sBus.BusqSts.GetBox	==	1)	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
 			USART_DMASend	(ICCardReadPort3,(u32*)CardReaderCmd_ReadData,14);	//´®¿ÚDMA·¢ËÍ³ÌĞò
-			USART_Send	(ICCardReadPort4,(u8*)CardReaderCmd_ReadData,14);			//´®¿Ú5·¢ËÍ³ÌĞò
+//			if(sBorad->Port4.sBus.BusqSts.GetBox	==	1)	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+			USART_Send		(ICCardReadPort4,(u8*)CardReaderCmd_ReadData,14);			//´®¿Ú5·¢ËÍ³ÌĞò
 			
-			sBorad->Step.ReadCard	=	1;
-			sBorad->Time.TimeCard	=	0;				//¶Á¿¨Æ÷Ê±¼ä
+			sBorad->sPlu.Step.ReadCard	=	1;				//¹Ø¶Á¿¨
+			sBorad->sPlu.Time.TimeCard	=	0;				//¶Á¿¨Æ÷Ê±¼ä
+			
+			if(CardReaderTimeCount1<100)
+			{
+				CardReaderTimeCount1++;
+			}
+			if(CardReaderTimeCount2<100)
+			{
+				CardReaderTimeCount2++;
+			}
+			if(CardReaderTimeCount3<100)
+			{
+				CardReaderTimeCount3++;
+			}
+			if(CardReaderTimeCount4<100)
+			{
+				CardReaderTimeCount4++;
+			}
+
 		}
 	}
+}
+/*******************************************************************************
+*º¯ÊıÃû			:	function
+*¹¦ÄÜÃèÊö		:	function
+*ÊäÈë				: 
+*·µ»ØÖµ			:	ÎŞ
+*ĞŞ¸ÄÊ±¼ä		:	ÎŞ
+*ĞŞ¸ÄËµÃ÷		:	ÎŞ
+*×¢ÊÍ				:	wegam@sina.com
+*******************************************************************************/
+void SendReadCardCmd(USART_TypeDef* USARTx)				//·¢ËÍ¶Á¿¨ÃüÁîÊ¹¶Á¿¨Æ÷·¢»ØÊı¾İ
+{
+
 }
 
 /*******************************************************************************
@@ -947,20 +1489,34 @@ void BoardSaveCardData(sBoradDef*	sBorad)		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
 		if(Port->sBox.BoxSts.ReadID==1)			//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
 		{
 			Port->sBox.BoxSts.ReadID	=	0;		//bit2£º0-ÎŞ²Ù×÷,		1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
-			if(Port->sBox.BoxSts.BoxOn==0)		//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä
+			if(
+						(Port->sReader.Retry++>=1)
+					&&((Port->sBox.BoxSts.BoxOn==0)		//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä
+					||(memcmp(Port->sBox.CardData,CardData,CardLength)!=0))	//·µ»Ø0--±È½Ï½á¹ûÒ»Ñù£¬²»ĞèÒª¸üĞÂ¿¨Êı¾İ
+				)
 			{
+				//========Çå³ıÖØÊÔ
+				Port->sReader.Retry	=	0;
 				//========Ò©Ïä£ºÈç¹ûÔ­À´¶¼ÎªÎŞÒ©Ïä×´Ì¬£¬±íÊ¾ÒÑ´¦Àí¹ıÖÁÉÙÒ»´ÎÉ¾³ıÇëÇó£¬Ôò²»ÍùÏÂÖ´ĞĞ
 				Port->sBox.BoxSts.BoxOn		=	1;	//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä				
 				
 				//========ÊıÂë¹Ü
 				Port->Seg.sSegSts.SegFlg	=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
 				//========¶Á¿¨Æ÷
-				Port->Status.BoxRead			=	0;	//bit3£º0-¶Á¿¨Æ÷Õı³££¬1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+				Port->sBox.BoxSts.ReadErr		=	0;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
 				
 				//========×ÜÏß
-				Port->sBus.BusqSts.BusFlg		=	1;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş
-				Port->sBus.BusqSts.BoxBack	=	1;	//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+				if(PowerUpFlag	!=	0)				//ÉÏµç±êÖ¾£¬0Î´ÉÏµçÍê£¬1ÉÏµçÍê
+				{
+					Port->sBus.BusqSts.BusFlg		=	1;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş
+					Port->sBus.BusqSts.BoxBack	=	1;	//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+				}
 				
+				//========Ëø
+				Port->Lock.sLockSts.LockOn	=	0;
+				Port->Lock.sLockSts.LockSts	=	0;
+				Port->Lock.sLockSts.LockTout	=	0;
+				Port->Lock.LockOnTime	=	0;
 				
 				//=====================±£´æ¿¨ºÅ
 				memcpy(Port->sBox.CardData,CardData,CardLength);					//¸´ÖÆ¿¨ºÅĞÅÏ¢µ½Ò©Ïä»º´æ
@@ -996,8 +1552,8 @@ void BoardSaveCardData(sBoradDef*	sBorad)		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
 	}
 	if(WriteSegFlg)				//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
 	{
-		sBorad->Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
-		sBorad->Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+		sBorad->sPlu.Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+		sBorad->sPlu.Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
 	}
 }
 	
@@ -1022,6 +1578,9 @@ void BoardClrCardData(sBoradDef*	sBorad)		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 		{	
 			Port->sBox.BoxSts.NoID	=	0;				//bit3£º0-ÎŞ²Ù×÷,		1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
 			
+			//========Çå³ıÖØÊÔ
+				Port->sReader.Retry	=	0;
+			
 			//========ĞŞ¸Ä¸÷×´Ì¬
 			//========Ò©Ïä£ºÈç¹ûÔ­À´¶¼ÎªÎŞÒ©Ïä×´Ì¬£¬±íÊ¾ÒÑ´¦Àí¹ıÖÁÉÙÒ»´ÎÉ¾³ıÇëÇó£¬Ôò²»ÍùÏÂÖ´ĞĞ
 			if(Port->sBox.BoxSts.BoxOn	==	0)		//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä	
@@ -1035,7 +1594,7 @@ void BoardClrCardData(sBoradDef*	sBorad)		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 			Port->Seg.sSegSts.SegFlg	=	1;			//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
 			
 			//========¶Á¿¨Æ÷
-			Port->Status.BoxRead	=	0;					//bit3£º0-¶Á¿¨Æ÷Õı³££¬1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+			Port->sBox.BoxSts.ReadErr	=	0;			//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
 			
 			//========×ÜÏß
 			Port->sBus.BusqSts.BusFlg	=	1;			//bit0£º0-ÎŞ²Ù×÷,	1-ÓĞ´ı´¦ÀíÊÂ¼ş
@@ -1043,9 +1602,12 @@ void BoardClrCardData(sBoradDef*	sBorad)		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 			{
 				Port->sBus.BusqSts.GetBox	=	0;			//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
 				Port->sBus.BusqSts.GotBox	=	1;			//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
+				Port->sBus.BusqSts.TakeBox	=	0;		//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+				Port->sBus.BusqSts.BoxBack	=	0;		//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
 			}
 			else
 			{
+				Port->sBus.BusqSts.BoxBack	=	0;		//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
 				Port->sBus.BusqSts.TakeBox	=	1;		//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
 			}	
 
@@ -1064,12 +1626,17 @@ void BoardClrCardData(sBoradDef*	sBorad)		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 	}
 	if(WriteSegFlg)				//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
 	{
-		sBorad->Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
-		sBorad->Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+		sBorad->sPlu.Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+		sBorad->sPlu.Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
 	}
 }
 
 //======
+
+
+
+
+
 
 
 //=================================================================================================================ÊıÂë¹Ü¿ØÖÆ³ÌĞò
@@ -1084,14 +1651,14 @@ void BoardClrCardData(sBoradDef*	sBorad)		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 *******************************************************************************/
 void BoardSetSeg(sBoradDef*	sBorad)			//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬£º¿¨ÓĞ±ä»¯¡¢È¡Ò©ÇëÇó¡¢ÖÜÆÚ¸üĞÂÊıÂë¹Ü×´Ì¬
 {
-	if(sBorad->Step.WriteSeg	==	0)		//ÊıÂë¹Ü¸üĞÂ±êÖ¾ÎªÎ´¸üĞÂ£¬ĞèÒª¸üĞÂ	
+	if(sBorad->sPlu.Step.WriteSeg	==	0)		//ÊıÂë¹Ü¸üĞÂ±êÖ¾ÎªÎ´¸üĞÂ£¬ĞèÒª¸üĞÂ	
 	{
-		sBorad->Time.TimeSEG++;						//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
-		if(sBorad->Time.TimeSEG==15)			//µÈ´ı15msºó¿ªÊ¼£¬ÓÉÓÚÊıÂë¹Ü´®¿Ú¶Ë¿ÚÓë¶Á¿¨Æ÷¸´ÓÃ£¬ĞèÒªµÈ´ı
+		sBorad->sPlu.Time.TimeSEG++;						//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+		if(sBorad->sPlu.Time.TimeSEG==15)			//µÈ´ı15msºó¿ªÊ¼£¬ÓÉÓÚÊıÂë¹Ü´®¿Ú¶Ë¿ÚÓë¶Á¿¨Æ÷¸´ÓÃ£¬ĞèÒªµÈ´ı
 		{
 			HALUsartRemapEnable();												//Ê¹ÄÜ´®¿Ú¸´ÓÃ
 		}
-		if((sBorad->Time.TimeSEG%20)	==	0)	//20mS¸üĞÂÒ»¸ö£ºÍ¨¹ı485½Ó¿Ú
+		if((sBorad->sPlu.Time.TimeSEG%20)	==	0)	//20mS¸üĞÂÒ»¸ö£ºÍ¨¹ı485½Ó¿Ú
 		{
 			u32	Time;						//µãÁÁÊ±¼ä£¬µ¥Î»mS
 			u8 Num		=	0;
@@ -1105,22 +1672,40 @@ void BoardSetSeg(sBoradDef*	sBorad)			//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬£º¿¨ÓĞ±ä»¯¡¢È¡Ò©Çë
 					//============²åÈëÒ©Ïä³£ÁÁ30S£»È¡Ò©ÏäÇëÇó£ºÒ»¶¨Ê±¼äÄÚÉÁË¸£»ÎŞÒ©Ïä£ºĞ¡ÊıµãÒ»Ö±ÉÁË¸£»¶Á¿¨Í¨Ñ¶¹ÊÕÏ£ºĞ¡Êıµã³£ÁÁ
 					if(Port->sBox.BoxSts.BoxOn	==	1)		//bit1£º0-ÎŞÒ©Ïä,		1-ÓĞÒ©Ïä
 					{
-						if(Port->sBus.BusqSts.GetBox	==	1)			//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
+						if(Port->sBox.BoxSts.ReadErr	==	1)			//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+						{
+							Port->Seg.SegFarme.cmd.DispEnNum	=	1;		//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+							Port->Seg.SegFarme.cmd.DispMdNum	=	1;		//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3µãÄ£Ê½		£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4ÏÔÊ¾Ê±¼ä	£º	0-³¤ÁÁ£¬			1-ÔÚÏÔÊ¾Ê±¼äÄÚ¸ù¾İÏÔÊ¾Ä£Ê½ÏÔÊ¾
+							memset((Port->Seg.SegFarme.data),0x00,4);		//000ÉÁË¸
+						}
+						else if(Port->sBus.BusqSts.GetBox	==	1)			//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
 						{
 							Port->Seg.SegFarme.cmd.DispEnNum	=	1;	//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
 							Port->Seg.SegFarme.cmd.DispMdNum	=	1;	//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
 							Port->Seg.SegFarme.cmd.DispEnDp	=	0;		//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
 							Port->Seg.SegFarme.cmd.DispTime	=	1;		//bit4ÏÔÊ¾Ê±¼ä	£º	0-³¤ÁÁ£¬			1-ÔÚÏÔÊ¾Ê±¼äÄÚ¸ù¾İÏÔÊ¾Ä£Ê½ÏÔÊ¾
 							
-							Time	=	Port->Lock.LockOnTime;		//ÉÁË¸Ê±¼ä¸ù¾İÉÏÎ»»ú·¢ËÍµÄĞèÒªËøµÄÎüºÏÊ±¼ä
+							Time	=	Port->Lock.LockOnTime;					//ÉÁË¸Ê±¼ä¸ù¾İÉÏÎ»»ú·¢ËÍµÄĞèÒªËøµÄÎüºÏÊ±¼ä
 						}
-						else			//·ÇÈ¡Ò©ÇëÇó£¬Ôò±íÊ¾ĞÂ²åÈëÒ©Ïä£º³£ÁÁ
+						else if(Port->Seg.sSegSts.SegTimeOut	==1)		//bit1£º0-ÎŞ²Ù×÷,		1-È¡Ò©³¬Ê±£¬ĞèÒª¹Ø±ÕÊıÂë¹Ü
+						{
+							Port->Seg.sSegSts.SegTimeOut	=	0;			//bit1£º0-ÎŞ²Ù×÷,		1-È¡Ò©³¬Ê±£¬ĞèÒª¹Ø±ÕÊıÂë¹Ü
+							Port->Seg.SegFarme.cmd.DispEnNum	=	0;			//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3µãÄ£Ê½		£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+							Port->Seg.SegFarme.cmd.DispTime	=	1;			//bit4ÏÔÊ¾Ê±¼ä	£º	0-³¤ÁÁ£¬			1-ÔÚÏÔÊ¾Ê±¼äÄÚ¸ù¾İÏÔÊ¾Ä£Ê½ÏÔÊ¾
+						}
+						else		//·ÇÈ¡Ò©ÇëÇó£¬Ôò±íÊ¾ĞÂ²åÈëÒ©Ïä£º³£ÁÁ
 						{
 							Port->Seg.SegFarme.cmd.DispEnNum	=	1;			//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
 							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
 							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
 							Port->Seg.SegFarme.cmd.DispTime	=	1;			//bit4ÏÔÊ¾Ê±¼ä	£º	0-³¤ÁÁ£¬			1-ÔÚÏÔÊ¾Ê±¼äÄÚ¸ù¾İÏÔÊ¾Ä£Ê½ÏÔÊ¾
-							Time	=	SegOnTime;								//²åÈëÒ©ÏäºóÊıÂë¹Ü³£ÁÁÊ±¼ä30S
+							Time	=	SegOnTime;								//²åÈëÒ©ÏäºóÊıÂë¹Ü³£ÁÁÊ±¼ä30S							
 						}
 						//=================Ğ´ÈëÊı¾İ
 						//==Êı¾İ,¸ßÎ»ÔÚÇ°,data[0~3]ÎªÏÔÊ¾ÄÚÈİ,data[4~7]ÎªÉÁË¸Ê±¼ä
@@ -1135,13 +1720,20 @@ void BoardSetSeg(sBoradDef*	sBorad)			//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬£º¿¨ÓĞ±ä»¯¡¢È¡Ò©Çë
 					}
 					else		//bit0£º0-ÎŞ¿¨,1-ÓĞ¿¨//Ò©Ïä±»È¡×ß»òÕß¶Á¿¨Æ÷»µ
 					{
-						if(Port->Status.BoxRead	==	1)			//bit3£º0-¶Á¿¨Æ÷Õı³££¬1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+						if(Port->sBox.BoxSts.ReadErr	==	1)			//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
 						{
-							Port->Seg.SegFarme.cmd.DispEnNum	=	0;			//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
-							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
-							Port->Seg.SegFarme.cmd.DispEnDp	=	1;			//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+							Port->Seg.SegFarme.cmd.DispEnNum	=	1;		//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+							Port->Seg.SegFarme.cmd.DispMdNum	=	1;		//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
 							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3µãÄ£Ê½		£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
 							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4ÏÔÊ¾Ê±¼ä	£º	0-³¤ÁÁ£¬			1-ÔÚÏÔÊ¾Ê±¼äÄÚ¸ù¾İÏÔÊ¾Ä£Ê½ÏÔÊ¾
+							memset((Port->Seg.SegFarme.data),0x00,4);		//000ÉÁË¸
+							
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	0;		//bit0ÏÔÊ¾ÊıÖµ	£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	0;		//bit2ÊıÖµÄ£Ê½	£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	1;			//bit1ÏÔÊ¾µã		£º	0-²»ÏÔÊ¾£¬		1-ÏÔÊ¾
+//							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3µãÄ£Ê½		£º	0-¾²Ì¬ÏÔÊ¾£¬	1-0.5SÉÁË¸
+//							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4ÏÔÊ¾Ê±¼ä	£º	0-³¤ÁÁ£¬			1-ÔÚÏÔÊ¾Ê±¼äÄÚ¸ù¾İÏÔÊ¾Ä£Ê½ÏÔÊ¾
 						}
 						else
 						{
@@ -1163,7 +1755,8 @@ void BoardSetSeg(sBoradDef*	sBorad)			//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬£º¿¨ÓĞ±ä»¯¡¢È¡Ò©Çë
 			}
 			
 			//Ö´ĞĞµ½Õâ±íÊ¾ÒÔÉÏÎ´¼ì²â³öÊıÂë¹Ü¸üĞÂ±êÖ¾£¬
-			sBorad->Step.WriteSeg	=	1;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+			sBorad->sPlu.Step.WriteSeg	=	1;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+			sBorad->sPlu.Step.ReadCard	=	0;			//¹Ø¶Á¿¨---¸üĞÂÍêÊıÂë¹Ü¼ÌĞø¶Á¿¨¼ì²â
 			HALUsartRemapDisable();					//¹Ø±Õ´®¿Ú¸´ÓÃ
 		}
 	}
@@ -1183,34 +1776,34 @@ void BoardSetSeg(sBoradDef*	sBorad)			//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬£º¿¨ÓĞ±ä»¯¡¢È¡Ò©Çë
 *ĞŞ¸ÄËµÃ÷		:	ÎŞ
 *×¢ÊÍ				:	
 *******************************************************************************/
-void Lock_Server(sBoradDef*	sBorad)		//Ëø²Ù×÷£¬¸ù¾İ_LockFlagÏàÓ¦±êÖ¾ÅĞ¶ÏÊÇ·ñĞèÒª´ò¿ªËø
-{
-	u8 Num	=	0;
-	PortDef*	Port	=	&(sBorad->Port1);
+//void Lock_Server(sBoradDef*	sBorad)		//Ëø²Ù×÷£¬¸ù¾İ_LockFlagÏàÓ¦±êÖ¾ÅĞ¶ÏÊÇ·ñĞèÒª´ò¿ªËø
+//{
+//	u8 Num	=	0;
+//	PortDef*	Port	=	&(sBorad->Port1);
 
-	for(Num=0;Num<MaxPortNum;Num++)
-	{
-		if(Port->Lock.sLockSts.LockOn	==	1)		//bit1£º0-ÊÍ·ÅËø£¬1-¿ªËø
-		{
-			if(Port->Lock.LockOnTime>0)	//ËøÎüºÏÊ±¼ä£¬×î´óÖµ0x3FFF FFFF
-			{
-				Port->Lock.LockOnTime--;		//ËøÎüºÏÊ±¼ä£¬×î´óÖµ0x3FFF FFFF
-				Port->Lock.sLockSts.LockSts	=1;		//bit2£º0-ÒÑÊÍ·Å£¬1-ÒÑ¿ªËø
-				GPIO_SetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//¿ªËø
-			}
-			else
-			{
-				Port->Lock.sLockSts.LockOn	=0;		//bit1£º0-ÊÍ·ÅËø£¬1-¿ªËø
-				Port->Lock.sLockSts.LockSts	=0;		//bit2£º0-ÒÑÊÍ·Å£¬1-ÒÑ¿ªËø
-				GPIO_ResetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//ÊÍ·ÅËø
-			}		
-		}
-		if(Num<MaxPortNum-1)
-		{
-			Port=(PortDef*)((u32)Port+sizeof(PortDef));				//Ö¸ÏòÏÂÒ»¶Ë¿Ú
-		}
-	}	
-}
+//	for(Num=0;Num<MaxPortNum;Num++)
+//	{
+//		if(Port->Lock.sLockSts.LockOn	==	1)		//bit1£º0-ÊÍ·ÅËø£¬1-¿ªËø
+//		{
+//			if(Port->Lock.LockOnTime>0)	//ËøÎüºÏÊ±¼ä£¬×î´óÖµ0x3FFF FFFF
+//			{
+//				Port->Lock.LockOnTime--;		//ËøÎüºÏÊ±¼ä£¬×î´óÖµ0x3FFF FFFF
+//				Port->Lock.sLockSts.LockSts	=1;		//bit2£º0-ÒÑÊÍ·Å£¬1-ÒÑ¿ªËø
+//				GPIO_SetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//¿ªËø
+//			}
+//			else
+//			{
+//				Port->Lock.sLockSts.LockOn	=0;		//bit1£º0-ÊÍ·ÅËø£¬1-¿ªËø
+//				Port->Lock.sLockSts.LockSts	=0;		//bit2£º0-ÒÑÊÍ·Å£¬1-ÒÑ¿ªËø
+//				GPIO_ResetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//ÊÍ·ÅËø
+//			}		
+//		}
+//		if(Num<MaxPortNum-1)
+//		{
+//			Port=(PortDef*)((u32)Port+sizeof(PortDef));				//Ö¸ÏòÏÂÒ»¶Ë¿Ú
+//		}
+//	}	
+//}
 //======
 
 
@@ -1241,7 +1834,7 @@ void HALUsartRemapEnable(void)												//Ê¹ÄÜ´®¿Ú¸´ÓÃ
 *******************************************************************************/
 void HALUsartRemapDisable(void)												//¹Ø±Õ´®¿Ú¸´ÓÃ
 {
-	USART_DMA_ConfigurationNR	(ICCardReadPort2,ICCardReadBaudRate,(u32*)&ICCardReadRxd2,ICCardReadBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
+	USART_DMA_ConfigurationNR	(ICCardReadPort2,ICCardReadBaudRate,(u32*)&ICCardReadRxd2,CardBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
 	GPIO_PinRemapConfig(GPIO_Remap_USART1,DISABLE);				//I/O¿ÚÖØÓ³Éä¿ªÆô
 	GPIO_ResetBits(RS485_Seg7.RS485_CTL_PORT,	RS485_Seg7.RS485_CTL_Pin);			//ÊÍ·Å×ÜÏß
 }
@@ -1261,6 +1854,20 @@ void HALSendSeg(u32* Buffer,u16 Length)		//ÏòÊıÂë¹Ü·¢ËÍÊı¾İ
 	RS485_DMASend(&RS485_Seg7,Buffer,Length);	//RS485-DMA·¢ËÍ³ÌĞò
 }
 //======
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //=================================================================================================================ÅäÖÃ³ÌĞò
@@ -1366,9 +1973,9 @@ void RS485_Configuration(void)			//RS485ÅäÖÃ
 *******************************************************************************/
 void CardReader_Configuration(void)			//Ñ¡ÔñÏàÓ¦¶Ë¿Ú¶Á¿¨Æ÷ÅäÖÃ
 {
-	USART_DMA_ConfigurationNR	(ICCardReadPort1,ICCardReadBaudRate,(u32*)&ICCardReadRxd,ICCardReadBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
-	USART_DMA_ConfigurationNR	(ICCardReadPort2,ICCardReadBaudRate,(u32*)&ICCardReadRxd2,ICCardReadBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
-	USART_DMA_ConfigurationNR	(ICCardReadPort3,ICCardReadBaudRate,(u32*)&ICCardReadRxd3,ICCardReadBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
+	USART_DMA_ConfigurationNR	(ICCardReadPort1,ICCardReadBaudRate,(u32*)&ICCardReadRxd,CardBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
+	USART_DMA_ConfigurationNR	(ICCardReadPort2,ICCardReadBaudRate,(u32*)&ICCardReadRxd2,CardBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
+	USART_DMA_ConfigurationNR	(ICCardReadPort3,ICCardReadBaudRate,(u32*)&ICCardReadRxd3,CardBufferSize);	//USART_DMAÅäÖÃ--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
 	USART_ConfigurationIT(ICCardReadPort4,ICCardReadBaudRate,0,0);	//USART_ÅäÖÃ---³£¹æÖĞ¶Ï·½Ê½//UART5²»Ö§³ÖDMA´«Êä
 	
 //	USART_DMA_ConfigurationNRRemap	(ICCardReadPort2,ICCardReadBaudRate,(u32*)&ICCardReadRxd2,ICCardReadBufferSize);	//USART_DMAÅäÖÃ(Ó³Éä)--²éÑ¯·½Ê½£¬²»¿ªÖĞ¶Ï
@@ -1438,6 +2045,79 @@ void ResetData(void)			//ÖØÖÃÏà¹Ø±äÁ¿
 	ICCardReadCount4	=	0;
 //	memset((u8*)&ICCardReadRev4,0x00,ICCardReadBufferSize);
 //	memset((u8*)&ICData,0x00,MaxPortNum*ICDataNum);					//Çå³ı¿¨ºÅ£¬ÖØĞÂ»ñÈ¡£¬´°¿ÚÊı*µ¥¸ö¿¨ºÅ´óĞ¡
+}
+/*******************************************************************************
+*º¯ÊıÃû			:	function
+*¹¦ÄÜÃèÊö		:	function
+*ÊäÈë				: 
+*·µ»ØÖµ			:	ÎŞ
+*ĞŞ¸ÄÊ±¼ä		:	ÎŞ
+*ĞŞ¸ÄËµÃ÷		:	ÎŞ
+*×¢ÊÍ				:	
+*******************************************************************************/
+void CardReaderError(void)			//ÖØÖÃÏà¹Ø±äÁ¿
+{
+//	sBorad
+	u8 WriteSegFlg	=	0;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	if((CardReaderTimeCount1==6)	&&(sBorad.Port1.sBox.BoxSts.ReadErr==0))
+	{
+		sBorad.Port1.sBox.BoxSts.ReadErr	=	1;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port1.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	else if((CardReaderTimeCount1<5)&&(sBorad.Port1.sBox.BoxSts.ReadErr==1))
+	{
+		sBorad.Port1.sBox.BoxSts.ReadErr	=	0;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port1.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	
+	if((CardReaderTimeCount2==6)	&&(sBorad.Port2.sBox.BoxSts.ReadErr==0))
+	{
+		sBorad.Port2.sBox.BoxSts.ReadErr	=	1;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port2.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	else if((CardReaderTimeCount2<5)&&(sBorad.Port2.sBox.BoxSts.ReadErr==1))
+	{
+		sBorad.Port2.sBox.BoxSts.ReadErr	=	0;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port2.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	
+	if((CardReaderTimeCount3==6)	&&(sBorad.Port3.sBox.BoxSts.ReadErr==0))
+	{
+		sBorad.Port3.sBox.BoxSts.ReadErr	=	1;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port3.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	else if((CardReaderTimeCount3<5)&&(sBorad.Port3.sBox.BoxSts.ReadErr==1))
+	{
+		sBorad.Port3.sBox.BoxSts.ReadErr	=	0;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port3.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	
+	if((CardReaderTimeCount4==6)	&&(sBorad.Port4.sBox.BoxSts.ReadErr==0))
+	{
+		sBorad.Port4.sBox.BoxSts.ReadErr	=	1;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port4.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+	else if((CardReaderTimeCount4<5)&&(sBorad.Port4.sBox.BoxSts.ReadErr==1))
+	{
+		sBorad.Port4.sBox.BoxSts.ReadErr	=	0;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		sBorad.Port4.Seg.sSegSts.SegFlg		=	1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
+		WriteSegFlg	=	1;		//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	}
+
+	
+	if(WriteSegFlg)				//ĞèÒª¸üĞÂÊıÂë¹Ü±êÖ¾£¬Ö»ÒªÓĞÒ»¸öÊı¾İÓĞ¸üĞÂ£¬±ä¸üĞÂÊıÂë¹Ü
+	{
+		sBorad.sPlu.Step.WriteSeg	=	0;			//bit1:	0-Î´¸üĞÂÊıÂë¹Ü,ĞèÒª¸üĞÂ£¬	1-ÒÑ¸üĞÂ
+		sBorad.sPlu.Time.TimeSEG	=	0;			//ÊıÂë¹Ü¸üĞÂÊı¾İ¼ÆÊ±Æ÷----¿ÉÓÃÓÚ¼ì²âÊıÂë¹ÜÍ¨Ñ¶×´Ì¬ 20msÍâ·¢Ò»¸öÊıÂë¹Ü×´Ì¬
+	}
+
 }
 //================
 
