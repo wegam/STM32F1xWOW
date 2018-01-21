@@ -99,9 +99,9 @@
 
 
 
-#define	SYSLED_FRQ	1				//正常运行时SYSLED闪烁频率
+#define	SYSLED_FRQ	1		//正常运行时SYSLED闪烁频率
 
-typedef struct _sMoto				//电机控制
+typedef struct _sMoto		//电机控制
 {
 	struct
 	{
@@ -124,7 +124,7 @@ typedef struct _sMoto				//电机控制
 	}MoRunData;
 }sMotoDef;
 
-typedef struct _sSensor			//传感器
+typedef struct _sSensor		//传感器
 {
 	struct
 	{
@@ -143,30 +143,11 @@ typedef struct _sSensor			//传感器
 		
 	}SenPerSensor;
 }sSensorDef;
-typedef struct _sMessage		//传感器
-{
-	struct
-	{
-		unsigned char 	SendData :1;		//Bit0:0-无操作，	1-将传感器数据发送出去
-	}MsgFlg;
-	struct
-	{
-		unsigned char 	Sens0 :1;		//Bit0:0-未触发，	1-有触发
-		unsigned char 	Sens1 :1;		//Bit1:0-未触发，	1-有触发
-		unsigned char 	Sens2 :1;		//Bit2:0-未触发，	1-有触发
-		unsigned char 	Sens3 :1;		//Bit3:0-未触发，	1-有触发
-		unsigned char 	Sens4 :1;		//Bit4:0-未触发，	1-有触发
-		unsigned char 	Sens5 :1;		//Bit5:0-未触发，	1-有触发
-		unsigned char 	Sens6 :1;		//Bit6:0-未触发，	1-有触发
-		unsigned char 	Sens7 :1;		//Bit7:0-未触发，	1-有触发
-		
-	}MsgData;
-}sMsgDef;
 
 typedef struct _sSYS
 {
-	sSensorDef 	Sensor;				//传感器
-	sMotoDef 		Motor;				//电机
+	sSensorDef Sensor;		//传感器
+	sMotoDef 		Motor;		//电机
 }sSYSDef;
 
 extern sSYSDef sSYS;

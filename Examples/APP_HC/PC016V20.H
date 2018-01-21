@@ -152,7 +152,7 @@ typedef	struct	_sMs485Farme			//485Í¨Ñ¶ÏûÏ¢Ö¡½á¹¹ÌåMessageFarme
 	u8							data[BusDataSize];		//BusDataSizeÎª×î´óÊı¾İ½ÓÊÕ»º³å£¬Êµ¼ÊÊı¾İ´óĞ¡°´ÕÕLength-4(4ÎªµØÖ·ºÍ×´Ì¬Âë³¤¶È)
 	
 	u8							Bcc8;				//Òì»òĞ£Ñé	//¼ÆËã·¶Î§ÎªÆğÊ¼¶Îµ½Êı¾İ¶Î(dAdd~data[n])µ½´íÎóÂë
-	ePro485UsDef		End;				//½áÊø·û
+	ePro485UsDef		End;				//½áÊø·û 0x7F
 }sMs485FrmDef;
 //============================================================================================Í¨Ñ¶Ğ­ÒéEnd
 
@@ -238,7 +238,7 @@ typedef	struct	_LockFlag		//Ëø¿ØÖÆ±êÖ¾¼°ÎüºÏÊ±¼ä
 		unsigned char LockSts		:1;	//bit2£º0-ÒÑÊÍ·Å£¬1-ÒÑ¿ªËø
 		unsigned char LockTout	:1;	//bit3£º0-Î´³¬Ê±£¬1-ÒÑ³¬Ê±(È¡Ò©³¬Ê±)
 	}sLockSts;		//Ò©Ïä×´Ì¬
-//	unsigned long	On					:1;		//0-²»´¦Àí£¬1-¿ªËø
+	unsigned long	LockTimeCountdown;		//¿ªËøµ¹¼ÆÊ± ¼ÆÊ±µ½0Ê±ÊÍ·ÅËø£¬Èç¹ûLockTimeOut²»Îª0£¬Ôò¿ªËø
 //	unsigned long	Status			:1;		//0-ËøÎ´¿ª£¬1-ÒÑ¿ª
 	unsigned long	LockOnTime	;	//ËøÎüºÏÊ±¼ä£¬×î´óÖµ0x3FFF FFFF
 	GPIO_TypeDef*	GPIOx;
@@ -260,8 +260,9 @@ typedef struct _sSeg
 	struct
 	{
 		unsigned char SegFlg			:1;	//bit0£º0-ÎŞ²Ù×÷,		1-ÓĞ²Ù×÷ÇëÇó(ĞèÒª¸üĞÂÊıÂë¹Ü×´Ì¬£©
-		unsigned char SegTimeOut	:1;	//bit1£º0-ÎŞ²Ù×÷,		1-È¡Ò©³¬Ê±£¬ĞèÒª¹Ø±ÕÊıÂë¹Ü
+		unsigned char Sync				:1;	//bit1£º0-ÎŞ²Ù×÷,		1-¸üĞÂ
 	}sSegSts;			//ÊıÂë¹Ü±êÖ¾
+	unsigned short	DisplayTime;		//ÏÔÊ¾Ê±¼ä
 	sSegFarmeDef 	SegFarme;					//ÊıÂë¹ÜÍ¨Ñ¶Ğ­Òé
 } sSegDef;			//ÊıÂë¹ÜÊı¾İ½á¹¹Ìå
 //=======================================================Ò©Ïä½á¹¹Ìå
@@ -269,12 +270,23 @@ typedef	struct	_sBox		//¶Ë¿Ú×´Ì¬--£ºÓĞ¿¨/ÎŞ¿¨
 {
 	struct
 	{
-		unsigned char BoxFlg		:1;	//bit0£º0-ÎŞ²Ù×÷,			1-²Ù×÷
-		unsigned char BoxOn			:1;	//bit1£º0-ÎŞÒ©Ïä,			1-ÓĞÒ©Ïä
+		unsigned char BoxFlg		:1;	//bit0£º0-ÎŞ²Ù×÷,	1-²Ù×÷
+		unsigned char BoxOn			:1;	//bit1£º0-ÎŞÒ©Ïä,	1-ÓĞÒ©Ïä
+		unsigned char BoxBack		:1;	//bit2£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+		unsigned char BoxOut		:1;	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
+		unsigned char BoxGet		:1;	//bit4£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©ÇëÇó
+		unsigned char TimeOut		:1;	//bit5£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
+		
 		unsigned char ReadID		:1;	//bit2£º0-ÎŞ²Ù×÷,			1-¶Áµ½ID(ĞèÒªÔö¼ÓÏà¹ØÊı¾İ¼°±êÖ¾)
-		unsigned char NoID			:1;	//bit3£º0-ÎŞ²Ù×÷,			1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)
+		
+		unsigned char NoID			:1;	//bit3£º0-ÎŞ²Ù×÷,			1-¿¨ºÅÎ´¶Áµ½(ĞèÒªÉ¾³ıÏà¹ØÊı¾İ¼°±êÖ¾)		
 		unsigned char ReadErr		:1;	//bit4£º0-¶Á¿¨Æ÷Õı³££¬	1-¶Á¿¨Æ÷Í¨Ñ¶Òì³£
+		
 	}BoxSts;		//Ò©Ïä×´Ì¬
+	
+	unsigned long		GetBoxTime;						//È¡Ò©Ê±¼ä£¬GetBoxTimeCount	==	GetBoxTimeÈ¡Ò©³¬Ê±
+	unsigned long		GetBoxTimeCount;			//È¡Ò©¼ÆÊ±£¬Èç¹û²»Îª0£¬ÔòÎ´³¬Ê±£¬·ñÔò³¬Ê±
+	
 	unsigned char 	CardData[CardLength];	//¿¨ºÅÊı¾İCardData[0]Îª°ÙÎ»£¬CardData[1]ÎªÊ®Î»£¬CardData[2]Îª¸öÎ»
 	unsigned long		CardNumber;						//Ê®½øÖÆ¿¨ºÅ
 }sBoxDef;
@@ -288,15 +300,22 @@ typedef	struct	_sBus		//¶Ë¿Ú×´Ì¬--£ºÓĞ¿¨/ÎŞ¿¨
 		unsigned char GetBox		:1;	//bit2£º0-ÎŞÇëÇó£¬	1-ÓĞÇëÇó	£¬È¡Ò©(ÊıÂë¹ÜÊıÖµÍ¬Ê±ÉÁË¸)
 		unsigned char GotBox		:1;	//bit3£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÒÑ±»È¡×ß
 		unsigned char TakeBox		:1;	//bit4£º0-ÎŞ²Ù×÷£¬	1-Ò©Ïä±»Ç¿ÖÆÈ¡
-		unsigned char BoxBack		:1;	//bit5£º0-ÎŞ²Ù×÷£¬1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
+		unsigned char BoxBack		:1;	//bit5£º0-ÎŞ²Ù×÷£¬	1-Ò©ÏäÊÕ»Ø,ÊÕ»ØºóĞèÒªÉÏ±¨Ò©ÏäºÅ£¨ÓĞGotBox±êÖ¾Ê±ÉèÖÃ´ËÎ»£©
 		unsigned char TimeOut		:1;	//bit6£º0-ÎŞ²Ù×÷£¬	1-È¡Ò©³¬Ê±
 		unsigned char SendID		:1;	//bit7£º0-ÎŞ²Ù×÷£¬	1-¼ì²âµ½Ò©Ïä²åÈë£¬Ö÷¶¯ÉÏ±¨ID£¬Èç¹ûÊÇÈ¡Ò©£¬È¡ÏûÖ÷¶¯ÉÏ±¨£¬Ê¹ÓÃ×´Ì¬ÉÏ±¨
+//		unsigned char PowrUp		:1;	//bit7£º0-ÎŞ²Ù×÷£¬	1-¼ì²âµ½Ò©Ïä²åÈë£¬Ö÷¶¯ÉÏ±¨ID£¬Èç¹ûÊÇÈ¡Ò©£¬È¡ÏûÖ÷¶¯ÉÏ±¨£¬Ê¹ÓÃ×´Ì¬ÉÏ±¨
 		
 	}BusqSts;		//Ò©Ïä×´Ì¬
 	unsigned char 	CardData[CardLength];	//¿¨ºÅÊı¾İCardData[0]Îª°ÙÎ»£¬CardData[1]ÎªÊ®Î»£¬CardData[2]Îª¸öÎ»
 	unsigned char		Ucode;								//ÓÃ»§Âë
 	sMs485FrmDef		sBusFarme;		//485×ÜÏß½á¹¹Ìå
 }sBusDef;
+typedef	struct	_sBusData		//¶Ë¿Ú×´Ì¬--£ºÓĞ¿¨/ÎŞ¿¨
+{
+	sMs485FrmDef	sFarmeTxd;		//×ÜÏß485Êı¾İ½á¹¹Ìå---·¢ËÍ
+	sMs485FrmDef	sFarmeRxd;		//×ÜÏß485Êı¾İ½á¹¹Ìå---½ÓÊÕ
+	sMs485FrmDef	sFarmeRev;		//×ÜÏß485Êı¾İ½á¹¹Ìå---»º´æ
+}sBusDataDef;
 
 
 //=======================================================¶Ë¿Ú/²ÛÎ»ËùÓĞĞÅÏ¢½á¹¹Ìå
@@ -320,8 +339,9 @@ typedef	struct	_Step
 //=======================================================¹«¹²Êı¾İ½á¹¹Ìå
 typedef struct _sPlu 
 {
-	StepDef	Step;		//Ö´ĞĞ·Ö²½£¨Ö÷Òª·ÀÖ¹¶Á¿¨Æ÷ÓëÊıÂë¹Ü¸´ÓÃ´®¿ÚÊı¾İ´íÂÒ£©
-	TimeDef	Time;		//¸÷¹¦ÄÜ¼ÆÊ±Æ÷
+	StepDef				Step;				//Ö´ĞĞ·Ö²½£¨Ö÷Òª·ÀÖ¹¶Á¿¨Æ÷ÓëÊıÂë¹Ü¸´ÓÃ´®¿ÚÊı¾İ´íÂÒ£©
+	TimeDef				Time;				//¸÷¹¦ÄÜ¼ÆÊ±Æ÷
+	sBusDataDef		BusData;		//×ÜÏß485Êı¾İ½á¹¹Ìå---´ı´¦Àí
 } sPluDef;			//ÊıÂë¹ÜÊı¾İ½á¹¹Ìå
 //=======================================================°åÄÚ¶Ë¿Ú/°åÄÚÊı¾İ
 typedef	struct	_sBorad		//¶Ë¿Ú×´Ì¬--£ºÓĞ¿¨/ÎŞ¿¨
@@ -408,10 +428,12 @@ void MessageProcessSend(void);					//ÏûÏ¢·¢ËÍ´¦Àí
 void RS485_Server(void);							//RS485ÊÕ·¢´¦Àí
 
 void BusFrameAck(sMs485FrmDef*	sFarme);			//Íâ²¿×ÜÏßÓ¦´ğ
+
+
 void MessageProcess(sMs485FrmDef*	sFarme,sBoradDef*	sBorad);				//Íâ²¿×ÜÏßÏûÏ¢´¦Àí
 
-void MessageAnalysis(sMs485FrmDef*	sFarme);		//½âÎöÏûÏ¢
-void MessagePacket(sMs485FrmDef*	sFarme);			//´ò°üÏûÏ¢
+
+
 
 void BusFrameProcessGetID(sMs485FrmDef*	sFarme,sBoradDef*	sBorad);		//Êı¾İÃüÁî´¦Àí
 void BusFrameProcessGetBox(sMs485FrmDef*	sFarme,sBoradDef*	sBorad);		//Êı¾İÃüÁî´¦Àí---È¡Ò©
@@ -419,28 +441,47 @@ void BusFrameProcessGetBox(sMs485FrmDef*	sFarme,sBoradDef*	sBorad);		//Êı¾İÃüÁî´
 void BusFrameProcessSendBox(sMs485FrmDef*	sFarme,sBoradDef*	sBorad);	//·¢ËÍÒ©ÏäÊı¾İ
 
 void BusFrameProcessPacketAndSend(sMs485FrmDef*	sFarme);					//°´ÕÕĞ­Òé´ò°üÊı¾İ²¢·¢ËÍ
+
 void BusFrameProcessLock(sMs485FrmDef*	sFarme,sBoradDef*	sBorad);	//ËøÃüÁî´¦Àí
 
+
+
+void MessageServer(sBoradDef*	sBorad);				//Íâ²¿×ÜÏßÏûÏ¢´¦Àí
+
+void MessageAnalysis(sMs485FrmDef*	sFarme);		//½âÎöÏûÏ¢
+void MessagePacket(sMs485FrmDef*	sFarme);			//´ò°üÏûÏ¢
+void MessageRece(sMs485FrmDef*	sFarme);				//½ÓÊÕÏûÏ¢
+void MessageSend(sMs485FrmDef*	sFarme);				//·¢ËÍÏûÏ¢
+
 //=================================================================================================================Ò©Ïä
-void BoardBoxProcess(sBoradDef*	sBorad);				//Ò©Ïä´¦Àí³ÌĞò
+
+
+
+
+
 void BoardGetBoxProcess(sBoradDef*	sBorad);		//È¡Ò©Ê±µÄÊ±¼ä¹ÜÀí,°üÀ¨³¬Ê±
-
-//=================================================================================================================¶Á¿¨Æ÷³ÌĞò
-
-void SendReadCardCmd(USART_TypeDef* USARTx);				//·¢ËÍ¶Á¿¨ÃüÁîÊ¹¶Á¿¨Æ÷·¢»ØÊı¾İ
-	
-
 u8 	 BoardCardReaderServer(void);					//¶ÁÈ¡IC¿¨Êı¾İ
 u8 	CardReaderPortn(void);									//¶Ë¿Ú4¶Á¿¨---¶Ë¿Ú4ÓÃUART5£¬ÎŞ·¨Ê¹ÓÃDMAËÍÊı¾İ£¬Ö»ÄÜÓÃÖĞ¶Ï½ÓÊÕ
 u8 	CardReaderPort4(void);									//¶Ë¿Ú4¶Á¿¨---¶Ë¿Ú4ÓÃUART5£¬ÎŞ·¨Ê¹ÓÃDMAËÍÊı¾İ£¬Ö»ÄÜÓÃÖĞ¶Ï½ÓÊÕ
 void CardReadTimeCount(void);			//È¡¿¨ºóµ¹¼ÆÊ±£¬Èç¹ûµ¹¼ÆÊ±Î´Íê³ÉÔÙÊÕ»Ø¿¨Êı¾İ£¬¶Á¿¨²»ÎÈ¶¨Ê±µÄÎó¶¯×÷
 u8 	 BoardCardDataAnalysis(ICBufferDef* CardData);		//¶ÁÈ¡IC¿¨Êı¾İĞ£Ñé£¬·µ»Ø0Ê§°Ü£¬×÷·Ï£¬·µ»Ø1ÕıÈ·
 void BoardCardReaderReadAll(sBoradDef*	sBorad);			//·¢ËÍ4¸ö¶Ë¿Ú¶Á¿¨Ö¸Áî
-void BoardSaveCardData(sBoradDef*	sBorad);		//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
-void BoardClrCardData(sBoradDef*	sBorad);		//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
+void BoardSaveCardData(sBoradDef*	sBorad);						//¸ù¾İ×´Ì¬±£´æ¿¨ºÅ¼°ÉèÖÃÏà¹Ø×´Ì¬
+void BoardClrCardData(sBoradDef*	sBorad);						//É¾³ı¿¨ºÅÊı¾İ¼°ÉèÖÃÏà¹Ø×´Ì¬
 
+
+void BoardServer(sBoradDef*	sBorad);				//
+void BoardLockServer(PortDef*	Port);				//Ëø¿ª¹Ø´¦Àí
+void BoardBoxServer(PortDef*	Port);				//Ò©Ïä´¦Àí³ÌĞò
+void BoardSegServer(PortDef*	Port);				//ÊıÂë¹Ü
 //=================================================================================================================ÊıÂë¹Ü¿ØÖÆ³ÌĞò
 void BoardSetSeg(sBoradDef*	sBorad);			//¸ù¾İ±êÖ¾ÉèÖÃÊıÂë¹Ü×´Ì¬£¨ÎŞÏä£¬ÓĞÏä£¬È¡Ïä£¬¶Á¿¨Í¨Ñ¶²»Á¼£©
+
+//=================================================================================================================¶Á¿¨Æ÷³ÌĞò
+
+void SendReadCardCmd(USART_TypeDef* USARTx);				//·¢ËÍ¶Á¿¨ÃüÁîÊ¹¶Á¿¨Æ÷·¢»ØÊı¾İ
+
+
 //=================================================================================================================Ëø³ÌĞò
 //void Lock_Server(sBoradDef*	sBorad);
 //=================================================================================================================Ó²¼şÇı¶¯³ÌĞò

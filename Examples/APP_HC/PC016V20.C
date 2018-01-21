@@ -229,10 +229,13 @@ void PC016V20_Server(void)
 	}
 	return;
 #endif
+	
+	
+	
 	//========================判断是否为串口中断进入PC016V20_Server
 	//---由于串口5无DMA功能，串口中断进入PC016V20_Server，接收完数据不继续往下执行
 //	Num	=	BoardCardReaderServer();	//RS485收发处理
-	Num	=	CardReaderPortn();	//RS485收发处理
+	Num	=	BoardCardReaderServer();	//RS485收发处理
 	if(Num	==1)									//RS485收发处理
 	{
 		return;					//串口5无DMA功能，串口中断进入PC016V20_Server，接收完数据不继续往下执行
@@ -284,10 +287,12 @@ void PC016V20_Server(void)
 	MessageProcess(&sFarmeTxd,&sBorad);				//外部总线消息处理
 	
 	//========================流水号0x01~0xFF
-	if(sBorad.Nserial>=0xFF)
-	{
-		sBorad.Nserial	=	0x01;
-	}
+//	if(sBorad.Nserial>=0xFF)
+//	{
+//		sBorad.Nserial	=	0x01;
+//	}
+	
+	BoardServer(&sBorad);							//
 }
 
 //======
@@ -443,12 +448,12 @@ void MessageAnalysis(sMs485FrmDef*	sFarme)				//解析消息
 	if(sFarme->Length==FixedAddrLenth)		//数据长度为FixedAddrLenth表示无数据//固定数据长度nLength中地址和状态码的长度
 	{
 		sFarme->Bcc8	=	sFarme->data[0];
-		sFarme->End		=	sFarme->data[1];
+		sFarme->End		=	(ePro485UsDef)sFarme->data[1];
 	}
 	else
 	{
 		sFarme->Bcc8	=	sFarme->data[sFarme->Length-FixedAddrLenth];
-		sFarme->End		=	sFarme->data[sFarme->Length-FixedAddrLenth+1];
+		sFarme->End		=	(ePro485UsDef)sFarme->data[sFarme->Length-FixedAddrLenth+1];
 	}
 }
 /*******************************************************************************
@@ -925,6 +930,21 @@ void BusFrameProcessLock(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//锁命令处理
 		Port->Lock.LockOnTime	=	Time;			//吸合时间
 	}
 }
+
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	function
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	wegam@sina.com
+*******************************************************************************/
+void MessageServer(sBoradDef*	sBorad)				//外部总线消息处理
+{
+
+}
+
 //======
 
 //=================================================================================================================药箱
@@ -937,8 +957,164 @@ void BusFrameProcessLock(sMs485FrmDef*	sFarme,sBoradDef*	sBorad)			//锁命令处理
 * 修改内容		: 无
 * 其它			: 
 *******************************************************************************/
-void BoardBoxProcess(sBoradDef*	sBorad)				//药箱处理程序
+void BoardServer(sBoradDef*	sBorad)							
 {
+	u8 Num	=	0;
+	PortDef*	Port	=	&(sBorad->Port1);
+	for(Num=0;Num<MaxPortNum;Num++)				//循环扫描各端口
+	{
+		BoardLockServer(Port);							//锁开关处理
+		BoardBoxServer(Port);								//药箱处理程序
+		BoardSegServer(Port);								//数码管
+		
+		
+		//-----------------------------------指向下一端口
+		if(Num<MaxPortNum-1)
+		{
+			Port=(PortDef*)((u32)Port+sizeof(PortDef));				
+		}
+	}
+}
+/*******************************************************************************
+*函数名			:	function
+*功能描述		:	function
+*输入				: 
+*返回值			:	无
+*修改时间		:	无
+*修改说明		:	无
+*注释				:	wegam@sina.com
+*******************************************************************************/
+void BoardLockServer(PortDef*	Port)							//锁开关处理
+{
+	//===============================================================取药
+	if(Port->Lock.LockTimeCountdown>0)					//锁吸合时间，最大值0x3FFF FFFF
+	{
+		Port->Lock.LockTimeCountdown-=1;					//锁吸合时间，最大值0x3FFF FFFF---倒计时
+		Port->Lock.GPIOx->BSRR = Port->Lock.GPIO_Pin_n;		//GPIO_SetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//开锁
+	}
+	else
+	{
+		Port->Lock.GPIOx->BRR = Port->Lock.GPIO_Pin_n;		//GPIO_ResetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//释放锁
+	}
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+* 修改时间		: 无
+* 修改内容		: 无
+* 其它			: 
+*******************************************************************************/
+void BoardBoxServer(PortDef*	Port)				//药箱处理程序
+{
+	u8 Num	=	0;
+
+	//===============================================================取药
+	if(
+			(Port->sBox.GetBoxTime>0)																	//取药有时间表示有取药请求
+		&&((Port->sBox.GetBoxTimeCount++)>Port->sBox.GetBoxTime)		//取药计时超过限定时间表示超时
+		)
+	{
+		
+		Port->sBox.BoxSts.TimeOut		=	1;	//bit5：0-无操作，	1-取药超时		
+		Port->sBox.GetBoxTimeCount	=	0;	//取药计时，如果不为0，则未超时，否则超时		
+		Port->sBox.GetBoxTime				=	0;	//取药时间，GetBoxTimeCount	==	GetBoxTime取药超时
+		
+		//-----------------------------总线上报
+		Port->sBus.BusqSts.BusFlg		=	1;	//bit0：0-无操作,	1-有待处理事件(上报数据或者状态）
+		//-----------------------------更新数码管
+		Port->Seg.sSegSts.SegFlg		=	1;	//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+	}
+}
+/*******************************************************************************
+* 函数名			:	function
+* 功能描述		:	函数功能说明 
+* 输入			: void
+* 返回值			: void
+* 修改时间		: 无
+* 修改内容		: 无
+* 其它			: 
+*******************************************************************************/
+void BoardSegServer(PortDef*	Port)				//数码管
+{
+	u8 Num	=	0;
+
+	//===============================================================状态
+	if(Port->Seg.sSegSts.SegFlg	==	1)		//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+	{
+		//============插入药箱常亮30S；取药箱请求：一定时间内闪烁；无药箱：小数点一直闪烁；读卡通讯故障：小数点常亮
+		//------------插入药箱常亮10S后关闭显示
+		//------------取药箱请求：卡号在取药限定时间内闪烁
+		//------------空药槽（无卡/被取走）（小数点一直闪烁）
+		//------------读卡器坏（显示000，一直闪烁）
+		//------------取药超时（常亮5秒关闭）
+		
+		if(Port->sBox.BoxSts.BoxOn	==	1)//bit1：0-无药箱,			1-有药箱
+		{
+			unsigned char Time	=	0;		//显示时间（单位S）
+			//----------获取ID、药盒收回、取药超时(常亮10S后关闭显示)
+			if(
+				 (	
+					(Port->sBox.BoxSts.BoxBack	==	1)		//bit2：0-无操作，	1-药箱收回,收回后需要上报药箱号（有GotBox标志时设置此位）
+				||(Port->sBox.BoxSts.TimeOut	==	1)		//bit5：0-无操作，	1-取药超时
+				||(Port->sBus.BusqSts.GetID		==	1)		//bit1：0-无请求，	1-有请求	，获取ID请求需要上报ID
+				 )
+				&&(Port->sBus.BusqSts.GetBox	!=	1)		//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
+				)
+			{				
+				Port->Seg.SegFarme.cmd.DispEnNum	=	1;	//bit0显示数值	：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdNum	=	0;	//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispEnDp		=	0;	//bit1显示点		：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdDp		=	0;	//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispTime		=	1;	//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+				
+				Port->Seg.DisplayTime							=	10;			//显示时间（单位S）
+			}
+			//----------取药请求(限定时间内闪烁)
+			else if(Port->sBus.BusqSts.GetBox	==	1)	//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
+			{
+				Port->Seg.SegFarme.cmd.DispEnNum	=	1;	//bit0显示数值	：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdNum	=	1;	//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispEnDp		=	0;	//bit1显示点		：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdDp		=	0;	//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispTime		=	1;	//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+				
+				Port->Seg.DisplayTime							=	(Port->sBox.GetBoxTime)/1000;			//显示时间（单位S）
+			}
+			//=================写入数据
+			memcpy((u8*)&(Port->Seg.SegFarme.data[0]),&(Port->sBox.CardNumber),4);		/*数据,高位在前,data[0~3]为显示内容,data[4~7]为显示时间*/
+			//=================写入时间
+			memcpy((u8*)&(Port->Seg.SegFarme.data[4]),&(Port->Seg.DisplayTime),4);		/*数据,高位在前,data[0~3]为显示内容,data[4~7]为显示时间*/ 
+		}
+		else			//无药箱（未感应到卡时加药显示888闪烁）
+		{
+			//============读卡器坏：一直闪烁000
+			if(Port->sReader.ReaderSts.ReadFlg	==1)	//bit3：0-读卡器正常，	1-读卡器通讯异常
+			{
+				Port->Seg.SegFarme.cmd.DispEnNum	=	1;	//bit0显示数值	：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdNum	=	1;	//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispEnDp		=	0;	//bit1显示点		：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdDp		=	1;	//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispTime		=	0;	//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+				
+				//=================写入数据
+				memset((u8*)&(Port->Seg.SegFarme.data[0]),0x00,4);		/*数据,高位在前,data[0~3]为显示内容,data[4~7]为显示时间*/
+			}
+			//==================无卡，卡被取走（小数点一直闪烁）
+			else
+			{
+				Port->Seg.SegFarme.cmd.DispEnNum	=	0;	//bit0显示数值	：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdNum	=	0;	//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispEnDp		=	1;	//bit1显示点		：	0-不显示，		1-显示
+				Port->Seg.SegFarme.cmd.DispMdDp		=	1;	//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+				Port->Seg.SegFarme.cmd.DispTime		=	0;	//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+			}
+		}	
+		HALUsartRemapDisable();					//关闭串口复用
+		HALSendSeg((u32*)&(Port->Seg.SegFarme),sizeof(sSegFarmeDef));		//向数码管发送数据
+		Port->Seg.sSegSts.SegFlg	=	0;					//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+	}
 }
 /*******************************************************************************
 * 函数名			:	function
@@ -951,57 +1127,59 @@ void BoardBoxProcess(sBoradDef*	sBorad)				//药箱处理程序
 *******************************************************************************/
 void BoardGetBoxProcess(sBoradDef*	sBorad)		//取药时的时间管理,包括超时
 {
-	u8 Num	=	0;
-	PortDef*	Port	=	&(sBorad->Port1);
+//	u8 Num	=	0;
+//	PortDef*	Port	=	&(sBorad->Port1);
 
-	for(Num=0;Num<MaxPortNum;Num++)
-	{
-		//===============================================================取药
-		if(Port->Lock.LockOnTime>0)			//锁吸合时间，最大值0x3FFF FFFF
-		{
-			Port->Lock.LockOnTime-=1;			//锁吸合时间，最大值0x3FFF FFFF---倒计时
-			if(Port->Lock.LockOnTime==0)	//倒计时完成
-			{
-				if(Port->Lock.sLockSts.LockOn)						//锁控制层
-				{
-					Port->Lock.sLockSts.LockFlg		=	0;	//bit0：0-无操作, 1-有操作请求(控制锁的状态）
-					Port->Lock.sLockSts.LockOn		=	0;	//bit1：0-释放锁，1-开锁
-					Port->Lock.sLockSts.LockSts		=	0;	//bit2：0-已释放，1-已开锁
-					Port->Lock.sLockSts.LockTout	=	0;	//bit3：0-未超时，1-已超时(取药超时)
-					GPIO_ResetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//释放锁
-				}
-				else												//药箱层
-				{
-					Port->Lock.sLockSts.LockFlg		=	0;	//bit0：0-无操作, 1-有操作请求(控制锁的状态）
-					Port->Lock.sLockSts.LockSts		=	0;	//bit2：0-已释放，1-已开锁
-					Port->Lock.sLockSts.LockTout	=	1;	//bit3：0-未超时，1-已超时(取药超时)
-					
-					//===========关闭数码管
-					Port->Seg.sSegSts.SegFlg			=	1;	//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
-					Port->Seg.sSegSts.SegTimeOut	=	1;	//bit1：0-无操作,		1-取药超时，需要关闭数码管
-					//===========总线
-					Port->sBus.BusqSts.BusFlg			=	1;	//bit0：0-无操作,	1-有待处理事件(上报数据或者状态）
-					Port->sBus.BusqSts.GetBox			=	0;	//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
-					Port->sBus.BusqSts.GotBox			=	0;	//bit3：0-无操作，	1-药箱已被取走
-					Port->sBus.BusqSts.TakeBox		=	0;	//bit4：0-无操作，	1-药箱被强制取
-					Port->sBus.BusqSts.BoxBack		=	0;	//bit5：0-无操作，1-药箱收回,收回后需要上报药箱号（有GotBox标志时设置此位）
-					Port->sBus.BusqSts.TimeOut		=	1;	//bit6：0-无操作，	1-取药超时
-					Port->sBus.BusqSts.SendID			=	0;	//bit7：0-无操作，	1-检测到药箱插入，主动上报ID，如果是取药，取消主动上报，使用状态上报
-//					Port->Status.SendSts	=	1;	//bit10：0-无操作，1-取药状态下药箱变化后需要上报药箱状态或者在无数据情况下上报状态
-				}
-			}
-			else	if((Port->Lock.sLockSts.LockOn==1)&&(Port->Lock.sLockSts.LockSts==0))					//需要开锁
-			{
-				Port->Lock.sLockSts.LockSts	=	1;			//0-锁未开，1-已开
-				GPIO_SetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//开锁
-			}
-		}
-		if(Num<MaxPortNum-1)
-		{
-			Port=(PortDef*)((u32)Port+sizeof(PortDef));				//指向下一端口
-		}
-	}
+//	for(Num=0;Num<MaxPortNum;Num++)
+//	{
+//		//===============================================================取药
+//		if(Port->Lock.LockOnTime>0)			//锁吸合时间，最大值0x3FFF FFFF
+//		{
+//			Port->Lock.LockOnTime-=1;			//锁吸合时间，最大值0x3FFF FFFF---倒计时
+//			if(Port->Lock.LockOnTime==0)	//倒计时完成
+//			{
+//				if(Port->Lock.sLockSts.LockOn)						//锁控制层
+//				{
+//					Port->Lock.sLockSts.LockFlg		=	0;	//bit0：0-无操作, 1-有操作请求(控制锁的状态）
+//					Port->Lock.sLockSts.LockOn		=	0;	//bit1：0-释放锁，1-开锁
+//					Port->Lock.sLockSts.LockSts		=	0;	//bit2：0-已释放，1-已开锁
+//					Port->Lock.sLockSts.LockTout	=	0;	//bit3：0-未超时，1-已超时(取药超时)
+//					GPIO_ResetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//释放锁
+//				}
+//				else												//药箱层
+//				{
+//					Port->Lock.sLockSts.LockFlg		=	0;	//bit0：0-无操作, 1-有操作请求(控制锁的状态）
+//					Port->Lock.sLockSts.LockSts		=	0;	//bit2：0-已释放，1-已开锁
+//					Port->Lock.sLockSts.LockTout	=	1;	//bit3：0-未超时，1-已超时(取药超时)
+//					
+//					//===========关闭数码管
+//					Port->Seg.sSegSts.SegFlg			=	1;	//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+//					Port->Seg.sSegSts.SegTimeOut	=	1;	//bit1：0-无操作,		1-取药超时，需要关闭数码管
+//					//===========总线
+//					Port->sBus.BusqSts.BusFlg			=	1;	//bit0：0-无操作,	1-有待处理事件(上报数据或者状态）
+//					Port->sBus.BusqSts.GetBox			=	0;	//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
+//					Port->sBus.BusqSts.GotBox			=	0;	//bit3：0-无操作，	1-药箱已被取走
+//					Port->sBus.BusqSts.TakeBox		=	0;	//bit4：0-无操作，	1-药箱被强制取
+//					Port->sBus.BusqSts.BoxBack		=	0;	//bit5：0-无操作，1-药箱收回,收回后需要上报药箱号（有GotBox标志时设置此位）
+//					Port->sBus.BusqSts.TimeOut		=	1;	//bit6：0-无操作，	1-取药超时
+//					Port->sBus.BusqSts.SendID			=	0;	//bit7：0-无操作，	1-检测到药箱插入，主动上报ID，如果是取药，取消主动上报，使用状态上报
+////					Port->Status.SendSts	=	1;	//bit10：0-无操作，1-取药状态下药箱变化后需要上报药箱状态或者在无数据情况下上报状态
+//				}
+//			}
+//			else	if((Port->Lock.sLockSts.LockOn==1)&&(Port->Lock.sLockSts.LockSts==0))					//需要开锁
+//			{
+//				Port->Lock.sLockSts.LockSts	=	1;			//0-锁未开，1-已开
+//				GPIO_SetBits(Port->Lock.GPIOx,	Port->Lock.GPIO_Pin_n);			//开锁
+//			}
+//		}
+//		if(Num<MaxPortNum-1)
+//		{
+//			Port=(PortDef*)((u32)Port+sizeof(PortDef));				//指向下一端口
+//		}
+//	}
 }
+
+
 
 
 //======
@@ -1011,6 +1189,134 @@ void BoardGetBoxProcess(sBoradDef*	sBorad)		//取药时的时间管理,包括超时
 
 //=================================================================================================================读卡器程序
 
+///*******************************************************************************
+//* 函数名			:	function
+//* 功能描述		:	函数功能说明 
+//* 输入			: void
+//* 返回值			: void
+//* 修改时间		: 无
+//* 修改内容		: 无
+//* 其它			: 
+//*******************************************************************************/
+//u8 BoardCardReaderServer(void)							//读取IC卡数据
+//{
+//	u16	Num	=	0;
+//	sBoxDef*	Status;				//箱子状态
+//	ICBufferDef*		CardBuffer;		//卡完整数据	
+//	
+////	sBoxStatusDef	*TempStus;	//获取状态参数地址
+//	//==============================Port1
+//	Num	=	USART_ReadBufferIDLE(ICCardReadPort1,(u32*)&ICCardReadRev1,(u32*)&ICCardReadRxd1);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+//	if(Num)
+//	{
+//		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev1);					//读取IC卡数据校验，返回0失败，作废，返回1正确
+//		if(temp	!=0)
+//		{
+//			Status	=	&(sBorad.Port1.sBox);			//箱子状态
+//			CardBuffer	=	&ICCardReadRev1;				//卡完整数据		
+//			if(Num	==	22)	//有卡
+//			{	
+//				CardReaderTimeCount1	=	0;
+//				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
+//				Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)
+//				BoardSaveCardData(&sBorad);		//根据状态保存卡号及设置相关状态
+//				
+//			}
+//			else if(Num	==	6)//无卡
+//			{
+//				CardReaderTimeCount1	=	0;
+//				ICCardReadTime1	=500;					//防止取卡时读卡不稳定误认为已收回卡
+//				Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
+//				BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
+//			}
+//		}		
+//	}
+//	//==============================Port2
+//	Num	=	USART_ReadBufferIDLE(ICCardReadPort2,(u32*)&ICCardReadRev2,(u32*)&ICCardReadRxd2);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+//	if(Num)
+//	{
+//		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev2);					//读取IC卡数据校验，返回0失败，作废，返回1正确
+//		if(temp	!=0)
+//		{
+//			Status	=	&(sBorad.Port2.sBox);			//箱子状态
+//			CardBuffer	=	&ICCardReadRev2;				//卡完整数据		
+//			if(Num	==	22)	//有卡
+//			{	
+//				CardReaderTimeCount2	=	0;				
+//				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
+//				Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)		
+//				BoardSaveCardData(&sBorad);		//根据状态保存卡号及设置相关状态
+//				
+//			}
+//			else if(Num	==	6)//无卡
+//			{
+//				CardReaderTimeCount2	=	0;
+//				Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
+//				BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
+//			}
+//		}
+//	}
+//	//==============================Port3
+//	Num	=	USART_ReadBufferIDLE(ICCardReadPort3,(u32*)&ICCardReadRev3,(u32*)&ICCardReadRxd3);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
+//	if(Num)
+//	{
+//		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev3);					//读取IC卡数据校验，返回0失败，作废，返回1正确
+//		if(temp	!=0)
+//		{
+//			Status	=	&(sBorad.Port3.sBox);			//箱子状态
+//			CardBuffer	=	&ICCardReadRev3;				//卡完整数据		
+//			if(Num	==	22)	//有卡
+//			{	
+//				CardReaderTimeCount3	=	0;
+//				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
+//				Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)		
+//				BoardSaveCardData(&sBorad);		//根据状态保存卡号及设置相关状态
+//				
+//			}
+//			else if(Num	==	6)//无卡
+//			{
+//				CardReaderTimeCount3	=	0;
+//				Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
+//				BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
+//			}
+//		}
+//	}
+//	//==============================Port4
+//	if(USART_GetITStatus(ICCardReadPort4, USART_IT_RXNE))
+//  {
+//		Port4TimeOut	=	0;		//端口4连续读数超时---清除
+//		USART_ClearITPendingBit(ICCardReadPort4, USART_IT_RXNE);
+//    ICCardReadRxd[ICCardReadCount4]	=	USART_ReceiveData(ICCardReadPort4);
+//		ICCardReadCount4++;
+//		
+//		if(ICCardReadCount4==6	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24	&&	ICCardReadRxd[5]==0x2D)
+//		{
+//			CardReaderTimeCount4	=	0;
+//			Status	=	&(sBorad.Port4.sBox);			//箱子状态
+//			Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
+//			BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
+//			
+//			ICCardReadCount4=0;
+//		}
+//		if(ICCardReadCount4>=22	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24)//有卡
+//		{
+//			CardReaderTimeCount4	=	0;
+//			Status	=	&(sBorad.Port4.sBox);			//箱子状态
+//			CardBuffer	=	(ICBufferDef*)ICCardReadRxd;				//卡完整数据		
+//			
+//			memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
+//			Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)		
+//			BoardSaveCardData(&sBorad);														//根据状态保存卡号及设置相关状态
+//		}
+//		return 1;
+//  }
+//	else if(USART_GetITStatus(ICCardReadPort4, USART_IT_TC))
+//  {   
+//    USART_ClearITPendingBit(ICCardReadPort4, USART_IT_TC);
+//		return 1;
+//  }	
+//	return 0;
+//}
 /*******************************************************************************
 * 函数名			:	function
 * 功能描述		:	函数功能说明 
@@ -1020,135 +1326,7 @@ void BoardGetBoxProcess(sBoradDef*	sBorad)		//取药时的时间管理,包括超时
 * 修改内容		: 无
 * 其它			: 
 *******************************************************************************/
-u8 BoardCardReaderServer(void)							//读取IC卡数据
-{
-	u16	Num	=	0;
-	sBoxDef*	Status;				//箱子状态
-	ICBufferDef*		CardBuffer;		//卡完整数据	
-	
-//	sBoxStatusDef	*TempStus;	//获取状态参数地址
-	//==============================Port1
-	Num	=	USART_ReadBufferIDLE(ICCardReadPort1,(u32*)&ICCardReadRev1,(u32*)&ICCardReadRxd1);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
-	if(Num)
-	{
-		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev1);					//读取IC卡数据校验，返回0失败，作废，返回1正确
-		if(temp	!=0)
-		{
-			Status	=	&(sBorad.Port1.sBox);			//箱子状态
-			CardBuffer	=	&ICCardReadRev1;				//卡完整数据		
-			if(Num	==	22)	//有卡
-			{	
-				CardReaderTimeCount1	=	0;
-				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
-				Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)
-				BoardSaveCardData(&sBorad);		//根据状态保存卡号及设置相关状态
-				
-			}
-			else if(Num	==	6)//无卡
-			{
-				CardReaderTimeCount1	=	0;
-				ICCardReadTime1	=500;					//防止取卡时读卡不稳定误认为已收回卡
-				Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
-				BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
-			}
-		}		
-	}
-	//==============================Port2
-	Num	=	USART_ReadBufferIDLE(ICCardReadPort2,(u32*)&ICCardReadRev2,(u32*)&ICCardReadRxd2);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
-	if(Num)
-	{
-		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev2);					//读取IC卡数据校验，返回0失败，作废，返回1正确
-		if(temp	!=0)
-		{
-			Status	=	&(sBorad.Port2.sBox);			//箱子状态
-			CardBuffer	=	&ICCardReadRev2;				//卡完整数据		
-			if(Num	==	22)	//有卡
-			{	
-				CardReaderTimeCount2	=	0;				
-				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
-				Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)		
-				BoardSaveCardData(&sBorad);		//根据状态保存卡号及设置相关状态
-				
-			}
-			else if(Num	==	6)//无卡
-			{
-				CardReaderTimeCount2	=	0;
-				Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
-				BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
-			}
-		}
-	}
-	//==============================Port3
-	Num	=	USART_ReadBufferIDLE(ICCardReadPort3,(u32*)&ICCardReadRev3,(u32*)&ICCardReadRxd3);	//串口空闲模式读串口接收缓冲区，如果有数据，将数据拷贝到RevBuffer,并返回接收到的数据个数，然后重新将接收缓冲区地址指向RxdBuffer
-	if(Num)
-	{
-		u8 temp	=	BoardCardDataAnalysis(&ICCardReadRev3);					//读取IC卡数据校验，返回0失败，作废，返回1正确
-		if(temp	!=0)
-		{
-			Status	=	&(sBorad.Port3.sBox);			//箱子状态
-			CardBuffer	=	&ICCardReadRev3;				//卡完整数据		
-			if(Num	==	22)	//有卡
-			{	
-				CardReaderTimeCount3	=	0;
-				memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
-				Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)		
-				BoardSaveCardData(&sBorad);		//根据状态保存卡号及设置相关状态
-				
-			}
-			else if(Num	==	6)//无卡
-			{
-				CardReaderTimeCount3	=	0;
-				Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
-				BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
-			}
-		}
-	}
-	//==============================Port4
-	if(USART_GetITStatus(ICCardReadPort4, USART_IT_RXNE))
-  {
-		Port4TimeOut	=	0;		//端口4连续读数超时---清除
-		USART_ClearITPendingBit(ICCardReadPort4, USART_IT_RXNE);
-    ICCardReadRxd[ICCardReadCount4]	=	USART_ReceiveData(ICCardReadPort4);
-		ICCardReadCount4++;
-		
-		if(ICCardReadCount4==6	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24	&&	ICCardReadRxd[5]==0x2D)
-		{
-			CardReaderTimeCount4	=	0;
-			Status	=	&(sBorad.Port4.sBox);			//箱子状态
-			Status->BoxSts.NoID	=	1;			//bit3：0-无操作,		1-卡号未读到(需要删除相关数据及标志)
-			BoardClrCardData(&sBorad);		//删除卡号数据及设置相关状态
-			
-			ICCardReadCount4=0;
-		}
-		if(ICCardReadCount4>=22	&&	ICCardReadRxd[0]==0xD2	&&	ICCardReadRxd[1]==0x24)//有卡
-		{
-			CardReaderTimeCount4	=	0;
-			Status	=	&(sBorad.Port4.sBox);			//箱子状态
-			CardBuffer	=	(ICBufferDef*)ICCardReadRxd;				//卡完整数据		
-			
-			memcpy(CardData,&(CardBuffer->data[CardStartByte]),CardLength);		//复制卡号
-			Status->BoxSts.ReadID	=	1;		//bit2：0-无操作,		1-读到ID(需要增加相关数据及标志)		
-			BoardSaveCardData(&sBorad);														//根据状态保存卡号及设置相关状态
-		}
-		return 1;
-  }
-	else if(USART_GetITStatus(ICCardReadPort4, USART_IT_TC))
-  {   
-    USART_ClearITPendingBit(ICCardReadPort4, USART_IT_TC);
-		return 1;
-  }	
-	return 0;
-}
-/*******************************************************************************
-* 函数名			:	function
-* 功能描述		:	函数功能说明 
-* 输入			: void
-* 返回值			: void
-* 修改时间		: 无
-* 修改内容		: 无
-* 其它			: 
-*******************************************************************************/
-u8 CardReaderPortn(void)	//DMA接收读卡器数据
+u8 BoardCardReaderServer(void)	//DMA接收读卡器数据
 {
 	u16	Num	=	0;
 	sBoxDef*	Status;				//箱子状态
@@ -1631,6 +1809,9 @@ void BoardClrCardData(sBoradDef*	sBorad)		//删除卡号数据及设置相关状态
 	}
 }
 
+
+
+
 //======
 
 
@@ -1651,115 +1832,115 @@ void BoardClrCardData(sBoradDef*	sBorad)		//删除卡号数据及设置相关状态
 *******************************************************************************/
 void BoardSetSeg(sBoradDef*	sBorad)			//根据标志设置数码管状态：卡有变化、取药请求、周期更新数码管状态
 {
-	if(sBorad->sPlu.Step.WriteSeg	==	0)		//数码管更新标志为未更新，需要更新	
-	{
-		sBorad->sPlu.Time.TimeSEG++;						//数码管更新数据计时器----可用于检测数码管通讯状态 20ms外发一个数码管状态
-		if(sBorad->sPlu.Time.TimeSEG==15)			//等待15ms后开始，由于数码管串口端口与读卡器复用，需要等待
-		{
-			HALUsartRemapEnable();												//使能串口复用
-		}
-		if((sBorad->sPlu.Time.TimeSEG%20)	==	0)	//20mS更新一个：通过485接口
-		{
-			u32	Time;						//点亮时间，单位mS
-			u8 Num		=	0;
-//			u8 SegFlg	=	0;			//0--无数据需要发送，可以把串口复用关闭，1--需要发送数据，需要等待20ms后关闭才可以根据条件关闭串口复用
-			PortDef*	Port	=	&(sBorad->Port1);
-			for(Num=0;Num<MaxPortNum;Num++)
-			{
-				if(Port->Seg.sSegSts.SegFlg	==	1)	//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
-				{
-					//============根据情况发送相关数码管命令
-					//============插入药箱常亮30S；取药箱请求：一定时间内闪烁；无药箱：小数点一直闪烁；读卡通讯故障：小数点常亮
-					if(Port->sBox.BoxSts.BoxOn	==	1)		//bit1：0-无药箱,		1-有药箱
-					{
-						if(Port->sBox.BoxSts.ReadErr	==	1)			//bit4：0-读卡器正常，	1-读卡器通讯异常
-						{
-							Port->Seg.SegFarme.cmd.DispEnNum	=	1;		//bit0显示数值	：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdNum	=	1;		//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-							memset((Port->Seg.SegFarme.data),0x00,4);		//000闪烁
-						}
-						else if(Port->sBus.BusqSts.GetBox	==	1)			//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
-						{
-							Port->Seg.SegFarme.cmd.DispEnNum	=	1;	//bit0显示数值	：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdNum	=	1;	//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispEnDp	=	0;		//bit1显示点		：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispTime	=	1;		//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-							
-							Time	=	Port->Lock.LockOnTime;					//闪烁时间根据上位机发送的需要锁的吸合时间
-						}
-						else if(Port->Seg.sSegSts.SegTimeOut	==1)		//bit1：0-无操作,		1-取药超时，需要关闭数码管
-						{
-							Port->Seg.sSegSts.SegTimeOut	=	0;			//bit1：0-无操作,		1-取药超时，需要关闭数码管
-							Port->Seg.SegFarme.cmd.DispEnNum	=	0;			//bit0显示数值	：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispTime	=	1;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-						}
-						else		//非取药请求，则表示新插入药箱：常亮
-						{
-							Port->Seg.SegFarme.cmd.DispEnNum	=	1;			//bit0显示数值	：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispTime	=	1;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-							Time	=	SegOnTime;								//插入药箱后数码管常亮时间30S							
-						}
-						//=================写入数据
-						//==数据,高位在前,data[0~3]为显示内容,data[4~7]为闪烁时间
-						//=================写入卡呺:已在读卡器接收中将数据存入数码管缓存
-
-						//=================写入时间
-						memcpy((u8*)&(Port->Seg.SegFarme.data[4]),&Time,4);
-//						Port->Seg.SegFarme.data[4]	=	(Time>>24)&0xFF;
-//						Port->Seg.SegFarme.data[5]	=	(Time>>16)&0xFF;
-//						Port->Seg.SegFarme.data[6]	=	(Time>>8)&0xFF;
-//						Port->Seg.SegFarme.data[7]	=	(Time>>0)&0xFF;
-					}
-					else		//bit0：0-无卡,1-有卡//药箱被取走或者读卡器坏
-					{
-						if(Port->sBox.BoxSts.ReadErr	==	1)			//bit4：0-读卡器正常，	1-读卡器通讯异常
-						{
-							Port->Seg.SegFarme.cmd.DispEnNum	=	1;		//bit0显示数值	：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdNum	=	1;		//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-							memset((Port->Seg.SegFarme.data),0x00,4);		//000闪烁
-							
-//							Port->Seg.SegFarme.cmd.DispEnNum	=	0;		//bit0显示数值	：	0-不显示，		1-显示
-//							Port->Seg.SegFarme.cmd.DispMdNum	=	0;		//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-//							Port->Seg.SegFarme.cmd.DispEnDp	=	1;			//bit1显示点		：	0-不显示，		1-显示
+//	if(sBorad->sPlu.Step.WriteSeg	==	0)		//数码管更新标志为未更新，需要更新	
+//	{
+//		sBorad->sPlu.Time.TimeSEG++;						//数码管更新数据计时器----可用于检测数码管通讯状态 20ms外发一个数码管状态
+//		if(sBorad->sPlu.Time.TimeSEG==15)			//等待15ms后开始，由于数码管串口端口与读卡器复用，需要等待
+//		{
+//			HALUsartRemapEnable();												//使能串口复用
+//		}
+//		if((sBorad->sPlu.Time.TimeSEG%20)	==	0)	//20mS更新一个：通过485接口
+//		{
+//			u32	Time;						//点亮时间，单位mS
+//			u8 Num		=	0;
+////			u8 SegFlg	=	0;			//0--无数据需要发送，可以把串口复用关闭，1--需要发送数据，需要等待20ms后关闭才可以根据条件关闭串口复用
+//			PortDef*	Port	=	&(sBorad->Port1);
+//			for(Num=0;Num<MaxPortNum;Num++)
+//			{
+//				if(Port->Seg.sSegSts.SegFlg	==	1)	//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+//				{
+//					//============根据情况发送相关数码管命令
+//					//============插入药箱常亮30S；取药箱请求：一定时间内闪烁；无药箱：小数点一直闪烁；读卡通讯故障：小数点常亮
+//					if(Port->sBox.BoxSts.BoxOn	==	1)		//bit1：0-无药箱,		1-有药箱
+//					{
+//						if(Port->sBox.BoxSts.ReadErr	==	1)			//bit4：0-读卡器正常，	1-读卡器通讯异常
+//						{
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	1;		//bit0显示数值	：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	1;		//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
 //							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
 //							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-						}
-						else
-						{
-							Port->Seg.SegFarme.cmd.DispEnNum	=	0;			//bit0显示数值	：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispEnDp	=	1;			//bit1显示点		：	0-不显示，		1-显示
-							Port->Seg.SegFarme.cmd.DispMdDp	=	1;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
-							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
-						}
-					}
-					HALSendSeg((u32*)&Port->Seg.SegFarme,sizeof(sSegFarmeDef));		//向数码管发送数据
-					Port->Seg.sSegSts.SegFlg	=	0;					//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
-					return;				//退出，发送数据，等待下一个延时时间再做剩余的数码管更新
-				}
-				if(Num<MaxPortNum-1)
-				{
-					Port=(PortDef*)((u32)Port+sizeof(PortDef));			//指向下一端口
-				}
-			}
-			
-			//执行到这表示以上未检测出数码管更新标志，
-			sBorad->sPlu.Step.WriteSeg	=	1;			//bit1:	0-未更新数码管,需要更新，	1-已更新
-			sBorad->sPlu.Step.ReadCard	=	0;			//关读卡---更新完数码管继续读卡检测
-			HALUsartRemapDisable();					//关闭串口复用
-		}
-	}
+//							memset((Port->Seg.SegFarme.data),0x00,4);		//000闪烁
+//						}
+//						else if(Port->sBus.BusqSts.GetBox	==	1)			//bit2：0-无请求，	1-有请求	，取药(数码管数值同时闪烁)
+//						{
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	1;	//bit0显示数值	：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	1;	//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	0;		//bit1显示点		：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispTime	=	1;		//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+//							
+//							Time	=	Port->Lock.LockOnTime;					//闪烁时间根据上位机发送的需要锁的吸合时间
+//						}
+//						else if(Port->Seg.sSegSts.SegTimeOut	==1)		//bit1：0-无操作,		1-取药超时，需要关闭数码管
+//						{
+//							Port->Seg.sSegSts.SegTimeOut	=	0;			//bit1：0-无操作,		1-取药超时，需要关闭数码管
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	0;			//bit0显示数值	：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispTime	=	1;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+//						}
+//						else		//非取药请求，则表示新插入药箱：常亮
+//						{
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	1;			//bit0显示数值	：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispTime	=	1;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+//							Time	=	SegOnTime;								//插入药箱后数码管常亮时间30S							
+//						}
+//						//=================写入数据
+//						//==数据,高位在前,data[0~3]为显示内容,data[4~7]为闪烁时间
+//						//=================写入卡呺:已在读卡器接收中将数据存入数码管缓存
+
+//						//=================写入时间
+//						memcpy((u8*)&(Port->Seg.SegFarme.data[4]),&Time,4);
+////						Port->Seg.SegFarme.data[4]	=	(Time>>24)&0xFF;
+////						Port->Seg.SegFarme.data[5]	=	(Time>>16)&0xFF;
+////						Port->Seg.SegFarme.data[6]	=	(Time>>8)&0xFF;
+////						Port->Seg.SegFarme.data[7]	=	(Time>>0)&0xFF;
+//					}
+//					else		//bit0：0-无卡,1-有卡//药箱被取走或者读卡器坏
+//					{
+//						if(Port->sBox.BoxSts.ReadErr	==	1)			//bit4：0-读卡器正常，	1-读卡器通讯异常
+//						{
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	1;		//bit0显示数值	：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	1;		//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	0;			//bit1显示点		：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+//							memset((Port->Seg.SegFarme.data),0x00,4);		//000闪烁
+//							
+////							Port->Seg.SegFarme.cmd.DispEnNum	=	0;		//bit0显示数值	：	0-不显示，		1-显示
+////							Port->Seg.SegFarme.cmd.DispMdNum	=	0;		//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+////							Port->Seg.SegFarme.cmd.DispEnDp	=	1;			//bit1显示点		：	0-不显示，		1-显示
+////							Port->Seg.SegFarme.cmd.DispMdDp	=	0;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+////							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+//						}
+//						else
+//						{
+//							Port->Seg.SegFarme.cmd.DispEnNum	=	0;			//bit0显示数值	：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdNum	=	0;			//bit2数值模式	：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispEnDp	=	1;			//bit1显示点		：	0-不显示，		1-显示
+//							Port->Seg.SegFarme.cmd.DispMdDp	=	1;			//bit3点模式		：	0-静态显示，	1-0.5S闪烁
+//							Port->Seg.SegFarme.cmd.DispTime	=	0;			//bit4显示时间	：	0-长亮，			1-在显示时间内根据显示模式显示
+//						}
+//					}
+//					HALSendSeg((u32*)&Port->Seg.SegFarme,sizeof(sSegFarmeDef));		//向数码管发送数据
+//					Port->Seg.sSegSts.SegFlg	=	0;					//bit0：0-无操作,		1-有操作请求(需要更新数码管状态）
+//					return;				//退出，发送数据，等待下一个延时时间再做剩余的数码管更新
+//				}
+//				if(Num<MaxPortNum-1)
+//				{
+//					Port=(PortDef*)((u32)Port+sizeof(PortDef));			//指向下一端口
+//				}
+//			}
+//			
+//			//执行到这表示以上未检测出数码管更新标志，
+//			sBorad->sPlu.Step.WriteSeg	=	1;			//bit1:	0-未更新数码管,需要更新，	1-已更新
+//			sBorad->sPlu.Step.ReadCard	=	0;			//关读卡---更新完数码管继续读卡检测
+//			HALUsartRemapDisable();					//关闭串口复用
+//		}
+//	}
 }
 
 
